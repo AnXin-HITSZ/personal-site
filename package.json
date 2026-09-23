@@ -1,0 +1,16 @@
+{
+  "name": "anxin-personal-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test": "node --test",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": { "node": ">=22.12.0" },
+  "dependencies": { "vue": "^3.5.0" },
+  "devDependencies": { "vite": "^7.0.0", "@vitejs/plugin-vue": "^6.0.0" }
+}

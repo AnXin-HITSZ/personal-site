@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Anxin Personal Site API
+  version: 0.1.0
+  description: >-
+    第一阶段直接读取 ECS MySQL 的公开只读接口。仅返回已发布文章，不需要认证。
+    ECS 公网 IP 为 8.135.60.136；生产通过域名 HTTPS 入口访问，数据库不直接暴露给浏览器。
+    列表按 publishedAt 降序、id 字典序升序排序。先筛选，再计数，最后分页。
+servers:
+  - url: http://localhost:8080/api/v1
+    description: 本地 Go 服务
+  - url: https://anxin-hitsz.com/api/v1
+    description: 规划的生产同源入口（尚未部署）
+paths:
+  /articles:
+    get:
+      operationId: listArticles
+      summary: 获取已发布文章列表
+      description: >-
+        缺省参数使用默认值。page/pageSize 仅接受十进制正整数字符串；空值、符号、小数和指数形式返回 400。
+        未知参数与重复参数返回 400。category 省略表示全部，空值或未知分类返回 400。
+        q 去除首尾 Unicode 空白后，按 Unicode 码点计数，最多 100 个字符；空白关键词等同未传。
+        关键词与 title 或 summary 做不区分大小写的子串匹配，不搜索标签，不执行正则。
+        page 超过总页数返回 200 和空 items，不自动改写页码。无结果时 totalPages 为 0。
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 6 }
+        - name: q
+          in: query
+          description: 标题或摘要关键词；最大长度在去除首尾空白后校验
+          schema: { type: string }
+          example: Go
+        - name: category
+          in: query
+          schema: { type: string, enum: [backend, frontend, ai, notes] }
+      responses:
+        '200':
+          description: 列表与筛选后的分页信息
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleList' }
+              example:
+                items:
+                  - id: a009
+                    slug: go-api-first-step
+                    title: 从一个接口开始，搭建自己的 Go 服务
+                    summary: 把一个想法变成可访问的接口。
+                    category: backend
+                    tags: [Go, HTTP]
+                    publishedAt: '2026-09-21T08:00:00Z'
+                    readingMinutes: 8
+                pagination: { page: 1, pageSize: 6, total: 1, totalPages: 1 }
+        '400':
+          description: 参数校验失败
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: { code: INVALID_ARGUMENT, message: page 必须为 1 到 1000000 的整数, field: page }
+        '500':
+          description: 内部错误；禁止泄露堆栈、数据库信息或凭据
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: { code: INTERNAL_ERROR, message: 服务暂时不可用 }
+components:
+  schemas:
+    ArticleSummary:
+      type: object
+      required: [id, slug, title, summary, category, tags, publishedAt, readingMinutes]
+      properties:
+        id: { type: string, minLength: 1, description: 稳定唯一的文章标识 }
+        slug: { type: string, minLength: 1, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', description: 为后续详情页保留的稳定路径标识 }
+        title: { type: string, minLength: 1 }
+        summary: { type: string, description: 纯文本摘要，不含 HTML }
+        category: { type: string, enum: [backend, frontend, ai, notes] }
+        tags: { type: array, items: { type: string }, uniqueItems: true }
+        publishedAt: { type: string, format: date-time, description: RFC3339 时间，统一使用 UTC Z 格式 }
+        readingMinutes: { type: integer, minimum: 1 }
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1, maximum: 1000000 }
+        pageSize: { type: integer, minimum: 1, maximum: 50 }
+        total: { type: integer, minimum: 0, description: 筛选后的总数，不是当前页数量 }
+        totalPages: { type: integer, minimum: 0, description: ceil(total / pageSize)，total 为 0 时为 0 }
+    ArticleList:
+      type: object
+      required: [items, pagination]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ArticleSummary' } }
+        pagination: { $ref: '#/components/schemas/Pagination' }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, enum: [INVALID_ARGUMENT, INTERNAL_ERROR] }
+            message: { type: string, description: 可公开展示的错误说明 }
+            field: { type: string, description: 参数错误时提供字段名；内部错误时省略 }
