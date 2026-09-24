@@ -6,6 +6,7 @@ info:
     第一阶段直接读取 ECS MySQL 的公开只读接口。仅返回已发布文章，不需要认证。
     ECS 公网 IP 为 8.135.60.136；生产通过域名 HTTPS 入口访问，数据库不直接暴露给浏览器。
     列表按 publishedAt 降序、id 字典序升序排序。先筛选，再计数，最后分页。
+    同一响应的 total 与 items 必须来自同一数据快照，避免并发写入造成分页信息矛盾。
 servers:
   - url: http://localhost:8080/api/v1
     description: 本地 Go 服务
