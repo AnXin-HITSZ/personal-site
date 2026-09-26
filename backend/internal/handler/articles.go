@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"anxin-hitsz.com/backend/internal/dto"
 )
 
 type ArticlesList struct{}
@@ -11,13 +13,13 @@ type ArticlesList struct{}
 func NewArticlesList() *ArticlesList { return &ArticlesList{} }
 
 func (h *ArticlesList) List(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"items": []any{},
-		"pagination": gin.H{
-			"page":       1,
-			"pageSize":   6,
-			"total":      0,
-			"totalPages": 0,
+	c.JSON(http.StatusOK, dto.ArticleList{
+		Items: []dto.ArticleSummary{},
+		Pagination: dto.Pagination{
+			Page:       1,
+			PageSize:   6,
+			Total:      0,
+			TotalPages: 0,
 		},
 	})
 }
