@@ -16,12 +16,13 @@ func NewArticle(repo *repository.Article) *Article {
 	return &Article{repo: repo}
 }
 
-func (s *Article) ListPublished(ctx context.Context, page, pageSize int) (dto.ArticleList, error) {
-	if page < 1 || pageSize < 1 {
-		return dto.ArticleList{}, fmt.Errorf("分页参数非法: page=%d pageSize=%d", page, pageSize)
+func (s *Article) ListPublished(ctx context.Context, query dto.ArticleListQuery) (dto.ArticleList, error) {
+	if query.Page < 1 || query.PageSize < 1 {
+		return dto.ArticleList{}, fmt.Errorf("分页参数非法: page=%d pageSize=%d", query.Page, query.PageSize)
 	}
 
-	articles, total, err := s.repo.ListPublished(ctx, pageSize, (page-1)*pageSize)
+	articles, total, err := s.repo.ListPublished(
+		ctx, query.Keyword, query.Category, query.PageSize, (query.Page-1)*query.PageSize)
 	if err != nil {
 		return dto.ArticleList{}, err
 	}
@@ -38,10 +39,10 @@ func (s *Article) ListPublished(ctx context.Context, page, pageSize int) (dto.Ar
 	return dto.ArticleList{
 		Items: items,
 		Pagination: dto.Pagination{
-			Page:       page,
-			PageSize:   pageSize,
+			Page:       query.Page,
+			PageSize:   query.PageSize,
 			Total:      total,
-			TotalPages: (total + pageSize - 1) / pageSize,
+			TotalPages: (total + query.PageSize - 1) / query.PageSize,
 		},
 	}, nil
 }

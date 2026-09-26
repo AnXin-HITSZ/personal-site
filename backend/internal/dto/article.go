@@ -29,6 +29,13 @@ type ArticleList struct {
 	Pagination Pagination       `json:"pagination"`
 }
 
+type ArticleListQuery struct {
+	Page     int
+	PageSize int
+	Keyword  string
+	Category string
+}
+
 func NewArticleSummary(m model.Article) (ArticleSummary, bool) {
 	if m.PublishedAt == nil {
 		return ArticleSummary{}, false

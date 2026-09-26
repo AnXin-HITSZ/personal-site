@@ -20,4 +20,4 @@ mysql personal_site_dev < 0001_create_articles.down.sql   # 回滚
 
 | 版本 | 文件 | 开发库 | 测试库 | 生产库 |
 | --- | --- | --- | --- | --- |
-| 0001 | `0001_create_articles` | 待应用 | 待应用 | 待应用 |
+| 0001 | `0001_create_articles` | 已应用 | 待应用 | 待应用 |
