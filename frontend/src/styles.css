@@ -1,106 +1,304 @@
+/* 稿本：正文一栏，事实一律挂在左边注文栏里。 */
+
 :root {
-  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
-  color: #202c26;
-  background: #f7f9f7;
+  --paper: #f5f5f4;
+  --ink: #14161a;
+  --muted: #5c5f65;
+  --rule: #d9d9d5;
+  --control: #8a8d90;
+  --seal: #a52a1e;
+  --fill: #e4e4e1;
+
+  /* 拉丁文一律用衬线体：Go、HTTP 这类词在中文里是被引用的对象，换个声音念。 */
+  --stack-body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --stack-display: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, "PingFang SC", "Microsoft YaHei", serif;
+
+  --shell: 67rem;
+  --pad: 3rem;
+  --margin: 13rem;
+  --gutter: 3rem;
+  --measure: 45rem;
+  --text-start: calc(var(--margin) + var(--gutter));
+
+  --body-size: 1.0625rem;
+  --facts-size: .875rem;
+  --leading: 1.85;
+  --h1: clamp(2.5rem, 5vw, 3.75rem);
+
+  color: var(--ink);
+  background: var(--paper);
   font-synthesis: none;
-  font-size: 16px;
-  --ink: #17291f;
-  --muted: #5e6b63;
-  --line: #dbe1dc;
-  --accent: #dfed9e;
+  -webkit-text-size-adjust: 100%;
 }
+
 * { box-sizing: border-box; }
-body { margin: 0; }
+
+/* 字号与行高一律走 token，不写字面量。简写落在 body 上而不是 :root：
+   自定义属性只向下继承，写在这一层，任何一层的覆写都能到达。 */
+body { margin: 0; font: 400 var(--body-size)/var(--leading) var(--stack-body); }
+h1, h2, h3, p { margin: 0; }
 a { color: inherit; text-decoration: none; }
-button, input { font: inherit; }
+button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
-button:disabled { cursor: default; opacity: .4; }
-a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #5e7b35; outline-offset: 4px; }
-.wrap { max-width: 1160px; margin: auto; padding-left: 40px; padding-right: 40px; }
-.site-header { min-height: 104px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: 12px; font-weight: 750; letter-spacing: 2px; }
-.brand-mark { background: var(--ink); color: var(--accent); width: 38px; height: 38px; border-radius: 10px; font: bold 32px Georgia; text-align: center; letter-spacing: -3px; padding-right: 5px; }
-.brand-sub { font-size: .875rem; font-weight: 400; color: var(--muted); letter-spacing: 1px; }
-nav { display: flex; gap: 32px; font-size: .9rem; }
-nav a { padding: 10px 0; }
-nav a:hover { color: #507634; }
-nav .active { border-bottom: 2px solid var(--ink); }
-.intro { display: grid; grid-template-columns: 1fr 310px; gap: 70px; padding: 68px 0 60px; align-items: center; }
-.eyebrow { font-size: .75rem; letter-spacing: 2.5px; font-weight: 700; margin: 0 0 20px; color: #597260; }
-h1 { font-size: clamp(2.5rem, 4.5vw, 3.65rem); line-height: 1.3; letter-spacing: -2px; margin: 0; font-weight: 650; }
-.intro-copy { font-size: 1rem; line-height: 1.95; color: var(--muted); margin: 24px 0 0; }
-.project-note { background: var(--ink); color: white; padding: 30px 30px 26px; border-radius: 4px; border-top: 4px solid #a8c477; }
-.note-index { font: .75rem ui-monospace, monospace; letter-spacing: 2px; color: #c3d1c7; }
-.project-note h2 { font-size: 1.85rem; font-weight: 500; letter-spacing: -1px; margin: 28px 0 12px; }
-.project-note p { font-size: 1rem; color: #c3d1c7; line-height: 1.85; margin-bottom: 24px; }
-.project-note a { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid #526047; padding-top: 19px; font-size: .9rem; color: var(--accent); }
-.section-heading { display: flex; align-items: end; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 34px; }
-.section-heading .eyebrow { margin-bottom: 10px; }
-h2 { margin: 0; font-size: 1.65rem; font-weight: 650; }
-.sample-label { font-size: .75rem; margin-left: 12px; border: 1px solid var(--line); padding: 3px 7px; color: var(--muted); font-weight: 400; vertical-align: middle; white-space: nowrap; }
-.section-side { font-size: .875rem; color: var(--muted); }
-.toolbar { display: flex; justify-content: space-between; gap: 24px; align-items: center; padding: 27px 0 10px; }
-.categories { display: flex; gap: 5px; flex-wrap: wrap; }
-.category { border: 0; background: transparent; color: #5c685e; font-size: .875rem; padding: 10px 13px; min-height: 44px; border-radius: 5px; }
-.category[aria-pressed=true] { background: var(--ink); color: white; }
-.category:hover:not([aria-pressed=true]) { background: #e8eee8; }
-form { display: flex; align-items: center; border: 1px solid var(--line); background: white; border-radius: 5px; }
-input { min-width: 0; width: 175px; background: none; border: 0; padding: 11px 12px; font-size: 1rem; }
-form button { border: 0; border-radius: 5px; background: white; font-size: .875rem; padding: 12px; color: #45603f; }
-form:focus-within { outline: 2px solid #5e7b35; }
-input:focus-visible { outline: none; }
-.result-info { min-height: 36px; padding: 7px 0 12px; font-size: .875rem; color: var(--muted); overflow-wrap: anywhere; }
-.article-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-.article-card { background: white; border: 1px solid var(--line); border-radius: 5px; padding: 24px; display: flex; flex-direction: column; min-height: 330px; overflow-wrap: anywhere; }
-.card-top { display: flex; align-items: center; justify-content: space-between; }
-.category-name { font-size: .875rem; color: #54764b; }
-.category-name.ai { color: #66539b; }
-.category-name.frontend { color: #376b95; }
-.category-name.notes { color: #88602e; }
-.article-number { font: .75rem ui-monospace, monospace; color: #727d75; }
-.article-card h3 { font-size: 1.17rem; line-height: 1.6; font-weight: 650; letter-spacing: -.35px; margin: 20px 0 12px; }
-.summary { font-size: 1rem; color: var(--muted); line-height: 1.85; margin: 0 0 20px; }
-.tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; padding-bottom: 20px; }
-.tags span { font-size: .75rem; background: #f2f5f1; color: #5d6c5d; padding: 4px 7px; border-radius: 3px; }
-.card-meta { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-top: 1px solid #edf0ec; padding-top: 16px; font-size: .75rem; color: #626f65; }
-.pagination { justify-content: center; align-items: center; min-height: 100px; gap: 24px; }
-.page-button { min-height: 44px; border: 1px solid var(--line); background: white; color: var(--ink); padding: 9px 15px; border-radius: 4px; font-size: .875rem; }
-.page-button:hover:enabled { background: #e9eedf; }
-.page-count { color: var(--muted); font-size: .875rem; }
-.empty-state { grid-column: 1/-1; text-align: center; padding: 50px 20px; background: white; border: 1px solid var(--line); }
-.empty-state p { color: var(--muted); line-height: 1.8; }
-.skeleton { height: 330px; border: 1px solid var(--line); background: linear-gradient(120deg, #edf1eb, white, #edf1eb); border-radius: 5px; }
-footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 27px!important; padding-bottom: 32px!important; color: var(--muted); font-size: .75rem; margin-top: 20px!important; }
-.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-.skip-link { position: absolute; left: 10px; top: -100px; background: white; padding: 12px; z-index: 10; }
-.skip-link:focus { top: 10px; }
-[hidden] { display: none!important; }
-@media (min-width: 1500px) { .intro { padding-top: 85px; padding-bottom: 76px; } }
-@media (max-width: 950px) {
-  .article-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .intro { gap: 35px; grid-template-columns: 1fr 280px; }
-  .toolbar { align-items: start; flex-direction: column; }
-  .toolbar form { width: 100%; }
-  .toolbar input { flex: 1; }
-  .section-side { display: none; }
+button:disabled { cursor: default; opacity: .45; }
+::selection { background: var(--seal); color: var(--paper); }
+
+:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--pad);
 }
-@media (max-width: 620px) {
-  .wrap { padding-left: 22px; padding-right: 22px; }
-  .site-header { min-height: 82px; flex-wrap: wrap; gap: 10px; padding-top: 16px; padding-bottom: 16px; }
-  .brand-sub { display: none; }
-  nav { gap: 20px; }
-  .intro { grid-template-columns: 1fr; padding: 40px 0; gap: 32px; }
-  h1 { font-size: 2.6rem; }
-  .project-note { padding: 22px; }
-  .project-note h2 { margin-top: 18px; }
-  .project-note p br { display: none; }
-  .project-note p { margin-bottom: 18px; }
-  .article-list { grid-template-columns: 1fr; }
-  .article-card { min-height: 270px; }
-  .categories { gap: 0; }
-  .category { padding: 9px 10px; }
-  h2 { font-size: 1.5rem; }
-  footer { flex-wrap: wrap; }
-  footer>span:nth-child(2) { display: none; }
-  .section-heading { padding-top: 25px; }
+
+/* 两栏骨架：注文栏 + 正文栏。 */
+.row {
+  display: grid;
+  grid-template-columns: var(--margin) minmax(0, var(--measure));
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+/* 分隔线只横跨正文栏，注文栏因此是一整条连续的批注。 */
+.ruled { position: relative; padding-top: 1.5rem; }
+.ruled::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--text-start);
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  background: var(--paper);
+  border: 1px solid var(--control);
+  padding: .75rem 1rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ---------- 报头 ---------- */
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 2.25rem;
+}
+.brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
+.nav { display: flex; gap: 1.75rem; font-size: .875rem; }
+.nav a { position: relative; padding: .5rem 0; color: var(--muted); }
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current] { color: var(--ink); }
+.nav a[aria-current]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--seal);
+}
+
+/* ---------- 题记 ---------- */
+
+.statement { margin-top: 5.5rem; }
+.statement-fact { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+.statement-body { grid-column: 2; }
+
+.statement h1 {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: var(--h1);
+  line-height: 1.34;
+  letter-spacing: .02em;
+}
+.statement-lede {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: calc(var(--body-size) - 1px);
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.project { margin-top: 3.25rem; }
+.project-fact { color: var(--muted); font-size: var(--facts-size); }
+.project-body { grid-column: 2; }
+.project-name { font-family: var(--stack-display); font-weight: 400; font-size: 1.6rem; letter-spacing: .01em; }
+.project-line { margin-top: .5rem; color: var(--muted); font-size: calc(var(--body-size) - 1px); line-height: 1.8; }
+.project-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--seal);
+  font-size: calc(var(--body-size) - 1px);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: .15rem;
+}
+.project-link:hover { color: var(--ink); }
+
+/* ---------- 文章列表 ---------- */
+
+.archive { margin-top: 6.5rem; }
+.archive-count { color: var(--muted); font-size: var(--facts-size); }
+.archive-main { grid-column: 2; display: flex; align-items: baseline; gap: .75rem; }
+.archive-main h2 { font-size: 1.75rem; font-weight: 600; }
+.archive-sample { color: var(--muted); font-size: var(--facts-size); }
+
+.archive-tools { margin-top: 2rem; }
+.archive-tools-main { grid-column: 2; }
+
+.filters { display: flex; flex-wrap: wrap; gap: .25rem; }
+.filter {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: .875rem;
+  min-height: 2.5rem;
+  padding: 0 .7rem;
+  border-bottom: 2px solid transparent;
+}
+.filter:first-child { padding-left: 0; }
+.filter:hover:not([aria-pressed="true"]) { color: var(--ink); }
+.filter[aria-pressed="true"] { color: var(--seal); border-bottom-color: var(--seal); }
+
+.search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 22rem;
+  margin-top: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+}
+.search:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: .7rem .85rem; font-size: .9375rem; }
+.search input::placeholder { color: var(--muted); }
+.search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); }
+.search button:hover { color: var(--ink); }
+
+/* 头条与其余条目共用一套 DOM，只靠 :first-child 分两档：
+   头条用标题的体量立起来，其余压成索引，两者的注文栏始终对齐同一列。 */
+.entries { margin-top: 2.75rem; }
+.entry { padding-top: 2.25rem; }
+.entry + .entry { margin-top: 1.75rem; padding-top: 1.5rem; }
+
+.entry-facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.entry-mark { color: var(--seal); margin-bottom: .35rem; }
+.entry-category { color: var(--seal); }
+.entry-date { font-variant-numeric: tabular-nums; }
+.entry-main { grid-column: 2; }
+
+.entry-title { font-size: 1.0625rem; font-weight: 600; line-height: 1.55; text-wrap: pretty; }
+.entry-summary { margin-top: .35rem; color: var(--muted); font-size: .9375rem; line-height: 1.75; text-wrap: pretty; }
+.entry-tags { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+
+.entry:first-child .entry-title {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
+  line-height: 1.3;
+  letter-spacing: .01em;
+}
+.entry:first-child .entry-summary {
+  margin-top: 1rem;
+  font-size: calc(var(--body-size) + 1px);
+  line-height: 1.85;
+}
+.entry:first-child .entry-tags { margin-top: .9rem; }
+
+.notice h3 { font-size: 1.1875rem; font-weight: 600; }
+.notice p { margin-top: .6rem; color: var(--muted); font-size: .9375rem; }
+.notice button { margin-top: 1.4rem; }
+
+.sk { display: block; background: var(--fill); border-radius: 2px; }
+.sk-fact { width: 3.5rem; height: .6rem; }
+.sk-fact-sm { width: 2.5rem; margin-top: .55rem; }
+.sk-title { width: 68%; height: .95rem; }
+/* 首条的骨架要按头条的体量撑住，否则数据回来时版面会跳一下 */
+.entry:first-child .sk-title { width: 78%; height: 1.5rem; margin-top: .55rem; }
+.sk-line { width: 100%; height: .6rem; margin-top: .9rem; }
+.sk-line-short { width: 54%; }
+
+/* ---------- 分页 ---------- */
+
+.pager { margin-top: 3rem; }
+.pager-nav { grid-column: 2; display: flex; align-items: center; gap: 1.25rem; }
+.pager-btn {
+  background: none;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: 0 1rem;
+  min-height: 2.5rem;
+  font-size: .875rem;
+}
+.pager-btn:hover:enabled { border-color: var(--seal); color: var(--seal); }
+.pager-count { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+
+/* ---------- 页脚 ---------- */
+
+.footer { margin-top: 4.5rem; padding-bottom: 3.5rem; }
+.footer-made { color: var(--muted); font-size: var(--facts-size); }
+.footer-main { grid-column: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 1.5rem; }
+.footer-main p { color: var(--muted); font-size: var(--facts-size); }
+.footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); }
+.footer-main a:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+/* ---------- 窄屏：注文栏立起来，变成标题上方的一行批注 ---------- */
+
+@media (max-width: 56rem) {
+  :root { --margin: 7.5rem; --gutter: 1.75rem; }
+}
+
+@media (max-width: 44rem) {
+  /* 零值必须带单位：无单位的 0 混进 calc() 会让整条声明在计算时失效 */
+  :root {
+    --pad: 1.25rem;
+    --margin: 0rem;
+    --gutter: 0rem;
+    --measure: 100%;
+    --text-start: 0rem;
+
+    --body-size: 1rem;
+    --facts-size: .8125rem;
+    --leading: 1.75;
+    --h1: clamp(2.125rem, 5.4vw, 3.125rem);
+  }
+
+  .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .statement-body, .archive-main, .archive-tools-main, .entry-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
+  .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
+
+  .masthead { padding-top: 1.5rem; }
+  .statement { margin-top: 2.75rem; }
+  .statement h1 { letter-spacing: .01em; }
+  .project { margin-top: 2.5rem; }
+
+  /* 注文栏立起来，变成标题上方的一行批注，「最新」跟着并入那一行 */
+  .entry-facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  .entry-mark { margin-bottom: 0; }
+  .entry:first-child .entry-title { font-size: 1.6rem; }
+
+  .filters { gap: .35rem; }
+  .filter { padding: 0 .5rem; }
+
+  .footer { margin-top: 3rem; }
+  .footer-made { margin-bottom: .75rem; }
 }
