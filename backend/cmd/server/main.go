@@ -11,9 +11,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
+	"anxin-hitsz.com/backend/internal/config"
+	"anxin-hitsz.com/backend/internal/database"
 	"anxin-hitsz.com/backend/internal/handler"
 	"anxin-hitsz.com/backend/internal/middleware"
+	"anxin-hitsz.com/backend/internal/repository"
+	"anxin-hitsz.com/backend/internal/service"
 )
 
 func main() {
@@ -23,15 +28,32 @@ func main() {
 }
 
 func run() error {
-	addr := listenAddr()
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
-	router, err := newRouter()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	db, err := database.OpenMySQL(ctx, cfg.MySQL)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Print("关闭 MySQL 连接池失败")
+		}
+	}()
+	log.Print("MySQL 连接检查通过")
+
+	router, err := newRouter(cfg, db.DB)
 	if err != nil {
 		return err
 	}
 
 	srv := &http.Server{
-		Addr:              addr,
+		Addr:              cfg.HTTPAddr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
@@ -39,12 +61,9 @@ func run() error {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	serveErr := make(chan error, 1)
 	go func() {
-		log.Printf("listening on http://%s", addr)
+		log.Printf("listening on http://%s", cfg.HTTPAddr)
 		serveErr <- srv.ListenAndServe()
 	}()
 
@@ -72,15 +91,8 @@ func run() error {
 	return nil
 }
 
-func listenAddr() string {
-	if addr := os.Getenv("HTTP_ADDR"); addr != "" {
-		return addr
-	}
-	return "127.0.0.1:8080"
-}
-
-func newRouter() (*gin.Engine, error) {
-	if os.Getenv("APP_ENV") == "production" {
+func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
+	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -91,10 +103,10 @@ func newRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 
-	articles := handler.NewArticlesList()
+	articlesHandler := handler.NewArticlesList(service.NewArticle(repository.NewArticle(db)))
 
 	api := router.Group("/api/v1")
-	api.GET("/articles", articles.List)
+	api.GET("/articles", articlesHandler.List)
 
 	return router, nil
 }
