@@ -109,6 +109,7 @@ backend/
   internal/middleware/      恢复中间件
   migrations/               手动执行的 SQL 迁移，启动不建表
 deploy/nginx/              部署网关模板
+deploy/systemd/            后端服务单元
 ```
 
 ## 前后端边界
@@ -123,8 +124,32 @@ Vite 开发服务器把 `/api` 代理到 `API_PROXY_TARGET`，前端只用相对
 
 目标 ECS 为 `8.135.60.136`，直接使用已有 MySQL，Redis 缓存分阶段启用。在 `frontend/` 复制 `.env.production.example` 为同目录的 `.env.production` 后执行 `npm run build`；构建会拒绝 mock 模式。产物落在 `frontend/dist/`，部署时把该目录放到服务器的 `/var/www/anxin-site/dist`，通过部署网关将 `/api/v1` 转发到 Go 服务；主域名开启 HTTPS。前端配置不能存放密钥。
 
-当前只用到 ECS 上的开发库（经 SSH 隧道，见「启动」），尚未部署服务、未修改 DNS。
+### 服务器现状
 
-配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
+主域名与 QA-Agent 共用一台 ECS 和一份 Nginx，改动时不要碰 `sites-available/qa-agent`。
+
+| 项 | 位置 |
+| --- | --- |
+| 代码 | `/root/personal-site`，`git pull --ff-only` 更新 |
+| 后端 | `/root/personal-site/backend/dist/server`，systemd 单元 `personal-site.service`，监听 `127.0.0.1:8080` |
+| 后端配置 | `/root/personal-site/backend/.env`，`chmod 600`，不入库 |
+| 前端产物 | `/var/www/anxin-site/dist` |
+| 数据库 | 生产库 `personal_site_prod`，账号 `personal_site_app@localhost` |
+| 网关 | `/etc/nginx/sites-available/anxin-hitsz.com` |
+| 证书 | `/etc/nginx/ssl/anxin-hitsz.com/anxin-hitsz.com.{pem,key}` |
+
+ECS 连不上 `proxy.golang.org`，服务器上已执行 `go env -w GOPROXY=https://goproxy.cn,direct`，否则 `go build` 会长时间卡在模块下载。
+
+在服务器上发布：
+
+```sh
+cd /root/personal-site && git pull --ff-only
+export PATH=$PATH:/usr/local/go/bin
+(cd backend && go build -o dist/server ./cmd/server)
+(cd frontend && npm ci && npm run build && rsync -a --delete dist/ /var/www/anxin-site/dist/)
+systemctl restart personal-site.service
+```
+
+配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)、[systemd 单元](deploy/systemd/personal-site.service)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
 
 生产库不执行种子与清理；`ARTICLE_CACHE_ENABLED` 保持 `false`。

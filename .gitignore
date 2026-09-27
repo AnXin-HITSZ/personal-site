@@ -8,3 +8,7 @@ node_modules/
 coverage/
 dist/
 .DS_Store
+# 证书下载包，含私钥；只应存在于服务器 /etc/nginx/ssl/
+certs/
+*.key
+*.pem

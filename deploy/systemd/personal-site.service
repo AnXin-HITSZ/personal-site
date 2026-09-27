@@ -1,0 +1,16 @@
+[Unit]
+Description=Anxin Personal Site API (Go / Gin)
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=root
+Group=root
+WorkingDirectory=/root/personal-site/backend
+ExecStart=/root/personal-site/backend/dist/server
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
