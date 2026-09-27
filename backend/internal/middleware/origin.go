@@ -38,9 +38,11 @@ func (p OriginPolicy) permits(origin, requestHost string) bool {
 	}
 
 	// 同源：Origin 里的主机就是这次请求打到的主机。反向代理必须原样保留 Host——
-	// nginx 的 $host 保留了，而 Vite 的 proxy 因为是字符串写法被自动加上
-	// changeOrigin:true，会把 Host 改写成 127.0.0.1:8080，所以开发环境要靠
-	// ALLOWED_ORIGINS 补上 http://localhost:5173。
+	// nginx 的 $host 保留了，Vite 的 proxy 也是（frontend/vite.config.js 写成了
+	// 对象形式并显式 changeOrigin:false）。早先 Vite 那处是字符串写法，会被自动
+	// 加上 changeOrigin:true 把 Host 改写成 127.0.0.1:8080，开发环境得靠
+	// ALLOWED_ORIGINS 补一个 http://localhost:5173 才能写；改过来之后不需要了。
+	// 这个配置一旦被改回字符串写法，所有写操作都会 403，且看起来和没登录一样。
 	//
 	// 这里只比主机不比协议：能发出 Origin 的只有浏览器，而浏览器的 Origin 是
 	// 页面真实的来源；http 版本的站点已被 nginx 301 到 https，没有页面能发出
