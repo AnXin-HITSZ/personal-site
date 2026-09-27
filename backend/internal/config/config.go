@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -16,6 +17,16 @@ type Config struct {
 	AppEnv   string
 	HTTPAddr string
 	MySQL    MySQLConfig
+	Session  SessionConfig
+	// 站点对外的地址，用来拼验证邮件和重置口令邮件里的链接。没有末尾斜杠。
+	SiteBaseURL string
+}
+
+type SessionConfig struct {
+	CookieSecure bool
+	// 额外的可信来源。同源请求不靠它判断（那是拿 Origin 的主机和本次请求的
+	// Host 直接比），只有反向代理改写了 Host 时才需要在这里补一条。
+	AllowedOrigins []string
 }
 
 type MySQLConfig struct {
@@ -42,10 +53,20 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	appEnv := optionalString("APP_ENV", "development")
+
 	return Config{
-		AppEnv:   optionalString("APP_ENV", "development"),
+		AppEnv:   appEnv,
 		HTTPAddr: optionalString("HTTP_ADDR", "127.0.0.1:8080"),
 		MySQL:    mysqlConfig,
+		Session: SessionConfig{
+			// 生产只走 HTTPS。开发是 http://localhost:5173，带上 Secure 的
+			// cookie 浏览器根本不会存，更不会发回来。
+			CookieSecure:   appEnv == "production",
+			AllowedOrigins: optionalList("ALLOWED_ORIGINS"),
+		},
+		// 去掉末尾斜杠，拼链接时才不用到处判断中间该有几个斜杠。
+		SiteBaseURL: strings.TrimRight(optionalString("SITE_BASE_URL", ""), "/"),
 	}, nil
 }
 
@@ -146,6 +167,20 @@ func optionalString(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func optionalList(key string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return nil
+	}
+	list := make([]string, 0, strings.Count(value, ",")+1)
+	for _, part := range strings.Split(value, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			list = append(list, trimmed)
+		}
+	}
+	return list
 }
 
 func optionalInt(key string, fallback, min, max int) (int, error) {
