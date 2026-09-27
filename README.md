@@ -67,15 +67,18 @@ npm run preview # 查看构建结果：http://localhost:4173
 
 ## 当前交付
 
-- Vue 单文件组件：首页、文章列表、文章条目。
+- Vue 单文件组件：首页、文章列表、文章条目、文章详情、404 页。
+- vue-router 承载真实路由：`/`、`/articles/:slug`，其余路径落到 404，刷新任意路径都由网关回退到 `index.html`。
 - 关键词搜索、分类筛选、分页、加载中、空列表、错误重试、移动端布局与键盘焦点。
+- 正文以 Markdown 原文存库，详情页在前端用 markdown-it 渲染。markdown-it 默认 `html: false`，正文里的 HTML 转义后原样显示。
+- 路由切换回填 `<title>`、`meta description` 与 `link[rel="canonical"]`。
 - mock / HTTP 共用数据服务，请求取消与超时，响应结构校验。
-- Go 服务：`GET /api/v1/articles`，参数校验、分页与关键词/分类过滤。
+- Go 服务：`GET /api/v1/articles`、`GET /api/v1/articles/:slug`，参数校验、分页与关键词/分类过滤；列表不返回正文，详情对未发布文章与不存在的地址一律返回 404。
 - QA-Agent 外链、站点域名与基础 metadata。
 
 接口契约以代码为准：[适配器与响应校验](frontend/src/api/articles.js)、[响应结构](backend/internal/dto/article.go)、[契约测试](frontend/tests/articles.test.js)。
 
-mock 中的文章均为示例，不代表真实经历或已发布内容。当前只展示文章摘要，正文与管理后台留待后续阶段。
+mock 中的文章均为示例，不代表真实经历或已发布内容。管理后台留待后续阶段。
 
 ## 项目结构
 
@@ -89,7 +92,11 @@ frontend/                  前端工程，命令都在这一层执行
   .env.example              环境变量模板，复制为同目录的 .env.local
   public/favicon.svg        站点图标
   src/App.vue               页面布局
+  src/router.js             路由表
+  src/metadata.js           标题、描述与 canonical 的回填
+  src/format.js             日期格式化
   src/components/           ArticleList / ArticleEntry
+  src/views/                ArticleListView / ArticleDetailView / NotFoundView
   src/api/articles.js       数据接口与适配器
   src/mocks/articles.js     示例数据
   src/config.js             域名、API、数据源配置
@@ -110,6 +117,8 @@ backend/
   migrations/               手动执行的 SQL 迁移，启动不建表
 deploy/nginx/              部署网关模板
 deploy/systemd/            后端服务单元
+deploy/publish.sh          服务器上一键发布
+deploy/start.sh            服务器上启动与状态
 ```
 
 ## 前后端边界
@@ -140,15 +149,25 @@ Vite 开发服务器把 `/api` 代理到 `API_PROXY_TARGET`，前端只用相对
 
 ECS 连不上 `proxy.golang.org`，服务器上已执行 `go env -w GOPROXY=https://goproxy.cn,direct`，否则 `go build` 会长时间卡在模块下载。
 
-在服务器上发布：
+在服务器上发布，一条命令：
 
 ```sh
-cd /root/personal-site && git pull --ff-only
-export PATH=$PATH:/usr/local/go/bin
-(cd backend && go build -o dist/server ./cmd/server)
-(cd frontend && npm ci && npm run build && rsync -a --delete dist/ /var/www/anxin-site/dist/)
-systemctl restart personal-site.service
+bash /root/personal-site/deploy/publish.sh
 ```
+
+依次做：前置检查（root、工具链、`backend/.env`、工作区干净）→ `git pull --ff-only` → 后端编译到 `dist/server.new` 再原子替换 → 前端 `npm ci && npm run build` → `rsync -a --delete` 同步到 `/var/www/anxin-site/dist` → 重启并等接口应答。任何一步失败都当场停下并打印原因，`dist/server` 与线上产物不会停在半成品状态。首次使用前要先 `git pull` 让脚本本身到位——脚本不会自己拉自己。
+
+日常启动与状态：
+
+```sh
+bash /root/personal-site/deploy/start.sh          # 启动后端与网关，等到接口真的应答
+bash /root/personal-site/deploy/start.sh restart  # 换过二进制后重启后端
+bash /root/personal-site/deploy/start.sh status   # 只报告状态，不改动任何东西
+```
+
+进程不归脚本管：开机自启与崩溃拉起由 systemd 负责，脚本只把「起服务 → 等就绪 → 报告」串成一条命令，退出后进程继续跑。nginx 同时服务 QA-Agent，脚本只会在它没跑的时候拉起来，任何情况下都不停它。
+
+迁移仍由人手动执行，两个脚本都不碰数据库。发布带新列或改列的版本时，先按[迁移约定](backend/migrations/README.md)在库上执行对应迁移，再发布。列表查询用 `Omit("Body")` 绕开正文，详情会读到它——迁移滞后时详情会 500。
 
 配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)、[systemd 单元](deploy/systemd/personal-site.service)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
 

@@ -106,8 +106,9 @@ button:disabled { cursor: default; opacity: .45; }
 .nav { display: flex; gap: 1.75rem; font-size: .875rem; }
 .nav a { position: relative; padding: .5rem 0; color: var(--muted); }
 .nav a:hover { color: var(--ink); }
-.nav a[aria-current] { color: var(--ink); }
-.nav a[aria-current]::after {
+/* 详情页也属于「文章」这一栏，但它不是 / 的激活路由，所以另给一个类。 */
+.nav a[aria-current], .nav a.nav-here { color: var(--ink); }
+.nav a[aria-current]::after, .nav a.nav-here::after {
   content: "";
   position: absolute;
   left: 0;
@@ -224,9 +225,77 @@ button:disabled { cursor: default; opacity: .45; }
 }
 .entry:first-child .entry-tags { margin-top: .9rem; }
 
-.notice h3 { font-size: 1.1875rem; font-weight: 600; }
+.entry-title a:hover { color: var(--seal); }
+
+/* ---------- 文章详情 ---------- */
+
+.piece { margin-top: 5.5rem; }
+.piece-head { padding-top: 2.25rem; }
+.piece-facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.piece-category { color: var(--seal); }
+.piece-date { font-variant-numeric: tabular-nums; }
+.piece-main { grid-column: 2; }
+
+.piece-title {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.32;
+  letter-spacing: .01em;
+  text-wrap: pretty;
+}
+.piece-summary {
+  margin-top: 1.25rem;
+  color: var(--muted);
+  font-size: calc(var(--body-size) + 1px);
+  line-height: 1.85;
+  text-wrap: pretty;
+}
+.piece-tags { margin-top: .9rem; color: var(--muted); font-size: var(--facts-size); }
+
+.piece-body { margin-top: 3rem; }
+.piece-foot { margin-top: 3.5rem; }
+.piece-back { color: var(--muted); font-size: var(--facts-size); border-bottom: 1px solid var(--rule); padding-bottom: .15rem; }
+.piece-back:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+.sk-piece-title { width: 76%; height: 1.75rem; }
+
+/* 正文排版：Markdown 渲染出来的元素全部落在 .prose 里。
+   段落间距走相邻兄弟选择器，标题再单独加大，避免每加一种元素就补一条 margin。 */
+.prose { font-size: calc(var(--body-size) + 1px); }
+.prose > * + * { margin-top: 1.5rem; }
+.prose > :first-child { margin-top: 0; }
+/* 正文自带的一级标题按二级处理：页面的 h1 已经给了文章标题，正文里的 h1 只是它自己的小节。 */
+.prose h1, .prose h2 {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  letter-spacing: .01em;
+  margin-top: 3rem;
+}
+.prose h1 { font-size: 1.65rem; }
+.prose h3 { font-size: 1.0625rem; font-weight: 600; line-height: 1.6; margin-top: 2.25rem; }
+.prose strong { font-weight: 600; }
+.prose ul, .prose ol { padding-left: 1.5rem; }
+.prose li + li { margin-top: .4rem; }
+.prose blockquote { border-left: 2px solid var(--seal); padding-left: 1.25rem; color: var(--muted); }
+.prose a { color: var(--seal); border-bottom: 1px solid currentColor; }
+.prose a:hover { color: var(--ink); }
+.prose hr { border: 0; height: 1px; background: var(--rule); margin-top: 3rem; }
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .875em;
+  background: var(--fill);
+  border-radius: 2px;
+  padding: .15em .35em;
+}
+.prose pre { background: var(--fill); border-radius: 2px; padding: 1rem 1.25rem; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; font-size: .875rem; line-height: 1.7; }
+
+.notice h1, .notice h3 { font-size: 1.1875rem; font-weight: 600; }
 .notice p { margin-top: .6rem; color: var(--muted); font-size: .9375rem; }
-.notice button { margin-top: 1.4rem; }
+.notice button, .notice .pager-btn { margin-top: 1.4rem; }
 
 .sk { display: block; background: var(--fill); border-radius: 2px; }
 .sk-fact { width: 3.5rem; height: .6rem; }
@@ -242,6 +311,8 @@ button:disabled { cursor: default; opacity: .45; }
 .pager { margin-top: 3rem; }
 .pager-nav { grid-column: 2; display: flex; align-items: center; gap: 1.25rem; }
 .pager-btn {
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: 1px solid var(--control);
   border-radius: 2px;
@@ -283,7 +354,7 @@ button:disabled { cursor: default; opacity: .45; }
   }
 
   .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
-  .statement-body, .archive-main, .archive-tools-main, .entry-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
+  .statement-body, .archive-main, .archive-tools-main, .entry-main, .piece-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
   .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
 
   .masthead { padding-top: 1.5rem; }
@@ -295,6 +366,15 @@ button:disabled { cursor: default; opacity: .45; }
   .entry-facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
   .entry-mark { margin-bottom: 0; }
   .entry:first-child .entry-title { font-size: 1.6rem; }
+
+  .piece { margin-top: 2.75rem; }
+  .piece-head { padding-top: 1.5rem; }
+  .piece-facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  .piece-title { font-size: 1.75rem; }
+  .piece-body { margin-top: 2.25rem; }
+  .piece-foot { margin-top: 2.5rem; }
+  .prose h2 { margin-top: 2.5rem; }
+  .prose pre { margin-inline: calc(var(--pad) * -1); border-radius: 0; }
 
   .filters { gap: .35rem; }
   .filter { padding: 0 .5rem; }

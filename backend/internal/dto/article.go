@@ -17,6 +17,11 @@ type ArticleSummary struct {
 	ReadingMinutes int       `json:"readingMinutes"`
 }
 
+type ArticleDetail struct {
+	ArticleSummary
+	Body string `json:"body"`
+}
+
 type Pagination struct {
 	Page       int `json:"page"`
 	PageSize   int `json:"pageSize"`
@@ -53,4 +58,12 @@ func NewArticleSummary(m model.Article) (ArticleSummary, bool) {
 		PublishedAt:    m.PublishedAt.UTC(),
 		ReadingMinutes: m.ReadingMinutes,
 	}, true
+}
+
+func NewArticleDetail(m model.Article) (ArticleDetail, bool) {
+	summary, ok := NewArticleSummary(m)
+	if !ok {
+		return ArticleDetail{}, false
+	}
+	return ArticleDetail{ArticleSummary: summary, Body: m.Body}, true
 }

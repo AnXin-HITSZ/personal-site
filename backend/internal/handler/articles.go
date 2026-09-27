@@ -13,6 +13,8 @@ import (
 	"anxin-hitsz.com/backend/internal/service"
 )
 
+const articleSlugMaxRunes = 120
+
 var articleCategories = map[string]struct{}{
 	"backend":  {},
 	"frontend": {},
@@ -40,6 +42,32 @@ func (h *ArticlesList) List(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+type ArticleGet struct {
+	service *service.Article
+}
+
+func NewArticleGet(service *service.Article) *ArticleGet { return &ArticleGet{service: service} }
+
+func (h *ArticleGet) Get(c *gin.Context) {
+	slug := strings.TrimSpace(c.Param("slug"))
+	if slug == "" || utf8.RuneCountInString(slug) > articleSlugMaxRunes {
+		c.JSON(http.StatusBadRequest, dto.NewInvalidArgument("slug", "文章标识不合法"))
+		return
+	}
+
+	detail, err := h.service.GetPublished(c.Request.Context(), slug)
+	if errors.Is(err, service.ErrArticleNotFound) {
+		c.JSON(http.StatusNotFound, dto.NewNotFound("文章不存在"))
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewInternalError())
+		return
+	}
+
+	c.JSON(http.StatusOK, detail)
 }
 
 type articleListParams struct {

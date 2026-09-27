@@ -3,12 +3,15 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 
 	"gorm.io/gorm"
 
 	"anxin-hitsz.com/backend/internal/model"
 )
+
+var ErrNotFound = errors.New("记录不存在")
 
 type Article struct {
 	db *gorm.DB
@@ -25,7 +28,7 @@ func (r *Article) ListPublished(ctx context.Context, keyword, category string, l
 	)
 
 	build := func(tx *gorm.DB) *gorm.DB {
-		query := tx.Model(&model.Article{}).Where("status = ?", "published")
+		query := tx.Model(&model.Article{}).Omit("Body").Where("status = ?", "published")
 		if category != "" {
 			query = query.Where("category = ?", category)
 		}
@@ -53,6 +56,20 @@ func (r *Article) ListPublished(ctx context.Context, keyword, category string, l
 	}
 
 	return articles, int(total), nil
+}
+
+func (r *Article) GetPublishedBySlug(ctx context.Context, slug string) (*model.Article, error) {
+	var article model.Article
+	err := r.db.WithContext(ctx).
+		Where("slug = ? AND status = ?", slug, "published").
+		Take(&article).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &article, nil
 }
 
 func escapeLike(s string) string {

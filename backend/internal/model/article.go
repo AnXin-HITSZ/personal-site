@@ -7,6 +7,7 @@ type Article struct {
 	Slug           string `gorm:"not null;unique"`
 	Title          string `gorm:"not null"`
 	Summary        string `gorm:"not null"`
+	Body           string `gorm:"not null;type:mediumtext"`
 	Category       string
 	Tags           []string `gorm:"serializer:json;type:json"`
 	Status         string

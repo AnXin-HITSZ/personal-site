@@ -103,10 +103,13 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 		return nil, err
 	}
 
-	articlesHandler := handler.NewArticlesList(service.NewArticle(repository.NewArticle(db)))
+	articleService := service.NewArticle(repository.NewArticle(db))
+	articleList := handler.NewArticlesList(articleService)
+	articleGet := handler.NewArticleGet(articleService)
 
 	api := router.Group("/api/v1")
-	api.GET("/articles", articlesHandler.List)
+	api.GET("/articles", articleList.List)
+	api.GET("/articles/:slug", articleGet.Get)
 
 	return router, nil
 }

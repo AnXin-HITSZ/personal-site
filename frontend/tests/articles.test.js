@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { listArticles, mockList, normalizeQuery } from '../src/api/articles.js';
+import { getArticle, listArticles, mockDetail, mockList, normalizeQuery } from '../src/api/articles.js';
 
 test('default list and pagination retain filtered totals', () => {
   const first = mockList();
@@ -56,6 +56,41 @@ test('HTTP failures and malformed responses never fall back to mock data', async
 test('cancelled mock request rejects so stale results cannot win', async () => {
   const controller = new AbortController();
   const request = listArticles({}, { source: 'mock', signal: controller.signal });
+  controller.abort();
+  await assert.rejects(request, { name: 'AbortError' });
+});
+
+test('mock detail carries the body that the list withholds', async () => {
+  assert.equal(mockList().items[0].body, undefined);
+  assert.ok(mockDetail('go-api-first-step').body.includes('## '));
+  assert.equal(mockDetail('does-not-exist'), null);
+  await assert.rejects(getArticle('does-not-exist', { source: 'mock' }), { name: 'ArticleNotFoundError' });
+});
+
+test('HTTP detail requests one slug and validates the result', async () => {
+  const detail = mockDetail('go-api-first-step');
+  const result = await getArticle(' go-api-first-step ', { source: 'http', fetchImpl: async (url, options) => {
+    assert.equal(url, '/api/v1/articles/go-api-first-step');
+    assert.equal(options.headers.Accept, 'application/json');
+    assert.ok(options.signal instanceof AbortSignal);
+    return new Response(JSON.stringify(detail), { status: 200 });
+  } });
+  assert.equal(result.id, detail.id);
+  assert.equal(result.body, detail.body);
+});
+
+test('detail failures separate missing articles from broken responses', async () => {
+  await assert.rejects(getArticle('x', { source: 'http', fetchImpl: async () => new Response('{}', { status: 404 }) }), { name: 'ArticleNotFoundError' });
+  await assert.rejects(getArticle('x', { source: 'http', fetchImpl: async () => new Response('{}', { status: 500 }) }), /HTTP 500/);
+  await assert.rejects(getArticle('x', { source: 'http', fetchImpl: async () => new Response('{') }), SyntaxError);
+  await assert.rejects(getArticle('x', { source: 'http', fetchImpl: async () => new Response(JSON.stringify({ ...mockDetail('go-api-first-step'), slug: 'other' })) }), /数据格式/);
+  await assert.rejects(getArticle('x', { source: 'http', fetchImpl: async () => new Response(JSON.stringify({ ...mockDetail('go-api-first-step'), body: 42 })) }), /数据格式/);
+  await assert.rejects(getArticle('   '), /接口约定/);
+});
+
+test('cancelled detail request rejects so stale results cannot win', async () => {
+  const controller = new AbortController();
+  const request = getArticle('go-api-first-step', { source: 'mock', signal: controller.signal });
   controller.abort();
   await assert.rejects(request, { name: 'AbortError' });
 });

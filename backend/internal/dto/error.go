@@ -2,6 +2,7 @@ package dto
 
 const (
 	CodeInvalidArgument = "INVALID_ARGUMENT"
+	CodeNotFound        = "NOT_FOUND"
 	CodeInternalError   = "INTERNAL_ERROR"
 )
 
@@ -21,6 +22,15 @@ func NewInvalidArgument(field, message string) ErrorResponse {
 			Code:    CodeInvalidArgument,
 			Message: message,
 			Field:   field,
+		},
+	}
+}
+
+func NewNotFound(message string) ErrorResponse {
+	return ErrorResponse{
+		Error: ErrorBody{
+			Code:    CodeNotFound,
+			Message: message,
 		},
 	}
 }
