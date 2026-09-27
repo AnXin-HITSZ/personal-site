@@ -160,12 +160,12 @@ type handlerFixture struct {
 // 要测限速的用例自己传一份很紧的进来。
 func generousLimits() AccountLimits {
 	return AccountLimits{
-		RegisterPerIP:    ratelimit.New(1000, time.Hour),
-		LoginPerIP:       ratelimit.New(1000, time.Hour),
-		LoginPerEmail:    ratelimit.New(1000, time.Hour),
-		PasswordPerIP:    ratelimit.New(1000, time.Hour),
-		PasswordPerEmail: ratelimit.New(1000, time.Hour),
-		ResendPerEmail:   ratelimit.New(1000, time.Hour),
+		RegisterPerIP:    ratelimit.New("register:ip", 1000, time.Hour),
+		LoginPerIP:       ratelimit.New("login:ip", 1000, time.Hour),
+		LoginPerEmail:    ratelimit.New("login:mail", 1000, time.Hour),
+		PasswordPerIP:    ratelimit.New("password:ip", 1000, time.Hour),
+		PasswordPerEmail: ratelimit.New("password:mail", 1000, time.Hour),
+		ResendPerEmail:   ratelimit.New("resend:mail", 1000, time.Hour),
 	}
 }
 
@@ -410,7 +410,7 @@ func TestLoginErrorMapping(t *testing.T) {
 
 func TestLoginRateLimitByAddress(t *testing.T) {
 	limits := generousLimits()
-	limits.LoginPerIP = ratelimit.New(2, 15*time.Minute)
+	limits.LoginPerIP = ratelimit.New("login:ip", 2, 15*time.Minute)
 
 	f := newHandlerFixture(limits)
 	calls := 0
@@ -444,7 +444,7 @@ func TestLoginRateLimitByAddress(t *testing.T) {
 // 只按 IP 限挡不住换 IP 撞同一个账号，所以还要按邮箱限一维。
 func TestLoginRateLimitByEmail(t *testing.T) {
 	limits := generousLimits()
-	limits.LoginPerEmail = ratelimit.New(1, 15*time.Minute)
+	limits.LoginPerEmail = ratelimit.New("login:mail", 1, 15*time.Minute)
 
 	f := newHandlerFixture(limits)
 
@@ -464,8 +464,8 @@ func TestLoginRateLimitByEmail(t *testing.T) {
 // 能登录的账号，就能靠它反复把自己的 IP 计数归零，继续爆破别人。
 func TestLoginSuccessResetsEmailLimitButNotAddressLimit(t *testing.T) {
 	limits := generousLimits()
-	limits.LoginPerIP = ratelimit.New(3, 15*time.Minute)
-	limits.LoginPerEmail = ratelimit.New(2, 15*time.Minute)
+	limits.LoginPerIP = ratelimit.New("login:ip", 3, 15*time.Minute)
+	limits.LoginPerEmail = ratelimit.New("login:mail", 2, 15*time.Minute)
 
 	f := newHandlerFixture(limits)
 	attempt := 0
@@ -492,6 +492,38 @@ func TestLoginSuccessResetsEmailLimitButNotAddressLimit(t *testing.T) {
 	// IP 这一维的计数没被清：三次已经用满，第四次必须被拦。
 	if rec := f.post("/api/v1/auth/login", loginBody("owner@example.com", "a-long-enough-password"), ""); rec.Code != http.StatusTooManyRequests {
 		t.Errorf("第四次应为 429（IP 计数不该被成功那次重置），实际 %d", rec.Code)
+	}
+}
+
+// handler 只认 rateLimiter 这个接口，不认 ratelimit 包——这个假实现就是证明：
+// 它跟 ratelimit 毫无关系，塞进去照样驱动整条路径。将来换成共享存储的实现时，
+// 要动的只有 main.go 的构造，这一层和它的用例都不动。
+type denyEveryRequest struct{}
+
+func (denyEveryRequest) Allow(string) (bool, time.Duration) { return false, time.Minute }
+func (denyEveryRequest) Reset(string)                       {}
+
+func TestLimitsAcceptAnyImplementation(t *testing.T) {
+	limits := generousLimits()
+	limits.LoginPerIP = denyEveryRequest{}
+
+	f := newHandlerFixture(limits)
+	called := false
+	f.svc.login = func(string, string, string, string) (*service.LoginResult, error) {
+		called = true
+		return nil, service.ErrCredentialsInvalid
+	}
+
+	rec := f.post("/api/v1/auth/login", loginBody("owner@example.com", "a-long-enough-password"), "")
+
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("应为 429，实际 %d：%s", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Error("被拦下就不该调用 service")
+	}
+	if rec.Header().Get("Retry-After") == "" {
+		t.Error("429 应带 Retry-After")
 	}
 }
 

@@ -115,14 +115,17 @@ func newMailer(appEnv string) mail.Mailer {
 // 限速策略集中在这里，一眼能看完每条是几分钟几次。
 // 具体数字的取舍：按 IP 的额度比按邮箱的宽，因为一个办公网出口后面可能坐着好几个人；
 // 按邮箱的额度收紧，因为那才是爆破的靶子。
+//
+// 第一个参数是这个限速器的名字，会被拼进 key。六个里有三个打在同一个 IP 上、
+// 三个打在同一个邮箱上，换个共用的限速存储时要靠这个名字区分开。
 func newAccountLimits() handler.AccountLimits {
 	return handler.AccountLimits{
-		RegisterPerIP:    ratelimit.New(5, time.Hour),
-		LoginPerIP:       ratelimit.New(20, 15*time.Minute),
-		LoginPerEmail:    ratelimit.New(5, 15*time.Minute),
-		PasswordPerIP:    ratelimit.New(10, time.Hour),
-		PasswordPerEmail: ratelimit.New(3, time.Hour),
-		ResendPerEmail:   ratelimit.New(3, time.Hour),
+		RegisterPerIP:    ratelimit.New("register:ip", 5, time.Hour),
+		LoginPerIP:       ratelimit.New("login:ip", 20, 15*time.Minute),
+		LoginPerEmail:    ratelimit.New("login:mail", 5, 15*time.Minute),
+		PasswordPerIP:    ratelimit.New("password:ip", 10, time.Hour),
+		PasswordPerEmail: ratelimit.New("password:mail", 3, time.Hour),
+		ResendPerEmail:   ratelimit.New("resend:mail", 3, time.Hour),
 	}
 }
 

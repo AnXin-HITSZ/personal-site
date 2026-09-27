@@ -10,8 +10,9 @@ import (
 var testNow = time.Date(2026, 9, 27, 12, 0, 0, 0, time.UTC)
 
 // 时钟注入进来，测试才能一秒钟跨过一小时的窗口。
+// 名字固定成 test：这里的用例都在验窗口的行为，名字参不参与 key 由下面单独测。
 func newTestLimiter(limit int, period time.Duration) (*Limiter, func(time.Duration)) {
-	limiter := New(limit, period)
+	limiter := New("test", limit, period)
 	current := testNow
 	limiter.now = func() time.Time { return current }
 	return limiter, func(d time.Duration) { current = current.Add(d) }
@@ -145,8 +146,30 @@ func TestOversizedTableIsDropped(t *testing.T) {
 	}
 }
 
+// 名字是 key 身份的一部分。同一个值落在两个限速器上必须是两个计数器——
+// 这是给将来的共享存储实现立的规矩：六个限速器里有三个用同一个 IP、
+// 三个用同一个邮箱，各存各的 map 时撞不上，共用一张表时全靠这个名字分开。
+func TestNameSeparatesLimitersSharingAKey(t *testing.T) {
+	login := New("login:ip", 1, time.Hour)
+	register := New("register:ip", 1, time.Hour)
+
+	if login.key("1.2.3.4") == register.key("1.2.3.4") {
+		t.Fatalf("两个限速器的 key 不该相同，都是 %q", login.key("1.2.3.4"))
+	}
+
+	if allowed, _ := login.Allow("1.2.3.4"); !allowed {
+		t.Fatal("构造前提不成立")
+	}
+	if allowed, _ := login.Allow("1.2.3.4"); allowed {
+		t.Fatal("同一个限速器的第二次应被拦")
+	}
+	if allowed, _ := register.Allow("1.2.3.4"); !allowed {
+		t.Error("登录维度被限住，不该牵连注册维度")
+	}
+}
+
 func TestConcurrentAccessIsSerialised(t *testing.T) {
-	limiter := New(50, time.Hour)
+	limiter := New("test", 50, time.Hour)
 
 	var wait sync.WaitGroup
 	allowed := make([]int, 100)

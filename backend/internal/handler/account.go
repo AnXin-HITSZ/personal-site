@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -13,7 +14,6 @@ import (
 	"anxin-hitsz.com/backend/internal/dto"
 	"anxin-hitsz.com/backend/internal/middleware"
 	"anxin-hitsz.com/backend/internal/model"
-	"anxin-hitsz.com/backend/internal/ratelimit"
 	"anxin-hitsz.com/backend/internal/service"
 )
 
@@ -21,15 +21,23 @@ import (
 // 不设上限的话，一个几 GB 的 body 就能把内存吃干。
 const maxRequestBodyBytes = 4 << 10
 
+// 这一层只声明限速器「能回答什么」，不声明它是怎么算的——所以 handler 不认识
+// ratelimit 包，换一个实现（进程内换成共享存储、固定窗口换成令牌桶）不必动
+// 这一层的任何决策代码：用哪个 key、什么顺序、什么时候清，都留在下面。
+type rateLimiter interface {
+	Allow(key string) (bool, time.Duration)
+	Reset(key string)
+}
+
 // 限速器由外面传进来，是为了测试能塞一个 limit=1 的进去——
 // 策略写在 main.go 里，看得见每一条是几分钟几次。
 type AccountLimits struct {
-	RegisterPerIP    *ratelimit.Limiter
-	LoginPerIP       *ratelimit.Limiter
-	LoginPerEmail    *ratelimit.Limiter
-	PasswordPerIP    *ratelimit.Limiter
-	PasswordPerEmail *ratelimit.Limiter
-	ResendPerEmail   *ratelimit.Limiter
+	RegisterPerIP    rateLimiter
+	LoginPerIP       rateLimiter
+	LoginPerEmail    rateLimiter
+	PasswordPerIP    rateLimiter
+	PasswordPerEmail rateLimiter
+	ResendPerEmail   rateLimiter
 }
 
 // 和 service 里那几个 Store 接口同一个理由：把依赖收窄成接口，这一层的测试
@@ -88,7 +96,7 @@ type changePasswordRequest struct {
 // 成功一律是 202 加同一句话，无论邮箱是否已经被占用、是否真的存在。
 // 这两个接口的作用是「请给我发一封信」，而信发不发得出去，不该由响应体说明。
 func (h *Account) Register(c *gin.Context) {
-	if h.tooMany(c, h.limits.RegisterPerIP, "ip:"+c.ClientIP(), "注册太频繁，请稍后再试") {
+	if h.tooMany(c, h.limits.RegisterPerIP, c.ClientIP(), "注册太频繁，请稍后再试") {
 		return
 	}
 
@@ -153,7 +161,7 @@ func (h *Account) ResendVerification(c *gin.Context) {
 }
 
 func (h *Account) Login(c *gin.Context) {
-	if h.tooMany(c, h.limits.LoginPerIP, "ip:"+c.ClientIP(), "登录尝试过于频繁，请稍后再试") {
+	if h.tooMany(c, h.limits.LoginPerIP, c.ClientIP(), "登录尝试过于频繁，请稍后再试") {
 		return
 	}
 
@@ -217,7 +225,7 @@ func (h *Account) Session(c *gin.Context) {
 }
 
 func (h *Account) ForgotPassword(c *gin.Context) {
-	if h.tooMany(c, h.limits.PasswordPerIP, "ip:"+c.ClientIP(), "请求太频繁，请稍后再试") {
+	if h.tooMany(c, h.limits.PasswordPerIP, c.ClientIP(), "请求太频繁，请稍后再试") {
 		return
 	}
 
@@ -364,11 +372,13 @@ func kickedMessage(kicked int64) string {
 	return "口令已更新，其它 " + strconv.FormatInt(kicked, 10) + " 台设备已登出"
 }
 
+// 维度由限速器的名字承担，这里只负责把值归一化：大小写和首尾空格
+// 都不该算成另一个邮箱。
 func mailKey(email string) string {
-	return "mail:" + strings.ToLower(strings.TrimSpace(email))
+	return strings.ToLower(strings.TrimSpace(email))
 }
 
-func (h *Account) tooMany(c *gin.Context, limiter *ratelimit.Limiter, key, message string) bool {
+func (h *Account) tooMany(c *gin.Context, limiter rateLimiter, key, message string) bool {
 	allowed, retryAfter := limiter.Allow(key)
 	if allowed {
 		return false
