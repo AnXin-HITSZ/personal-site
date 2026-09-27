@@ -10,4 +10,9 @@ export const config = Object.freeze({
   dataSource,
   apiBaseUrl: env.VITE_API_BASE_URL || '/api/v1',
   requestTimeoutMs: 8000,
+  // 注册、重发验证信、找回口令这三个接口是同步发信的：用户在那一屏等着 SMTP
+  // 连上、认证、投递完。服务端给整次发信留了 10 秒，HTTP 写超时是 15 秒，
+  // 这里必须比 15 秒长，否则会出现「前端已经超时、服务端其实办成了」——
+  // 用户以为没注册上，再点一次，撞上的却是限速。
+  mailTimeoutMs: 20000,
 });
