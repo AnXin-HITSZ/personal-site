@@ -4,7 +4,23 @@ Vue 3 + Vite 前端，Gin + GORM + MySQL 后端的个人网站，主域名 `anxi
 
 ## 启动
 
-需要 Node.js 22.12+（推荐使用你现有的 Node.js 24）。前端工程自成一个目录，在 `frontend/` 执行：
+需要 Node.js 22.12+（推荐使用你现有的 Node.js 24）。
+
+### 一条命令起全套
+
+```sh
+bash dev.sh
+```
+
+按 SSH 隧道 → Go 后端 → Vite 前端的顺序起，每一环都等到**真正就绪**才继续下一环——后端要等到它自己打印 `MySQL 连接检查通过`，因此「起来了」就等于数据库链路确实通了，而不是端口恰好被占上。已经在跑的环节直接复用、不会重复拉起，退出时也只关它自己起的进程。按 Ctrl+C 或关掉终端窗口都会收尾；被强杀留下的进程用 `bash dev.sh --stop` 收回。
+
+开关：`--no-tunnel`（隧道已在跑）、`--no-frontend`（只调接口）、`--no-install`（依赖缺失时不自动安装）、`--help`。超时上限用 `READY_TIMEOUT`（秒）覆盖，隧道目标用 `SSH_ALIAS` / `TUNNEL_PORT` / `DB_PORT` 覆盖。
+
+前置：`ssh`、`go`、`node` 在 PATH 上；`backend/.env` 已按 [backend/.env.example](backend/.env.example) 填好，且 `MYSQL_PORT` 与隧道端口一致（不一致时脚本会在连库之前就拦下）；本地有能免密登录 ECS 的私钥。
+
+### 手动起
+
+前端工程自成一个目录，在 `frontend/` 执行：
 
 ```sh
 npm ci
@@ -28,7 +44,7 @@ npm run preview # 查看构建结果：http://localhost:4173
 
 ### 联调真实接口
 
-三个进程都要起，缺任何一个页面都会落到错误态：
+`bash dev.sh` 做的就是下面这三件事。要分开起、单独看每一环的输出时按这个顺序来——三个进程缺任何一个，页面都会落到错误态：
 
 1. **SSH 隧道**（PowerShell，保持窗口开启）
 
@@ -64,6 +80,8 @@ mock 中的文章均为示例，不代表真实经历或已发布内容。当前
 ## 项目结构
 
 ```text
+dev.sh                     本地开发一键启动（隧道 + 后端 + 前端）
+.gitattributes             钉死 *.sh 为 LF，否则 shebang 会被 \r 破坏
 frontend/                  前端工程，命令都在这一层执行
   index.html                Vue 挂载页与 metadata
   package.json              依赖与 npm 脚本
