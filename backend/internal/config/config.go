@@ -11,6 +11,9 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+
+	"anxin-hitsz.com/backend/internal/auth"
+	"anxin-hitsz.com/backend/internal/mail"
 )
 
 type Config struct {
@@ -20,6 +23,8 @@ type Config struct {
 	Session  SessionConfig
 	// 站点对外的地址，用来拼验证邮件和重置口令邮件里的链接。没有末尾斜杠。
 	SiteBaseURL string
+	// 邮件通道。nil 表示这台机器不发信，由 main.go 按环境挑一个占位实现顶上。
+	Mail *mail.SMTPConfig
 }
 
 type SessionConfig struct {
@@ -53,6 +58,11 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	mailConfig, err := loadMailConfig()
+	if err != nil {
+		return Config{}, err
+	}
+
 	appEnv := optionalString("APP_ENV", "development")
 
 	return Config{
@@ -67,6 +77,50 @@ func Load() (Config, error) {
 		},
 		// 去掉末尾斜杠，拼链接时才不用到处判断中间该有几个斜杠。
 		SiteBaseURL: strings.TrimRight(optionalString("SITE_BASE_URL", ""), "/"),
+		Mail:        mailConfig,
+	}, nil
+}
+
+// 「一个都没填」是合法的——那表示这台机器不发信，由调用方挑占位实现顶上。
+// 但只要填了主机，其余四项就都是必填：半套配置不能退化成安静地不发信，
+// 那会让注册看起来成功，而用户永远收不到那封信。
+func loadMailConfig() (*mail.SMTPConfig, error) {
+	host := optionalString("SMTP_HOST", "")
+	if host == "" {
+		return nil, nil
+	}
+
+	port, err := optionalInt("SMTP_PORT", 465, 1, 65535)
+	if err != nil {
+		return nil, err
+	}
+	username, err := requiredString("SMTP_USERNAME")
+	if err != nil {
+		return nil, err
+	}
+	password, err := requiredString("SMTP_PASSWORD")
+	if err != nil {
+		return nil, err
+	}
+	from, err := requiredString("SMTP_FROM")
+	if err != nil {
+		return nil, err
+	}
+
+	// 复用注册那条校验，而不是在这里另写一遍：发件地址会原样进 SMTP 命令
+	// 和邮件头，格式不对或者夹了换行都得在启动时就挡住，不能等到第一封
+	// 注册信发不出去才发现。
+	normalizedFrom, err := auth.NormalizeEmail(from)
+	if err != nil {
+		return nil, fmt.Errorf("SMTP_FROM %w", err)
+	}
+
+	return &mail.SMTPConfig{
+		Host:     host,
+		Port:     port,
+		Username: username,
+		Password: password,
+		From:     normalizedFrom,
 	}, nil
 }
 

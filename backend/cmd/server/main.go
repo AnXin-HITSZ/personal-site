@@ -58,6 +58,12 @@ func run() error {
 
 	log.Print("MySQL 连接检查通过")
 
+	// 没配 SMTP 时注册仍然返回 202、仍然看着像成功，只是信永远不会到。
+	// 这行日志是唯一能让人提前发现这件事的地方，所以留在启动路径上。
+	if cfg.AppEnv == "production" && cfg.Mail == nil {
+		log.Print("警告：未配置 SMTP_HOST，注册与找回口令的邮件不会发出")
+	}
+
 	router, err := newRouter(cfg, db.DB)
 	if err != nil {
 		return err
@@ -102,11 +108,17 @@ func run() error {
 	return nil
 }
 
-// 开发环境用 LogMailer：它把验证链接打进日志，本地才捞得到令牌。
-// 生产用占位实现，写信失败——第 5 步接上 SMTP 之前，生产环境的注册和
-// 找回口令会明确失败。失败好过安静地把令牌写进生产日志。
-func newMailer(appEnv string) mail.Mailer {
-	if appEnv == "production" {
+// 先看配置，再退到按环境挑的占位实现。配了 SMTP_HOST 就用真的，开发机上
+// 也可以配，不必等到生产才第一次试。
+//
+// 生产没配就用 UnconfiguredMailer：信写不出去，注册和找回口令会明确失败，
+// 只留一行日志。失败好过安静地把令牌写进生产日志。
+// 没配又落在开发环境才用 LogMailer——它把验证链接打进日志，本地才捞得到令牌。
+func newMailer(cfg config.Config) mail.Mailer {
+	if cfg.Mail != nil {
+		return mail.NewSMTPMailer(*cfg.Mail)
+	}
+	if cfg.AppEnv == "production" {
 		return mail.UnconfiguredMailer{}
 	}
 	return mail.LogMailer{}
@@ -148,7 +160,7 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 
 	accountRepo := repository.NewAccount(db)
 	sessionService := service.NewSession(accountRepo)
-	accountService := service.NewAccount(accountRepo, sessionService, newMailer(cfg.AppEnv), cfg.SiteBaseURL)
+	accountService := service.NewAccount(accountRepo, sessionService, newMailer(cfg), cfg.SiteBaseURL)
 
 	cookies := middleware.NewSessionCookie(cfg.Session.CookieSecure)
 	account := handler.NewAccount(accountService, cookies, newAccountLimits())

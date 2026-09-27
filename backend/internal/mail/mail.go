@@ -1,8 +1,10 @@
 // 包 mail 负责把一封信送出去。它不认识账号、令牌或任何业务概念——
 // 正文由 service 拼好，这里只管运输。
 //
-// 真实的 SMTP 通道（阿里云邮件推送）是第 5 步。在那之前只有 LogMailer，
-// 而它会把正文整段写进日志——正文里有验证链接，也就是有令牌。
+// 三个实现，由 main.go 按配置和环境挑：SMTPMailer 真的发信；LogMailer 把
+// 正文打进日志，只给开发环境用（正文里有验证链接，也就是有令牌）；
+// UnconfiguredMailer 一律失败，给没配 SMTP 的生产环境用——失败好过安静地
+// 把令牌写进生产日志。
 package mail
 
 import (
@@ -32,9 +34,8 @@ func (LogMailer) Send(_ context.Context, message Message) error {
 	return nil
 }
 
-// 生产环境的占位。第 5 步把它换成 SMTP 实现。
-// 现在这个存在的意义，是当 SMTP_HOST 还没配时让注册直接失败——
-// 失败总好过安静地把令牌写进生产日志。
+// 生产环境没配 SMTP_HOST 时的兜底。接口照旧返回「验证邮件已经发出」，
+// 但信不会发出——启动日志里有一行警告，那是唯一能提前发现它的地方。
 type UnconfiguredMailer struct{}
 
 func (UnconfiguredMailer) Send(context.Context, Message) error {

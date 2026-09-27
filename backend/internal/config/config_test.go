@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+
+	"anxin-hitsz.com/backend/internal/mail"
 )
 
 func TestLoadDoesNotLeakMalformedEnv(t *testing.T) {
@@ -72,6 +74,117 @@ func TestSessionConfig(t *testing.T) {
 				t.Errorf("AllowedOrigins 应为 %v，实际 %v", tc.wantOrigins, cfg.Session.AllowedOrigins)
 			}
 		})
+	}
+}
+
+// 一个都不填是合法的——那表示这台机器不发信。但只要填了主机，剩下的
+// 就必须齐全：半套配置要是被当成「没配」，注册会照常返回 202，
+// 而信永远发不出去，谁也不会发现。
+func TestMailConfig(t *testing.T) {
+	base := map[string]string{
+		"MYSQL_HOST":     "127.0.0.1",
+		"MYSQL_DATABASE": "personal_site_dev",
+		"MYSQL_USER":     "personal_site_app",
+		"MYSQL_PASSWORD": "fake-password-for-test-only",
+	}
+	const password = "fake-smtp-password-for-test-only"
+
+	cases := []struct {
+		name    string
+		env     map[string]string
+		wantErr bool
+		want    *mail.SMTPConfig
+	}{
+		{name: "一个都不填表示不发信", env: nil},
+		{name: "主机留空也当作没配", env: map[string]string{"SMTP_HOST": ""}},
+		{
+			name: "配全了照抄，端口默认 465，发件地址归一化",
+			env: map[string]string{
+				"SMTP_HOST":     "smtpdm.aliyun.com",
+				"SMTP_USERNAME": "noreply@example.com",
+				"SMTP_PASSWORD": password,
+				"SMTP_FROM":     "Noreply@Example.com",
+			},
+			want: &mail.SMTPConfig{
+				Host: "smtpdm.aliyun.com", Port: 465,
+				Username: "noreply@example.com", Password: password,
+				From: "noreply@example.com",
+			},
+		},
+		{name: "只填主机是错误", env: map[string]string{"SMTP_HOST": "smtpdm.aliyun.com"}, wantErr: true},
+		{
+			name: "端口越界是错误",
+			env: map[string]string{
+				"SMTP_HOST": "smtpdm.aliyun.com", "SMTP_PORT": "70000",
+				"SMTP_USERNAME": "noreply@example.com", "SMTP_PASSWORD": password,
+				"SMTP_FROM": "noreply@example.com",
+			},
+			wantErr: true,
+		},
+		{
+			name: "发件地址带显示名是错误",
+			env: map[string]string{
+				"SMTP_HOST": "smtpdm.aliyun.com", "SMTP_USERNAME": "noreply@example.com",
+				"SMTP_PASSWORD": password, "SMTP_FROM": "站点 <noreply@example.com>",
+			},
+			wantErr: true,
+		},
+		{
+			name: "发件地址里夹换行是错误",
+			env: map[string]string{
+				"SMTP_HOST": "smtpdm.aliyun.com", "SMTP_USERNAME": "noreply@example.com",
+				"SMTP_PASSWORD": password, "SMTP_FROM": "a@b.c\r\nBcc: victim@example.com",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			for key, value := range base {
+				t.Setenv(key, value)
+			}
+			for key, value := range tc.env {
+				t.Setenv(key, value)
+			}
+
+			cfg, err := Load()
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("这份配置应当被拒")
+				}
+				if strings.Contains(err.Error(), password) {
+					t.Fatal("报错信息里不能带出口令")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("加载配置失败：%v", err)
+			}
+			if tc.want == nil {
+				if cfg.Mail != nil {
+					t.Fatalf("不该有邮件配置，实际 %v", cfg.Mail)
+				}
+				return
+			}
+			if cfg.Mail == nil {
+				t.Fatal("应当有邮件配置")
+			}
+			if *cfg.Mail != *tc.want {
+				t.Errorf("邮件配置应为 %+v，实际 %+v", *tc.want, *cfg.Mail)
+			}
+		})
+	}
+}
+
+// 这个结构迟早会被谁顺手打进日志。
+func TestSMTPConfigStringHidesPassword(t *testing.T) {
+	const password = "fake-smtp-password-for-test-only"
+	cfg := mail.SMTPConfig{Host: "smtpdm.aliyun.com", Port: 465,
+		Username: "noreply@example.com", Password: password, From: "noreply@example.com"}
+	if strings.Contains(cfg.String(), password) {
+		t.Fatal("config string disclosed password")
 	}
 }
 
