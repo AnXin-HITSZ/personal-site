@@ -45,6 +45,11 @@ button:disabled { cursor: default; opacity: .45; }
 
 :focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
 
+/* 滚动条要占掉十几像素的布局宽度，于是「内容比视口高」的页面比「不高」的页面
+   窄这么多；.shell 是居中的，这点宽度差就变成整块框架左右移半格，翻页时看得见。
+   高度不该决定位置，所以把这条槽位一直留着，不管当前有没有滚动条。 */
+html { scrollbar-gutter: stable; }
+
 .shell {
   width: 100%;
   max-width: var(--shell);
@@ -78,7 +83,9 @@ button:disabled { cursor: default; opacity: .45; }
 /* 账号页的注文是「词条 + 一行说明」的两行写法，段与段之间要空一行才分得开。
    文章条目的注文是单行的，那点间距会把版面撑散，所以不并进 .facts。 */
 .facts-stacked > * + * { margin-top: .85rem; }
-.main { grid-column: 2; }
+/* 三个名字指的是同一件事：正文栏。必须显式钉在第二列——左栏没有内容时
+   （验证、重置那几屏，注文是空的），自动排布会把它塞进第一列，正文整个左移一格。 */
+.main, .piece-main, .device-main { grid-column: 2; }
 .mark { color: var(--seal); margin-bottom: .35rem; }
 .key { color: var(--seal); }
 .date { font-variant-numeric: tabular-nums; }
@@ -332,6 +339,64 @@ button:disabled { cursor: default; opacity: .45; }
 .footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); }
 .footer-main a:hover { color: var(--seal); border-bottom-color: currentColor; }
 
+/* ---------- 账号页 ---------- */
+
+/* 认证页比账号页低一档：它们是过道，不是目的地。 */
+.form-title { font-family: var(--stack-display); font-weight: 400; font-size: 1.75rem; line-height: 1.35; letter-spacing: .01em; }
+.form-lede { margin-top: .75rem; color: var(--muted); font-size: .9375rem; line-height: 1.8; max-width: 30rem; text-wrap: pretty; }
+
+.form { margin-top: 2.25rem; max-width: 21rem; }
+.field + .field { margin-top: 1.25rem; }
+.field-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 和 .search 同一套：白底、一像素描边、两像素圆角，聚焦时描边转为印色。 */
+.field-input { display: block; width: 100%; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .7rem .85rem; font-size: .9375rem; }
+.field-input:focus { border-color: var(--seal); }
+.field-input[aria-invalid="true"] { border-color: var(--seal); }
+.field-hint { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+.field-error { margin-top: .4rem; color: var(--seal); font-size: var(--facts-size); }
+
+.form-actions { margin-top: 1.75rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; }
+.form-alt { margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); max-width: 21rem; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; color: var(--muted); font-size: var(--facts-size); }
+.form-alt a, .link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; }
+.form-alt a:hover, .link-quiet:hover { color: var(--ink); }
+.link-quiet { font-size: var(--facts-size); }
+
+/* 一页只有一个主操作，所以它是全站唯一用满印色的面。 */
+.primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
+.primary:hover:enabled { background: var(--ink); border-color: var(--ink); }
+a.primary:hover { background: var(--ink); border-color: var(--ink); }
+
+/* 账号页的提示条。文章列表里那两处 .notice 也表达同一件事，但它们没有左线，
+   所以这里另起一个类，不去动已经定稿的版面。
+   左线用印色表示「出事了」，用界色表示「办完了」——这两件事让人做的动作不同。 */
+.banner { border-left: 2px solid var(--seal); padding: .85rem 0 .85rem 1.1rem; max-width: 30rem; }
+.banner-done { border-left-color: var(--rule); }
+.banner h3 { font-size: 1.0625rem; font-weight: 600; }
+.banner p { margin-top: .4rem; color: var(--muted); font-size: .9375rem; }
+.banner-actions { margin-top: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.banner + .form { margin-top: 2rem; }
+/* 认证页的提示条紧贴着标题，是稿样里定的。账号页的小标题下面还带一行说明，
+   提示条跟在那行后面就得让开一点，否则两段字会粘在一起。 */
+.section-note + .banner { margin-top: 1.5rem; }
+
+.identity { margin-top: 2.25rem; }
+.identity > div { display: flex; flex-wrap: wrap; gap: .2rem .9rem; padding: .85rem 0; border-top: 1px solid var(--rule); font-size: .9375rem; }
+.identity dt { color: var(--muted); min-width: 6rem; font-size: var(--facts-size); align-self: center; }
+.badge { color: var(--seal); font-size: var(--facts-size); }
+
+.section-head { margin-top: 4rem; }
+/* 顶层的一段，和上面隔开一整段。 */
+.section { margin-top: 4rem; }
+.section-title { font-family: var(--stack-display); font-weight: 400; font-size: 1.5rem; letter-spacing: .01em; }
+.section-note { margin-top: .5rem; color: var(--muted); font-size: var(--facts-size); }
+
+.devices { margin-top: 2rem; }
+.device { padding-top: 1.5rem; }
+.device + .device { margin-top: 1.5rem; }
+.device-ua { font-size: 1.0625rem; line-height: 1.55; text-wrap: pretty; }
+.device-meta { margin-top: .35rem; color: var(--muted); font-size: var(--facts-size); }
+.device-actions { margin-top: 1rem; }
+
 /* ---------- 窄屏：注文栏立起来，变成标题上方的一行批注 ---------- */
 
 @media (max-width: 56rem) {
@@ -354,7 +419,7 @@ button:disabled { cursor: default; opacity: .45; }
   }
 
   .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
-  .statement-body, .archive-main, .archive-tools-main, .main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
+  .statement-body, .archive-main, .archive-tools-main, .main, .piece-main, .device-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
   .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
 
   .masthead { padding-top: 1.5rem; }
@@ -369,6 +434,14 @@ button:disabled { cursor: default; opacity: .45; }
   .facts-stacked { display: block; }
   .facts-stacked > * + * { margin-top: .55rem; }
   .entry:first-child .entry-title { font-size: 1.6rem; }
+
+  .form-title { font-size: 1.5rem; }
+  .form { margin-top: 1.75rem; }
+  .identity { margin-top: 1.75rem; }
+  /* 词条和内容并排会挤成窄窄一条，窄屏下让它独占一行 */
+  .identity dt { min-width: 0; flex-basis: 100%; }
+  .section-head, .section { margin-top: 2.75rem; }
+  .devices { margin-top: 1.5rem; }
 
   .piece { margin-top: 2.75rem; }
   .piece-head { padding-top: 1.5rem; }

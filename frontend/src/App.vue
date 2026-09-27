@@ -1,5 +1,7 @@
 <script setup>
 import { config } from './config.js';
+import { signedIn } from './session.js';
+
 const year = new Date().getFullYear();
 </script>
 
@@ -11,6 +13,8 @@ const year = new Date().getFullYear();
     <nav class="nav" aria-label="主导航">
       <router-link to="/" :class="{ 'nav-here': $route.name === 'articles' || $route.name === 'article' }">文章</router-link>
       <a :href="config.qaUrl" target="_blank" rel="noopener noreferrer">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <router-link v-if="signedIn" to="/account" :class="{ 'nav-here': $route.name === 'account' }">账号</router-link>
+      <router-link v-else to="/login" :class="{ 'nav-here': $route.name === 'login' }">登录</router-link>
     </nav>
   </header>
 
