@@ -1,16 +1,16 @@
 package dto
 
 const (
-	CodeInvalidArgument     = "INVALID_ARGUMENT"
-	CodeUnauthorized        = "UNAUTHORIZED"
-	CodeForbidden           = "FORBIDDEN"
-	CodeNotFound            = "NOT_FOUND"
-	CodeInternalError       = "INTERNAL_ERROR"
-	CodeInvalidCredentials  = "INVALID_CREDENTIALS"
-	CodeEmailNotVerified    = "EMAIL_NOT_VERIFIED"
-	CodeAccountDisabled     = "ACCOUNT_DISABLED"
-	CodeInvalidToken        = "INVALID_TOKEN"
-	CodeTooManyRequests     = "TOO_MANY_REQUESTS"
+	CodeInvalidArgument    = "INVALID_ARGUMENT"
+	CodeUnauthorized       = "UNAUTHORIZED"
+	CodeForbidden          = "FORBIDDEN"
+	CodeNotFound           = "NOT_FOUND"
+	CodeInternalError      = "INTERNAL_ERROR"
+	CodeInvalidCredentials = "INVALID_CREDENTIALS"
+	CodeEmailNotVerified   = "EMAIL_NOT_VERIFIED"
+	CodeAccountDisabled    = "ACCOUNT_DISABLED"
+	CodeInvalidToken       = "INVALID_TOKEN"
+	CodeTooManyRequests    = "TOO_MANY_REQUESTS"
 )
 
 type ErrorBody struct {
