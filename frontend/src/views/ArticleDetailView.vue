@@ -68,8 +68,8 @@ onUnmounted(() => controller?.abort());
   <div :aria-busy="loading">
     <template v-if="loading">
       <section class="piece row ruled">
-        <div class="piece-facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
-        <div class="piece-main" aria-hidden="true">
+        <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+        <div class="main" aria-hidden="true">
           <span class="sk sk-piece-title"></span>
           <span class="sk sk-line"></span>
           <span class="sk sk-line sk-line-short"></span>
@@ -79,7 +79,7 @@ onUnmounted(() => controller?.abort());
 
     <template v-else-if="error">
       <section class="piece row ruled">
-        <div class="piece-main notice">
+        <div class="main notice">
           <h3 ref="heading" tabindex="-1">暂时无法读取这篇文章</h3>
           <p>{{ error }}</p>
           <button class="pager-btn" @click="retry">重新加载</button>
@@ -89,7 +89,7 @@ onUnmounted(() => controller?.abort());
 
     <template v-else-if="missing">
       <section class="piece row ruled">
-        <div class="piece-main notice">
+        <div class="main notice">
           <h1 ref="heading" tabindex="-1">文章不存在</h1>
           <p>这篇文章可能已下线或地址有变。</p>
           <router-link class="pager-btn" to="/">返回文章列表</router-link>
@@ -100,12 +100,12 @@ onUnmounted(() => controller?.abort());
     <template v-else>
       <article class="piece">
         <header class="piece-head row ruled">
-          <div class="piece-facts">
-            <p class="piece-category">{{ categories[article.category] }}</p>
-            <p><time class="piece-date" :datetime="article.publishedAt">{{ formatDate(article.publishedAt) }}</time></p>
+          <div class="facts">
+            <p class="key">{{ categories[article.category] }}</p>
+            <p><time class="date" :datetime="article.publishedAt">{{ formatDate(article.publishedAt) }}</time></p>
             <p>{{ article.readingMinutes }} 分钟阅读</p>
           </div>
-          <div class="piece-main">
+          <div class="main">
             <h1 ref="heading" class="piece-title" tabindex="-1">{{ article.title }}</h1>
             <p class="piece-summary">{{ article.summary }}</p>
             <p v-if="article.tags.length" class="piece-tags">{{ article.tags.join(' / ') }}</p>
@@ -113,11 +113,11 @@ onUnmounted(() => controller?.abort());
         </header>
 
         <div class="piece-body row">
-          <div class="piece-main prose" v-html="body"></div>
+          <div class="main prose" v-html="body"></div>
         </div>
 
         <nav class="piece-foot row ruled" aria-label="返回">
-          <div class="piece-main">
+          <div class="main">
             <router-link class="piece-back" to="/">返回文章列表</router-link>
           </div>
         </nav>

@@ -73,19 +73,19 @@ onUnmounted(() => controller?.abort());
     <div class="entries" :aria-busy="loading">
       <template v-if="loading">
         <div v-for="n in 3" :key="n" class="entry row ruled" aria-hidden="true">
-          <div class="entry-facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
-          <div class="entry-main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+          <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+          <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
         </div>
       </template>
       <div v-else-if="error" class="entry row ruled">
-        <div class="entry-main notice">
+        <div class="main notice">
           <h3>暂时无法读取文章</h3>
           <p>{{ error }}</p>
           <button class="pager-btn" @click="retry">重新加载</button>
         </div>
       </div>
       <div v-else-if="!items.length" class="entry row ruled">
-        <div class="entry-main notice">
+        <div class="main notice">
           <h3>还没有找到这样的文章</h3>
           <p>试试其他关键词，或回到全部文章。</p>
           <button class="pager-btn" @click="reset">查看全部文章</button>
