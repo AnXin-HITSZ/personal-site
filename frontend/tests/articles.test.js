@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { listArticles, mockList, normalizeQuery } from '../frontend/src/api/articles.js';
+import { listArticles, mockList, normalizeQuery } from '../src/api/articles.js';
 
 test('default list and pagination retain filtered totals', () => {
   const first = mockList();

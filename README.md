@@ -4,7 +4,7 @@ Vue 3 + Vite 前端，Gin + GORM + MySQL 后端的个人网站，主域名 `anxi
 
 ## 启动
 
-需要 Node.js 22.12+（推荐使用你现有的 Node.js 24）。在仓库根目录执行：
+需要 Node.js 22.12+（推荐使用你现有的 Node.js 24）。前端工程自成一个目录，在 `frontend/` 执行：
 
 ```sh
 npm ci
@@ -13,9 +13,18 @@ npm run dev
 
 打开 <http://localhost:5173>。默认读取真实 HTTP API，需要同时启动 Go 与 MySQL；只想看界面时改用一个 mock 配置即可。
 
+其余前端命令同样在 `frontend/` 执行：
+
+```sh
+npm test         # 前端数据适配器契约测试
+npm run check   # JS 语法检查
+npm run build   # Vue 编译与生产构建，输出 frontend/dist/
+npm run preview # 查看构建结果：http://localhost:4173
+```
+
 ### 只调界面
 
-在根目录建 `.env.local` 写入 `VITE_DATA_SOURCE=mock`，重启 Vite。页面改用 `src/mocks/articles.js` 的示例数据，不需要 Go 和 MySQL。
+在 `frontend/` 建 `.env.local` 写入 `VITE_DATA_SOURCE=mock`，重启 Vite。页面改用 `src/mocks/articles.js` 的示例数据，不需要 Go 和 MySQL。
 
 ### 联调真实接口
 
@@ -40,13 +49,6 @@ npm run dev
 
 **本地联调不需要 `.env.local`**：默认值 `VITE_DATA_SOURCE=http`、`VITE_API_BASE_URL=/api/v1`、`API_PROXY_TARGET=http://127.0.0.1:8080` 已经指向本机 Go 服务，`/api` 由 Vite 代理，因此没有跨域问题。数据库连接字段见 [backend/.env.example](backend/.env.example)，本机把 `MYSQL_PORT` 指向隧道端口 `13306`。隧道、`mysqlsh` 验证与账号约定见[数据库说明](backend/internal/database/README.md#windows-本机开发)。
 
-```sh
-npm test         # 前端数据适配器契约测试
-npm run check   # JS 语法检查
-npm run build   # Vue 编译与生产构建，输出 dist/
-npm run preview # 查看构建结果：http://localhost:4173
-```
-
 ## 当前交付
 
 - Vue 单文件组件：首页、文章列表、文章条目。
@@ -55,15 +57,18 @@ npm run preview # 查看构建结果：http://localhost:4173
 - Go 服务：`GET /api/v1/articles`，参数校验、分页与关键词/分类过滤。
 - QA-Agent 外链、站点域名与基础 metadata。
 
-接口契约以代码为准：[适配器与响应校验](frontend/src/api/articles.js)、[响应结构](backend/internal/dto/article.go)、[契约测试](tests/articles.test.js)。
+接口契约以代码为准：[适配器与响应校验](frontend/src/api/articles.js)、[响应结构](backend/internal/dto/article.go)、[契约测试](frontend/tests/articles.test.js)。
 
 mock 中的文章均为示例，不代表真实经历或已发布内容。当前只展示文章摘要，正文与管理后台留待后续阶段。
 
 ## 项目结构
 
 ```text
-frontend/
+frontend/                  前端工程，命令都在这一层执行
   index.html                Vue 挂载页与 metadata
+  package.json              依赖与 npm 脚本
+  vite.config.js            构建与本地 API 代理
+  .env.example              环境变量模板，复制为同目录的 .env.local
   public/favicon.svg        站点图标
   src/App.vue               页面布局
   src/components/           ArticleList / ArticleEntry
@@ -71,6 +76,9 @@ frontend/
   src/mocks/articles.js     示例数据
   src/config.js             域名、API、数据源配置
   src/styles.css            响应式样式
+  tests/                    契约测试
+  scripts/check.mjs         JS 语法检查
+  dist/                     构建产物（生成，不入库）
 backend/
   cmd/server/               程序入口与路由装配
   internal/config/          环境变量加载与校验
@@ -82,10 +90,7 @@ backend/
   internal/dto/             响应结构
   internal/middleware/      恢复中间件
   migrations/               手动执行的 SQL 迁移，启动不建表
-tests/                     前端契约测试
-scripts/check.mjs          JS 语法检查
 deploy/nginx/              部署网关模板
-vite.config.js             构建与本地 API 代理
 ```
 
 ## 前后端边界
@@ -98,10 +103,10 @@ Vite 开发服务器把 `/api` 代理到 `API_PROXY_TARGET`，前端只用相对
 
 ## 生产部署约定
 
-目标 ECS 为 `8.135.60.136`，直接使用已有 MySQL，Redis 缓存分阶段启用。根目录复制 `.env.production.example` 为 `.env.production` 后执行 `npm run build`；构建会拒绝 mock 模式。静态目录为 `dist/`，通过部署网关将 `/api/v1` 转发到 Go 服务；主域名开启 HTTPS。前端配置不能存放密钥。
+目标 ECS 为 `8.135.60.136`，直接使用已有 MySQL，Redis 缓存分阶段启用。在 `frontend/` 复制 `.env.production.example` 为同目录的 `.env.production` 后执行 `npm run build`；构建会拒绝 mock 模式。产物落在 `frontend/dist/`，部署时把该目录放到服务器的 `/var/www/anxin-site/dist`，通过部署网关将 `/api/v1` 转发到 Go 服务；主域名开启 HTTPS。前端配置不能存放密钥。
 
 当前只用到 ECS 上的开发库（经 SSH 隧道，见「启动」），尚未部署服务、未修改 DNS。
 
-配置模板：根目录 .env.example、.env.production.example、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
+配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
 
 生产库不执行种子与清理；`ARTICLE_CACHE_ENABLED` 保持 `false`。

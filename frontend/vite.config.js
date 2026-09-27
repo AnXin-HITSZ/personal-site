@@ -10,10 +10,8 @@ export default defineConfig(({ mode, command }) => {
     throw new Error('生产构建必须使用真实 HTTP API，请设置 VITE_DATA_SOURCE=http');
   }
   return {
-    root: 'frontend',
-    envDir: process.cwd(),
     plugins: [vue()],
-    build: { outDir: '../dist', emptyOutDir: true },
+    build: { outDir: 'dist', emptyOutDir: true },
     server: { proxy: { '/api': env.API_PROXY_TARGET || 'http://127.0.0.1:8080' } },
   };
 });
