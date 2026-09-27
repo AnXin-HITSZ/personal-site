@@ -37,6 +37,7 @@ func (h *ArticlesList) List(c *gin.Context) {
 
 	result, err := h.service.ListPublished(c.Request.Context(), query)
 	if err != nil {
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, dto.NewInternalError())
 		return
 	}
@@ -63,6 +64,7 @@ func (h *ArticleGet) Get(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, dto.NewInternalError())
 		return
 	}

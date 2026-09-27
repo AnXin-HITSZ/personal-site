@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +25,7 @@ import (
 )
 
 func main() {
+	flag.Parse()
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
@@ -47,6 +49,12 @@ func run() error {
 			log.Print("关闭 MySQL 连接池失败")
 		}
 	}()
+
+	// 建管理员是一次性命令，做完就退出——不该顺带把服务也起来，
+	// 否则运维还得再想办法把它停掉。
+	if *createAdminEmail != "" {
+		return runCreateAdmin(ctx, db.DB, *createAdminEmail)
+	}
 
 	log.Print("MySQL 连接检查通过")
 
