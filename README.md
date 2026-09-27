@@ -167,7 +167,7 @@ bash /root/personal-site/deploy/start.sh status   # 只报告状态，不改动�
 
 进程不归脚本管：开机自启与崩溃拉起由 systemd 负责，脚本只把「起服务 → 等就绪 → 报告」串成一条命令，退出后进程继续跑。nginx 同时服务 QA-Agent，脚本只会在它没跑的时候拉起来，任何情况下都不停它。
 
-迁移仍由人手动执行，两个脚本都不碰数据库。发布带新列或改列的版本时，先按[迁移约定](backend/migrations/README.md)在库上执行对应迁移，再发布。列表查询用 `Omit("Body")` 绕开正文，详情会读到它——迁移滞后时详情会 500。
+迁移仍由人手动执行，两个脚本都不碰数据库。发布带新列或改列的版本时，先按[迁移约定](backend/migrations/README.md)在库上执行对应迁移，再发布。列表查询用 `Omit("Body")`，GORM 会据此展开成不含正文的显式列名；详情是 `Take(&model.Article)`，目标就是模型本身，GORM 发的是 `SELECT *`——因此迁移滞后**不会报错**，缺的那列会被扫成零值，正文静默为空。
 
 配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)、[systemd 单元](deploy/systemd/personal-site.service)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
 
