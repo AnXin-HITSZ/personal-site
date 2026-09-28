@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>固定报头稿样 · Anxin</title>
+<style>
+/* 稿样：报头在滚动时固定在顶上，内容滑到它底下时淡出。
+   上面一大段是从 src/styles.css 原样搬过来的现有样式，一个字没改；
+   提议的改动集中在中段那一片用 ══ 框起来的地方。 */
+
+:root {
+  --paper: #f5f5f4;
+  --ink: #14161a;
+  --muted: #5c5f65;
+  --rule: #d9d9d5;
+  --control: #8a8d90;
+  --seal: #a52a1e;
+  --fill: #e4e4e1;
+
+  /* 拉丁文一律用衬线体：Go、HTTP 这类词在中文里是被引用的对象，换个声音念。 */
+  --stack-body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --stack-display: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, "PingFang SC", "Microsoft YaHei", serif;
+  --stack-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shell: 67rem;
+  --pad: 3rem;
+  --margin: 13rem;
+  --gutter: 3rem;
+  --measure: 45rem;
+  --text-start: calc(var(--margin) + var(--gutter));
+
+  --body-size: 1.0625rem;
+  --facts-size: .875rem;
+  --leading: 1.85;
+  --h1: clamp(2.5rem, 5vw, 3.75rem);
+
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; padding-bottom: 3.5rem; font: 400 var(--body-size)/var(--leading) var(--stack-body); }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+::selection { background: var(--seal); color: var(--paper); }
+
+:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+
+html { scrollbar-gutter: stable; }
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: var(--margin) minmax(0, var(--measure));
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+.ruled { position: relative; padding-top: 1.5rem; }
+.ruled::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--text-start);
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+}
+
+.facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.facts-stacked > * + * { margin-top: .85rem; }
+.main, .piece-main, .device-main { grid-column: 2; }
+.mark { color: var(--seal); margin-bottom: .35rem; }
+.key { color: var(--seal); }
+.date { font-variant-numeric: tabular-nums; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  background: var(--paper);
+  border: 1px solid var(--control);
+  padding: .75rem 1rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ---------- 报头 ---------- */
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 2.25rem;
+}
+.brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
+.nav { display: flex; gap: 1.75rem; font-size: .875rem; }
+.nav a { position: relative; padding: .5rem 0; color: var(--muted); }
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current], .nav a.nav-here { color: var(--ink); }
+.nav a[aria-current]::after, .nav a.nav-here::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--seal);
+}
+
+/* ---------- 题记 ---------- */
+
+.statement { margin-top: 5.5rem; }
+.statement-fact { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+.statement-body { grid-column: 2; }
+
+.statement h1 {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: var(--h1);
+  line-height: 1.34;
+  letter-spacing: .02em;
+}
+.statement-lede {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: calc(var(--body-size) - 1px);
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.project { margin-top: 3.25rem; }
+.project-fact { color: var(--muted); font-size: var(--facts-size); }
+.project-body { grid-column: 2; }
+.project-name { font-family: var(--stack-display); font-weight: 400; font-size: 1.6rem; letter-spacing: .01em; }
+.project-line { margin-top: .5rem; color: var(--muted); font-size: calc(var(--body-size) - 1px); line-height: 1.8; }
+.project-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--seal);
+  font-size: calc(var(--body-size) - 1px);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: .15rem;
+}
+.project-link:hover { color: var(--ink); }
+
+/* ---------- 文章列表 ---------- */
+
+.archive { margin-top: 6.5rem; }
+.archive-count { color: var(--muted); font-size: var(--facts-size); }
+.archive-main { grid-column: 2; display: flex; align-items: baseline; gap: .75rem; }
+.archive-main h2 { font-size: 1.75rem; font-weight: 600; }
+.archive-sample { color: var(--muted); font-size: var(--facts-size); }
+
+.archive-tools { margin-top: 2rem; }
+.archive-tools-main { grid-column: 2; }
+
+.filters { display: flex; flex-wrap: wrap; gap: .25rem; }
+.filter {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: .875rem;
+  min-height: 2.5rem;
+  padding: 0 .7rem;
+  border-bottom: 2px solid transparent;
+}
+.filter:first-child { padding-left: 0; }
+.filter:hover:not([aria-pressed="true"]) { color: var(--ink); }
+.filter[aria-pressed="true"] { color: var(--seal); border-bottom-color: var(--seal); }
+
+.search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 22rem;
+  margin-top: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+}
+.search:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: .7rem .85rem; font-size: .9375rem; }
+.search input::placeholder { color: var(--muted); }
+.search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); }
+.search button:hover { color: var(--ink); }
+
+.entries { margin-top: 2.75rem; }
+.entry { padding-top: 2.25rem; }
+.entry + .entry { margin-top: 1.75rem; padding-top: 1.5rem; }
+
+.entry-title { font-size: 1.0625rem; font-weight: 600; line-height: 1.55; text-wrap: pretty; }
+.entry-summary { margin-top: .35rem; color: var(--muted); font-size: .9375rem; line-height: 1.75; text-wrap: pretty; }
+.entry-tags { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+
+.entry:first-child .entry-title {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
+  line-height: 1.3;
+  letter-spacing: .01em;
+}
+.entry:first-child .entry-summary {
+  margin-top: 1rem;
+  font-size: calc(var(--body-size) + 1px);
+  line-height: 1.85;
+}
+.entry:first-child .entry-tags { margin-top: .9rem; }
+
+.entry-title a:hover { color: var(--seal); }
+
+/* ---------- 分页 ---------- */
+
+.pager { margin-top: 3rem; }
+.pager-nav { grid-column: 2; display: flex; align-items: center; gap: 1.25rem; }
+.pager-btn {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: 0 1rem;
+  min-height: 2.5rem;
+  font-size: .875rem;
+}
+.pager-btn:hover:enabled { border-color: var(--seal); color: var(--seal); }
+.pager-count { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+
+/* ---------- 页脚 ---------- */
+
+.footer { margin-top: 4.5rem; padding-bottom: 3.5rem; }
+.footer-made { color: var(--muted); font-size: var(--facts-size); }
+.footer-main { grid-column: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 1.5rem; }
+.footer-main p { color: var(--muted); font-size: var(--facts-size); }
+.footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); }
+.footer-main a:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   提议的改动。上面是现有样式，下面这两段是新增的，也是这次要 review 的东西。
+
+   做什么：让 .masthead 粘在视口顶上，并在它底下拉一道从纸色到透明的渐变，
+   内容滑过去时先淡掉再被盖住，而不是被一条硬边一刀切断。
+
+   为什么不用别的办法：给主内容挂 mask 做不到。mask 是画在元素自己的坐标里的，
+   会跟着内容一起滚，结果是一块固定的模糊区在页面上滑，不是「靠近顶部才淡」。
+   视口锚定的淡出只能靠盖在内容上方的一层渐变，也就是下面这个 ::after。
+
+   为什么 ::after 而不是给 .masthead 自己加渐变背景：::after 挂在 top:100%，
+   伸到报头盒子外面去；渐变加在报头自己身上，淡的就会是报头的高度那一段，
+   导航文字会跟着一起变透明。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* 淡出区的高度。渐变从报头底边开始往下铺这么多。 */
+  --masthead-fade: 3.25rem;
+}
+
+/* 报头必须给底色，否则滚过去的内容会和导航文字叠在一起。底色取的正是纸色，
+   所以它看上去不像一个「条」，只是让内容到此为止。 */
+body[data-variant] .masthead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--paper);
+}
+
+/* ══ 变体：淡出（A）与 淡出 + 细线（B）——渐变部分 ══ */
+body[data-variant="fade"] .masthead::after,
+body[data-variant="fade-rule"] .masthead::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--masthead-fade);
+  /* 前 22% 保持不透明：留一点纯纸的空当，内容不会刚滑出报头就露头。
+     收尾用 transparent 是安全的——CSS 渐变按预乘 alpha 插值，不会像老浏览器
+     那样在中段泛出一层灰。 */
+  background: linear-gradient(to bottom, var(--paper) 0, var(--paper) 22%, transparent 100%);
+  /* 淡出区盖在内容上方，但它不该吃掉内容的点击。 */
+  pointer-events: none;
+}
+
+/* ══ 变体：细线（B）与 对照（C）——细线部分 ══
+   线都画在报头底边那个高度，也就是激活项那道红线所在的位置：两道线会并成
+   一条，红线成了整条细线上被点亮的一小段。
+
+   但两版画法不同，因为 B 不能画在报头底边上。box-shadow 画在元素盒子外面，
+   而淡出区是它的定位子元素、绘制在后，顶部那一段又是不透明的纸色——线会被
+   整段盖住，等于没画。所以 B 把线画在淡出区自己的上边框上，让线跟着淡出区
+   一起压在最上层。C 没有淡出区，才轮到 box-shadow。 */
+body[data-variant="fade-rule"] .masthead::after {
+  box-sizing: border-box;
+  border-top: 1px solid var(--rule);
+}
+body[data-variant="rule"] .masthead {
+  box-shadow: 0 1px 0 var(--rule);
+}
+
+/* 报头粘住之后，跳转锚点会落在它背后。留出报头的高度，跳过去才看得见。
+   这个值要跟报头实际高度对齐，占位偏小等于没留。 */
+html { scroll-padding-top: var(--masthead-h); }
+:root { --masthead-h: 5.6rem; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 56rem) {
+  :root { --margin: 7.5rem; --gutter: 1.75rem; }
+}
+
+@media (max-width: 44rem) {
+  :root {
+    --pad: 1.25rem;
+    --margin: 0rem;
+    --gutter: 0rem;
+    --measure: 100%;
+    --text-start: 0rem;
+
+    --body-size: 1rem;
+    --facts-size: .8125rem;
+    --leading: 1.75;
+    --h1: clamp(2.125rem, 5.4vw, 3.125rem);
+
+    --masthead-fade: 2.5rem;
+    --masthead-h: 4.6rem;
+  }
+
+  .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .statement-body, .archive-main, .archive-tools-main, .main, .piece-main, .device-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
+  .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
+
+  .masthead { padding-top: 1.5rem; }
+  .statement { margin-top: 2.75rem; }
+  .statement h1 { letter-spacing: .01em; }
+  .project { margin-top: 2.5rem; }
+
+  .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  .mark { margin-bottom: 0; }
+  .facts-stacked { display: block; }
+  .facts-stacked > * + * { margin-top: .55rem; }
+  .entry:first-child .entry-title { font-size: 1.6rem; }
+
+  .footer { margin-top: 3rem; }
+  .footer-made { margin-bottom: .75rem; }
+}
+
+/* ---------- 稿样控制条：不属于设计，实现时整个删掉 ---------- */
+.mockbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: .35rem; overflow-x: auto; padding: .5rem .75rem; background: var(--ink); color: var(--paper); }
+.mockbar-label { flex: none; font-family: var(--stack-mono); font-size: .6875rem; letter-spacing: .08em; color: var(--control); padding-right: .5rem; }
+.mockbar button { flex: none; background: none; border: 1px solid #3a3d42; border-radius: 2px; color: var(--paper); padding: .35rem .6rem; font-size: .75rem; white-space: nowrap; }
+.mockbar button:hover { border-color: var(--paper); }
+.mockbar button[aria-pressed="true"] { background: var(--seal); border-color: var(--seal); }
+.mockbar-sep { flex: none; width: 1px; align-self: stretch; margin-inline: .4rem; background: #3a3d42; }
+.mockbar-note { flex: none; color: var(--control); font-size: .75rem; padding-left: .35rem; }
+</style>
+</head>
+<body data-variant="fade">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#" class="nav-here">文章</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+  <section class="statement row">
+    <p class="statement-fact">2026</p>
+    <div class="statement-body">
+      <h1>把思考写下来，<br>让想法发生。</h1>
+      <p class="statement-lede">这里是 Anxin 的个人空间。记录代码、学习，以及从问题到答案的过程。</p>
+    </div>
+  </section>
+
+  <aside class="project row">
+    <p class="project-fact">项目</p>
+    <div class="project-body">
+      <h2 class="project-name">QA-Agent</h2>
+      <p class="project-line">从一个问题开始，探索另一种寻找答案的方式。</p>
+      <a class="project-link" href="#">打开 QA-Agent<span class="sr-only">（新窗口）</span></a>
+    </div>
+  </aside>
+
+  <section class="archive" aria-labelledby="archive-title">
+    <div class="archive-head row ruled">
+      <p class="archive-count" role="status">6 篇文章</p>
+      <div class="archive-main">
+        <h2 id="archive-title">文章</h2>
+      </div>
+    </div>
+
+    <div class="archive-tools row">
+      <div class="archive-tools-main">
+        <div class="filters" role="group" aria-label="文章分类">
+          <button class="filter" type="button" aria-pressed="true">全部</button>
+          <button class="filter" type="button" aria-pressed="false">后端开发</button>
+          <button class="filter" type="button" aria-pressed="false">前端实践</button>
+          <button class="filter" type="button" aria-pressed="false">AI 探索</button>
+          <button class="filter" type="button" aria-pressed="false">学习随笔</button>
+        </div>
+        <form class="search" role="search" onsubmit="return false">
+          <label class="sr-only" for="search">搜索文章标题与摘要</label>
+          <input id="search" type="search" placeholder="搜索标题或摘要" maxlength="100">
+          <button type="submit">搜索</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="entries">
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="mark">最新</p>
+          <p class="key">后端开发</p>
+          <p><time class="date" datetime="2026-09-27">2026.09.27</time></p>
+          <p>9 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">不透明令牌，以及我为什么把 JWT 从设计里拿掉了</a></h3>
+          <p class="entry-summary">会话凭证一旦是自证明的，撤销就变成了一个需要额外造一套机制才能解决的问题。把状态放回服务端，换来的是登出真的等于登出。</p>
+          <p class="entry-tags">Go / 会话 / 安全</p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="key">后端开发</p>
+          <p><time class="date" datetime="2026-09-21">2026.09.21</time></p>
+          <p>7 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">三层 CSRF 里，最容易被绕过去的是哪一层</a></h3>
+          <p class="entry-summary">自定义头、Origin 比对、SameSite，三层里真正在挡人的往往只有一层。另外两层的作用是让攻击面变窄，不是让人放心。</p>
+          <p class="entry-tags">Gin / 中间件 / 安全</p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="key">前端实践</p>
+          <p><time class="date" datetime="2026-09-18">2026.09.18</time></p>
+          <p>5 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">滚动条宽度不该决定版面的位置</a></h3>
+          <p class="entry-summary">一个页面比另一个只是多了一屏内容，居中框就整体横移了半个格。高度是内容的事，位置不该被它牵着走。</p>
+          <p class="entry-tags">CSS / 布局</p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="key">前端实践</p>
+          <p><time class="date" datetime="2026-09-14">2026.09.14</time></p>
+          <p>6 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">把 500 说成人话：前端错误码映射的边界</a></h3>
+          <p class="entry-summary">服务端崩了不该赖到用户头上，也不该假装成功。映射表真正要解决的，是哪些错误值得解释、哪些只需要一句「稍后再试」。</p>
+          <p class="entry-tags">Vue / 错误处理</p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="key">学习随笔</p>
+          <p><time class="date" datetime="2026-09-09">2026.09.09</time></p>
+          <p>4 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">迁移账号和运行账号为什么要分开</a></h3>
+          <p class="entry-summary">应用只需要读写数据，不需要改表结构。把这两件事交给两个账号，出事的半径就被限定住了——顺带也有一个副作用：开发库的授权很容易漏配。</p>
+          <p class="entry-tags">MySQL / 权限</p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="key">AI 探索</p>
+          <p><time class="date" datetime="2026-09-03">2026.09.03</time></p>
+          <p>8 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#">从一个问题开始，而不是从一个索引开始</a></h3>
+          <p class="entry-summary">检索增强的默认做法是先切块再排序，但真实的问题往往先要决定「该去哪一类材料里找」。这一步做错了，后面排得再准也没用。</p>
+          <p class="entry-tags">RAG / 检索</p>
+        </div>
+      </article>
+    </div>
+
+    <nav class="pager row ruled" aria-label="文章分页">
+      <div class="pager-nav">
+        <button class="pager-btn" type="button" disabled>上一页</button>
+        <span class="pager-count">1 / 2</span>
+        <button class="pager-btn" type="button">下一页</button>
+      </div>
+    </nav>
+  </section>
+</main>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+<div class="mockbar" role="group" aria-label="稿样变体切换">
+  <span class="mockbar-label">报头</span>
+</div>
+
+<script>
+const variants = [
+  { key: 'fade', label: 'A 淡出' },
+  { key: 'fade-rule', label: 'B 淡出 + 细线' },
+  { key: 'rule', label: 'C 对照：只固定，不淡出' },
+];
+
+const bar = document.querySelector('.mockbar');
+const buttons = [];
+
+/* 换变体时滚到同一个位置：让同一条内容停在报头底下，三版才比得出来。 */
+function show(key) {
+  document.body.dataset.variant = key;
+  buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.variant === key)));
+  window.scrollTo(0, 900);
+}
+
+variants.forEach(({ key, label }) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.variant = key;
+  button.textContent = label;
+  button.addEventListener('click', () => show(key));
+  buttons.push(button);
+  bar.append(button);
+});
+
+const separator = document.createElement('span');
+separator.className = 'mockbar-sep';
+const note = document.createElement('span');
+note.className = 'mockbar-note';
+note.textContent = '切换时会停在同一个滚动位置，好对着看';
+bar.append(separator, note);
+
+show('fade');
+</script>
+</body>
+</html>

@@ -25,6 +25,11 @@
   --leading: 1.85;
   --h1: clamp(2.5rem, 5vw, 3.75rem);
 
+  /* 报头粘在顶上，淡出区从它底边往下铺这么高。 */
+  --masthead-fade: 3.25rem;
+  /* 报头实际高度加上一点余量，供锚点跳转让位，见下面「报头」一节。 */
+  --masthead-h: 5.6rem;
+
   color: var(--ink);
   background: var(--paper);
   font-synthesis: none;
@@ -113,13 +118,41 @@ html { scrollbar-gutter: stable; }
 
 /* ---------- 报头 ---------- */
 
+/* 报头粘在顶上，内容滑到它底下时先淡掉、再被盖住。底色取的正是纸色，所以它
+   看上去不像一个「条」，只是让内容到此为止。
+
+   淡出只能靠盖在内容上方的渐变。给主内容挂 mask 不行：mask 画在元素自己的
+   坐标里，会跟着内容一起滚，结果是一块固定的模糊区在页面上滑。渐变也不能加在
+   报头自己身上：淡的会是报头那一段高度，导航文字跟着一起变透明。所以挂在
+   ::after 上，由它伸到报头盒子外面去。 */
 .masthead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1.5rem;
   padding-top: 2.25rem;
+  background: var(--paper);
 }
+.masthead::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--masthead-fade);
+  /* 前 22% 保持不透明：留一点纯纸的空当，内容不会刚滑出报头就露头。收尾用
+     transparent 是安全的——渐变按预乘 alpha 插值，不会像老浏览器那样在中段
+     泛出一层灰。 */
+  background: linear-gradient(to bottom, var(--paper) 0, var(--paper) 22%, transparent 100%);
+  /* 淡出区盖在内容上方，但它不该吃掉内容的点击。 */
+  pointer-events: none;
+}
+
+/* 报头粘住之后锚点会落在它背后——「跳到主要内容」就是一个。留出报头的高度，
+   跳过去才看得见。这个值要略大于报头实际高度（桌面 77.9px，窄屏 64.5px），
+   偏小等于没留。 */
+html { scroll-padding-top: var(--masthead-h); }
 .brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
 .nav { display: flex; gap: 1.75rem; font-size: .875rem; }
 .nav a { position: relative; padding: .5rem 0; color: var(--muted); }
@@ -416,6 +449,9 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
     --facts-size: .8125rem;
     --leading: 1.75;
     --h1: clamp(2.125rem, 5.4vw, 3.125rem);
+
+    --masthead-fade: 2.5rem;
+    --masthead-h: 4.6rem;
   }
 
   .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }

@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账号页面稿样 · Anxin</title>
+<style>
+/* 稿本：正文一栏，事实一律挂在左边注文栏里。 */
+:root {
+  --paper: #f5f5f4;
+  --ink: #14161a;
+  --muted: #5c5f65;
+  --rule: #d9d9d5;
+  --control: #8a8d90;
+  --seal: #a52a1e;
+  --fill: #e4e4e1;
+
+  --stack-body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --stack-display: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, "PingFang SC", "Microsoft YaHei", serif;
+  --stack-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shell: 67rem;
+  --pad: 3rem;
+  --margin: 13rem;
+  --gutter: 3rem;
+  --measure: 45rem;
+  --text-start: calc(var(--margin) + var(--gutter));
+
+  --body-size: 1.0625rem;
+  --facts-size: .875rem;
+  --leading: 1.85;
+
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+/* 底下那条稿样控制条是固定的，正文留出它的高度。 */
+body { margin: 0; padding-bottom: 3.5rem; font: 400 var(--body-size)/var(--leading) var(--stack-body); }
+h1, h2, h3, p { margin: 0; }
+dl, dd { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+::selection { background: var(--seal); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+
+.shell { width: 100%; max-width: var(--shell); margin-inline: auto; padding-inline: var(--pad); }
+.row { display: grid; grid-template-columns: var(--margin) minmax(0, var(--measure)); column-gap: var(--gutter); align-items: start; }
+.ruled { position: relative; padding-top: 1.5rem; }
+.ruled::before { content: ""; position: absolute; top: 0; left: var(--text-start); right: 0; height: 1px; background: var(--rule); }
+
+.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 10; background: var(--paper); border: 1px solid var(--control); padding: .75rem 1rem; }
+.skip-link:focus { top: 1rem; }
+
+/* 注文栏与正文栏。.facts / .main 是从 .entry-facts / .entry-main 提出来的通用名字，
+   实现时这两组应当合并成一处，不要再写第二遍相同的值。 */
+.facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.main, .piece-main, .device-main { grid-column: 2; }
+.mark { color: var(--seal); margin-bottom: .35rem; }
+.key { color: var(--seal); }
+.date { font-variant-numeric: tabular-nums; }
+.facts > p + p { margin-top: .85rem; }
+
+/* ---------- 报头 ---------- */
+.masthead { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem; padding-top: 2.25rem; }
+.brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
+.nav { display: flex; gap: 1.75rem; font-size: .875rem; }
+.nav a { position: relative; padding: .5rem 0; color: var(--muted); }
+.nav a:hover { color: var(--ink); }
+.nav a.nav-here { color: var(--ink); }
+.nav a.nav-here::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--seal); }
+/* 登录态只换报头最后一项，其余不动。 */
+body[data-auth="out"] .nav-signed-in, body[data-auth="in"] .nav-signed-out { display: none; }
+
+/* ---------- 页 ---------- */
+.page { display: none; }
+.page.is-active { display: block; }
+
+.piece { margin-top: 5.5rem; }
+.piece-title { font-family: var(--stack-display); font-weight: 400; font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.32; letter-spacing: .01em; text-wrap: pretty; }
+.piece-foot { margin-top: 3.5rem; }
+
+/* 认证页比账号页低一档：它们是过道，不是目的地。 */
+.form-title { font-family: var(--stack-display); font-weight: 400; font-size: 1.75rem; line-height: 1.35; letter-spacing: .01em; }
+.form-lede { margin-top: .75rem; color: var(--muted); font-size: .9375rem; line-height: 1.8; max-width: 30rem; text-wrap: pretty; }
+
+/* ---------- 表单 ---------- */
+.form { margin-top: 2.25rem; max-width: 21rem; }
+.field + .field { margin-top: 1.25rem; }
+.field-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 和 .search 同一套：白底、一像素描边、两像素圆角，聚焦时描边转为印色。 */
+.field-input { display: block; width: 100%; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .7rem .85rem; font-size: .9375rem; }
+.field-input:focus { border-color: var(--seal); }
+.field-input[aria-invalid="true"] { border-color: var(--seal); }
+.field-hint { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+.field-error { margin-top: .4rem; color: var(--seal); font-size: var(--facts-size); }
+.stall-note { margin-top: 2rem; }
+
+.form-actions { margin-top: 1.75rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; }
+.form-alt { margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); max-width: 21rem; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; color: var(--muted); font-size: var(--facts-size); }
+.form-alt a, .link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; }
+.form-alt a:hover, .link-quiet:hover { color: var(--ink); }
+.link-quiet { font-size: var(--facts-size); }
+
+/* 一页只有一个主操作，所以它是全站唯一用满印色的面。 */
+.primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
+.primary:hover:enabled { background: var(--ink); border-color: var(--ink); }
+.pager-btn { display: inline-flex; align-items: center; background: none; border: 1px solid var(--control); border-radius: 2px; padding: 0 1rem; min-height: 2.5rem; font-size: .875rem; }
+.pager-btn:hover:enabled { border-color: var(--seal); color: var(--seal); }
+
+/* ---------- 提示条 ---------- */
+.notice { border-left: 2px solid var(--seal); padding: .85rem 0 .85rem 1.1rem; max-width: 30rem; }
+.notice h3 { font-size: 1.0625rem; font-weight: 600; }
+.notice p { margin-top: .4rem; color: var(--muted); font-size: .9375rem; }
+.notice-actions { margin-top: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.notice + .form { margin-top: 2rem; }
+/* 成功是「事情办完了」，不是「出了事」，左线换成界色。 */
+.notice-done { border-left-color: var(--rule); }
+
+/* ---------- 账号页 ---------- */
+.identity { margin-top: 2.25rem; }
+.identity > div { display: flex; flex-wrap: wrap; gap: .2rem .9rem; padding: .85rem 0; border-top: 1px solid var(--rule); font-size: .9375rem; }
+.identity dt { color: var(--muted); min-width: 6rem; font-size: var(--facts-size); align-self: center; }
+.badge { color: var(--seal); font-size: var(--facts-size); }
+
+.section-head { margin-top: 4rem; }
+.section-title { font-family: var(--stack-display); font-weight: 400; font-size: 1.5rem; letter-spacing: .01em; }
+.section-note { margin-top: .5rem; color: var(--muted); font-size: var(--facts-size); }
+/* 顶层的一段，和注文栏里的 .entry 之间只靠一条横线分开。 */
+.section { margin-top: 4rem; }
+
+.devices { margin-top: 2rem; }
+.device { padding-top: 1.5rem; }
+.device + .device { margin-top: 1.5rem; }
+.device-ua { font-size: 1.0625rem; line-height: 1.55; text-wrap: pretty; }
+.device-meta { margin-top: .35rem; color: var(--muted); font-size: var(--facts-size); }
+.device-actions { margin-top: 1rem; }
+
+/* ---------- 页脚 ---------- */
+.footer { margin-top: 4.5rem; padding-bottom: 3.5rem; }
+.footer-made { color: var(--muted); font-size: var(--facts-size); }
+.footer-main { grid-column: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 1.5rem; }
+.footer-main p { color: var(--muted); font-size: var(--facts-size); }
+.footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); }
+.footer-main a:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+/* ---------- 稿样控制条：不属于设计，实现时整个删掉 ---------- */
+.mockbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: .35rem; overflow-x: auto; padding: .5rem .75rem; background: var(--ink); color: var(--paper); }
+.mockbar-label { flex: none; font-family: var(--stack-mono); font-size: .6875rem; letter-spacing: .08em; color: var(--control); padding-right: .5rem; }
+.mockbar button { flex: none; background: none; border: 1px solid #3a3d42; border-radius: 2px; color: var(--paper); padding: .35rem .6rem; font-size: .75rem; white-space: nowrap; }
+.mockbar button:hover { border-color: var(--paper); }
+.mockbar button[aria-pressed="true"] { background: var(--seal); border-color: var(--seal); }
+.mockbar-sep { flex: none; width: 1px; align-self: stretch; margin-inline: .4rem; background: #3a3d42; }
+
+/* 从页面上删掉、留给你复核的备注。默认不显示，也不属于设计。 */
+.draft-note { display: none; margin-top: 3.5rem; border: 1px dashed var(--control); border-radius: 2px; padding: 1rem 1.25rem; font-family: var(--stack-mono); font-size: .8125rem; line-height: 1.8; color: var(--muted); }
+body.show-notes .draft-note { display: block; }
+.draft-note b { display: block; margin-bottom: .6rem; font-family: var(--stack-body); font-size: .875rem; font-weight: 600; color: var(--seal); }
+.draft-note p + p { margin-top: .6rem; }
+
+@media (max-width: 56rem) {
+  :root { --margin: 7.5rem; --gutter: 1.75rem; }
+}
+@media (max-width: 44rem) {
+  :root { --pad: 1.25rem; --margin: 0rem; --gutter: 0rem; --measure: 100%; --text-start: 0rem; --body-size: 1rem; --facts-size: .8125rem; --leading: 1.75; }
+  .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .main, .piece-main, .device-main, .footer-main { grid-column: 1; }
+  .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  .facts > p + p { margin-top: 0; }
+  .mark { margin-bottom: 0; }
+  .masthead { padding-top: 1.5rem; }
+  .piece { margin-top: 2.75rem; }
+  .piece-title { font-size: 1.75rem; }
+  .form { max-width: none; }
+  .footer { margin-top: 3rem; }
+}
+</style>
+</head>
+<body data-auth="out">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-signed-out" href="#">登录</a>
+    <a class="nav-signed-in nav-here" href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+
+<!-- ═══════════ 登录 ═══════════ -->
+<div class="page" data-screen="login" data-label="登录" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">会话</span><br>登录后 30 天内免登录，可以随时在账号页撤销</p>
+      <p><span class="key">邮箱</span><br>没验证过的邮箱登不进来</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">登录</h1>
+      <p class="form-lede">用注册时的邮箱和口令进来。</p>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="l1-mail">邮箱</label>
+          <input class="field-input" id="l1-mail" type="email" autocomplete="email" value="reader@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="l1-pass">口令</label>
+          <input class="field-input" id="l1-pass" type="password" autocomplete="current-password" value="correct-horse-battery">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">登录</button>
+          <a class="link-quiet" href="#">忘记口令</a>
+        </div>
+      </form>
+
+      <p class="form-alt"><span>还没有账号？</span><a href="#">注册</a></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>口令 ─ 同一个邮箱连错 5 次，15 分钟内不再接受尝试。</p>
+    <p>删掉的理由：它是给攻击者看的预算表。访客被挡住时，限速那一屏会告诉他等多久。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 登录 · 口令不对 ═══════════ -->
+<div class="page" data-screen="login-error" data-label="登录 · 口令错" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">登录</h1>
+
+      <div class="notice" role="alert">
+        <h3>邮箱或口令不正确</h3>
+        <p>两者之一不对，请重试。</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="l2-mail">邮箱</label>
+          <input class="field-input" id="l2-mail" type="email" autocomplete="email" value="reader@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="l2-pass">口令</label>
+          <input class="field-input" id="l2-pass" type="password" autocomplete="current-password" aria-invalid="true" value="wrong-password-here">
+          <p class="field-error">口令不对</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">登录</button>
+          <a class="link-quiet" href="#">忘记口令</a>
+        </div>
+      </form>
+
+      <p class="form-alt"><span>还没有账号？</span><a href="#">注册</a></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>为什么不说 ─ 「邮箱没注册」和「口令不对」回的是同一句话，否则这个页面就成了一个查邮箱是否注册过的接口。</p>
+    <p>还剩 4 次机会 ─ 后端不返回剩余次数，而且不该返回：告诉试探者还剩几次，等于帮他算什么时候该停手换账号。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 登录 · 邮箱未验证 ═══════════ -->
+<div class="page" data-screen="login-unverified" data-label="登录 · 未验证" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">重发</span><br>同一个邮箱每小时最多 3 封</p>
+      <p><span class="key">有效期</span><br>验证链接 24 小时</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">登录</h1>
+
+      <div class="notice" role="alert">
+        <h3>邮箱尚未验证</h3>
+        <p>reader@example.com 的验证还没完成，先点开那封信里的链接。</p>
+        <div class="notice-actions">
+          <button class="pager-btn" type="button">重新发送验证邮件</button>
+          <span class="field-hint">没收到？翻一下垃圾邮件。</span>
+        </div>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="l3-mail">邮箱</label>
+          <input class="field-input" id="l3-mail" type="email" autocomplete="email" value="reader@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="l3-pass">口令</label>
+          <input class="field-input" id="l3-pass" type="password" autocomplete="current-password" value="correct-horse-battery">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">登录</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>为什么 ─ 口令是对的，所以这里可以说出「这个邮箱存在」——走到这一步的人本来就知道。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 登录 · 限速 ═══════════ -->
+<div class="page" data-screen="login-throttled" data-label="登录 · 限速" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">登录</h1>
+
+      <div class="notice" role="alert">
+        <h3>登录尝试过于频繁</h3>
+        <p>这个邮箱的尝试太多了，请 8 分钟后再试。</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="l4-mail">邮箱</label>
+          <input class="field-input" id="l4-mail" type="email" disabled value="reader@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="l4-pass">口令</label>
+          <input class="field-input" id="l4-pass" type="password" disabled>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit" disabled>登录</button>
+          <span class="field-hint">等待期间可以先去<a class="link-quiet" href="#">重置口令</a></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>两条线 ─ 按网络算，15 分钟 20 次；按邮箱算，15 分钟 5 次，哪个先到算哪个。</p>
+    <p>为什么按两个 ─ 只限网络，换一批地址就能继续爆同一个账号；只限邮箱，一批口令就能拿去撞很多账号。</p>
+    <p>「8 分钟」取自 429 响应上的 Retry-After 头（秒），前端要换算成分钟。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 登录 · 提交中 ═══════════ -->
+<div class="page" data-screen="login-busy" data-label="登录 · 提交中" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">登录</h1>
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="l5-mail">邮箱</label>
+          <input class="field-input" id="l5-mail" type="email" value="reader@example.com" readonly>
+        </div>
+        <div class="field">
+          <label class="field-label" for="l5-pass">口令</label>
+          <input class="field-input" id="l5-pass" type="password" value="correct-horse-battery" readonly>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button" disabled>登录中…</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>最长等多久 ─ 接口 8 秒超时。超时后按「没连上」处理，不说成口令不对。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 注册 ═══════════ -->
+<div class="page" data-screen="register" data-label="注册" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">下一步</span><br>会收到一封验证信，点里面的链接才算注册完</p>
+      <p><span class="key">有效期</span><br>链接 24 小时</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">注册</h1>
+      <p class="form-lede">注册之后你可以在文章下面留言。</p>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="r1-mail">邮箱</label>
+          <input class="field-input" id="r1-mail" type="email" autocomplete="email">
+          <p class="field-hint">验证信会寄到这里</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="r1-pass">口令</label>
+          <input class="field-input" id="r1-pass" type="password" autocomplete="new-password">
+          <p class="field-hint">至少 12 个字符</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="r1-pass2">再输一遍口令</label>
+          <input class="field-input" id="r1-pass2" type="password" autocomplete="new-password">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">注册</button>
+        </div>
+      </form>
+
+      <p class="form-alt"><span>已经有账号？</span><a href="#">登录</a></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>口令 ─ 至少 12 个字符，最多 72 字节。已在字段下方写了，注文栏里是重复。</p>
+    <p>口令 ─ 不能和邮箱一样。同上，重复。</p>
+    <p>次数 ─ 同一个网络每小时最多 5 次。被挡住时那一屏会说，平时是噪音。</p>
+    <p>待定 ─ 「邮箱注册后不能修改」（后端确实没有改邮箱的接口），要不要写进注文栏请定。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 注册 · 本地校验 ═══════════ -->
+<div class="page" data-screen="register-invalid" data-label="注册 · 本地校验" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">注册</h1>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="r2-mail">邮箱</label>
+          <input class="field-input" id="r2-mail" type="email" autocomplete="email" value="reader@example.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="r2-pass">口令</label>
+          <input class="field-input" id="r2-pass" type="password" autocomplete="new-password" aria-invalid="true" value="short">
+          <p class="field-error">口令过短：至少 12 个字符</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="r2-pass2">再输一遍口令</label>
+          <input class="field-input" id="r2-pass2" type="password" autocomplete="new-password" aria-invalid="true" value="short2">
+          <p class="field-error">两次输入的口令不一致</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">注册</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>两道 ─ 这两条前端自己就能断定，不必等一次往返；服务端仍旧各查一遍，前端校验只是省一次等待。</p>
+    <p>对不上 ─ 「再输一遍」只在本地比对，不会发给服务端。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 注册 · 已发出 ═══════════ -->
+<div class="page" data-screen="register-sent" data-label="注册 · 已发出" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">接下来</span><br>点开信里的链接，验证就完成了，然后回来登录</p>
+      <p><span class="key">有效期</span><br>链接 24 小时</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">去邮箱看看</h1>
+      <p class="form-lede">如果 reader@example.com 可以注册，验证信已经发出。点开里面的链接，注册就算完成。</p>
+
+      <div class="notice notice-done">
+        <p>没收到？先翻一下垃圾邮件，再确认地址写对了。都不是的话，可以再要一封——同一个邮箱每小时最多 3 封。</p>
+      </div>
+
+      <div class="form-actions">
+        <button class="pager-btn" type="button">重新发送验证邮件</button>
+        <a class="link-quiet" href="#">去登录</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>为什么是「如果」 ─ 这个邮箱已经注册过时，服务端回的是同一句话，否则谁都能拿它试出某个邮箱在不在这个站上。</p>
+    <p>这条是三处「为什么」里最舍不得删的一条：它解释的是页面上那句别扭的措辞本身。但访客读完也不会改变任何动作。想留就留这一条，其余两条不必。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 注册 · 限速 ═══════════ -->
+<div class="page" data-screen="register-throttled" data-label="注册 · 限速" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">注册</h1>
+      <div class="notice" role="alert">
+        <h3>注册太频繁</h3>
+        <p>这个网络的注册次数用完了，请 42 分钟后再试。</p>
+      </div>
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="r3-mail">邮箱</label>
+          <input class="field-input" id="r3-mail" type="email" disabled>
+        </div>
+        <div class="field">
+          <label class="field-label" for="r3-pass">口令</label>
+          <input class="field-input" id="r3-pass" type="password" disabled>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit" disabled>注册</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>额度 ─ 按网络算，每小时 5 次。</p>
+    <p>为什么宽 ─ 一个办公室出口后面可能坐着好几个人，所以按网络的额度比按邮箱的宽。</p>
+    <p>「这个网络」原来写作「这个网络出口」，那是运维的说法，访客不懂。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 验证邮箱 · 进行中 ═══════════ -->
+<div class="page" data-screen="verify-pending" data-label="验证 · 进行中" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">正在验证邮箱</h1>
+      <p class="form-lede">稍等，在跟服务端核对这个链接。</p>
+      <p class="field-hint stall-note">如果这一步停着不动，<a class="link-quiet" href="#">点这里重新申请一封</a>。</p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>这一页 ─ 只在从邮件里点进来时有内容，它读地址栏上的 ?token= 再发给服务端。</p>
+    <p>令牌 ─ 验证成功之后就不能再用第二次。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 验证邮箱 · 成功 ═══════════ -->
+<div class="page" data-screen="verify-done" data-label="验证 · 成功" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">会话</span><br>登录后 30 天内免登录</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">邮箱验证完成</h1>
+      <p class="form-lede">reader@example.com 已经确认是你的。现在可以登录了。</p>
+      <div class="form-actions">
+        <a class="primary" href="#">去登录</a>
+        <a class="link-quiet" href="#">回文章列表</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- ═══════════ 验证邮箱 · 链接失效 ═══════════ -->
+<div class="page" data-screen="verify-invalid" data-label="验证 · 失效" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">这个链接不能用了</h1>
+      <p class="form-lede">它可能超过 24 小时了，也可能在这之前已经用过一次。重新要一封就行。</p>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="v1-mail">邮箱</label>
+          <input class="field-input" id="v1-mail" type="email" autocomplete="email" value="reader@example.com">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">重新发送验证邮件</button>
+        </div>
+      </form>
+
+      <p class="form-alt"><span>已经验证过了？</span><a href="#">直接登录</a></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>三种情况一种说法 ─ 不存在、过期、已经用过，对要做的事来说完全一样，都是重新申请一封。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 验证邮箱 · 没有令牌 ═══════════ -->
+<div class="page" data-screen="verify-missing" data-label="验证 · 无令牌" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">这一页需要从邮件里打开</h1>
+      <p class="form-lede">验证链接带着一串一次性的令牌，直接输网址是进不来的。去收件箱里找那封信，或者重新要一封。</p>
+      <div class="form-actions">
+        <a class="pager-btn" href="#">重新发送验证邮件</a>
+        <a class="link-quiet" href="#">去登录</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>直接访问 ─ 地址栏里没有 ?token= 就是这个样子。这一页本来只能从邮件里点进来。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 忘记口令 ═══════════ -->
+<div class="page" data-screen="forgot" data-label="忘记口令" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">有效期</span><br>重置链接 30 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">重置口令</h1>
+      <p class="form-lede">填注册时用的邮箱，我们会寄一条重设口令的链接过去。</p>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="f1-mail">邮箱</label>
+          <input class="field-input" id="f1-mail" type="email" autocomplete="email">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">发送重置链接</button>
+        </div>
+      </form>
+
+      <p class="form-alt"><span>想起来了？</span><a href="#">去登录</a></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>同样的「如果」 ─ 这个邮箱没有账号时，回的也是同一句话。</p>
+    <p>次数 ─ 按邮箱每小时 3 次，按网络每小时 10 次。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 忘记口令 · 已发出 ═══════════ -->
+<div class="page" data-screen="forgot-sent" data-label="忘记口令 · 已发出" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">有效期</span><br>30 分钟，过了得重新申请</p>
+      <p><span class="key">改完之后</span><br>所有设备都会登出，需要重新登录</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">去邮箱看看</h1>
+      <p class="form-lede">如果 reader@example.com 有账号，重置口令的链接已经发出，30 分钟内有效。</p>
+      <div class="form-actions">
+        <a class="pager-btn" href="#">回登录</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- ═══════════ 设置新口令 ═══════════ -->
+<div class="page" data-screen="reset" data-label="设置新口令" data-auth="out">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">有效期</span><br>这条链接 30 分钟</p>
+      <p><span class="key">改完之后</span><br>所有设备都要重新登录</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="form-title">设置新口令</h1>
+      <p class="form-lede">为 reader@example.com 设一个新口令。设完之后所有设备都要重新登录。</p>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="p1-pass">新口令</label>
+          <input class="field-input" id="p1-pass" type="password" autocomplete="new-password">
+          <p class="field-hint">至少 12 个字符</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="p1-pass2">再输一遍新口令</label>
+          <input class="field-input" id="p1-pass2" type="password" autocomplete="new-password">
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">保存新口令</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>口令 ─ 至少 12 个字符，不能和邮箱一样。已在字段下方写了，注文栏里是重复。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 设置新口令 · 链接失效 ═══════════ -->
+<div class="page" data-screen="reset-invalid" data-label="新口令 · 失效" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">这个链接不能用了</h1>
+      <p class="form-lede">它可能超过 30 分钟了，也可能已经用过。重新申请一条就行，口令没有被改。</p>
+      <div class="form-actions">
+        <a class="primary" href="#">重新申请</a>
+        <a class="link-quiet" href="#">去登录</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>最常见的原因 ─ 超过 30 分钟。这个期限比验证邮箱短得多，因为它是口令，不是邮箱。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 设置新口令 · 完成 ═══════════ -->
+<div class="page" data-screen="reset-done" data-label="新口令 · 完成" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">口令已更新</h1>
+      <p class="form-lede">所有设备上的登录都已经作废，包括之前在这台机器上的。用新口令重新登录即可。</p>
+      <div class="form-actions">
+        <a class="primary" href="#">去登录</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>为什么全部登出 ─ 改口令的前提是「原来那个可能已经泄露」。留下任何一台旧会话，都等于把泄露的那个口子留着。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 账号 ═══════════ -->
+<div class="page" data-screen="account" data-label="账号" data-auth="in">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">改口令</span><br>改完其它设备全部登出，当前这台留着</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">账号</h1>
+
+      <dl class="identity">
+        <div><dt>邮箱</dt><dd>reader@example.com <span class="badge">已验证</span></dd></div>
+        <div><dt>身份</dt><dd>读者</dd></div>
+        <div><dt>注册于</dt><dd class="date">2026-09-27</dd></div>
+      </dl>
+
+      <div class="section-head">
+        <h2 class="section-title">改口令</h2>
+        <p class="section-note">改完其它设备会全部登出，这一台留着。</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <div class="field">
+          <label class="field-label" for="a1-cur">当前口令</label>
+          <input class="field-input" id="a1-cur" type="password" autocomplete="current-password">
+        </div>
+        <div class="field">
+          <label class="field-label" for="a1-new">新口令</label>
+          <input class="field-input" id="a1-new" type="password" autocomplete="new-password">
+          <p class="field-hint">至少 12 个字符，且不能和现在这个一样</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="submit">保存新口令</button>
+          <button class="pager-btn" type="button">退出登录</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">3 台</p>
+    <div class="main">
+      <h2 class="section-title">登录设备</h2>
+      <p class="section-note">认不出哪一台，就在那一行上把它登出。改动口令也会全部登出。</p>
+    </div>
+  </section>
+
+  <div class="devices">
+    <article class="device row ruled">
+      <div class="facts">
+        <p class="mark">本机</p>
+        <p><time class="date">2026-09-27 18:31</time></p>
+        <p>127.0.0.1</p>
+      </div>
+      <div class="device-main">
+        <p class="device-ua">Chrome 140 · Windows 11</p>
+        <p class="device-meta">10 月 27 日过期</p>
+      </div>
+    </article>
+
+    <article class="device row ruled">
+      <div class="facts">
+        <p><time class="date">2026-09-21 09:04</time></p>
+        <p>113.87.44.12</p>
+      </div>
+      <div class="device-main">
+        <p class="device-ua">Safari 18 · iOS 19</p>
+        <p class="device-meta">10 月 21 日过期</p>
+        <div class="device-actions">
+          <button class="pager-btn" type="button">在这台设备上登出</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="device row ruled">
+      <div class="facts">
+        <p><time class="date">2026-09-02 22:47</time></p>
+        <p>203.0.113.9</p>
+      </div>
+      <div class="device-main">
+        <p class="device-ua">Edge 139 · Windows 10</p>
+        <p class="device-meta">10 月 2 日过期</p>
+        <div class="device-actions">
+          <button class="pager-btn" type="button">在这台设备上登出</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>身份 ─ 注册时定的，改不了。右栏的「身份 读者」已经说了这件事。</p>
+    <p>待定 ─ 后端 role 给的是 member，页面上写「读者」是我临时起的，映射表用词请定。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 账号 · 改完口令 ═══════════ -->
+<div class="page" data-screen="account-changed" data-label="账号 · 改完" data-auth="in">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="piece-title">账号</h1>
+
+      <div class="notice notice-done" role="status">
+        <h3>口令已更新</h3>
+        <p>其它 2 台设备已登出。</p>
+      </div>
+
+      <dl class="identity">
+        <div><dt>邮箱</dt><dd>reader@example.com <span class="badge">已验证</span></dd></div>
+        <div><dt>身份</dt><dd>读者</dd></div>
+        <div><dt>注册于</dt><dd class="date">2026-09-27</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">1 台</p>
+    <div class="main">
+      <h2 class="section-title">登录设备</h2>
+      <p class="section-note">刚才那两台已经不在这张表上了。</p>
+    </div>
+  </section>
+
+  <div class="devices">
+    <article class="device row ruled">
+      <div class="facts">
+        <p class="mark">本机</p>
+        <p><time class="date">2026-09-27 18:31</time></p>
+        <p>127.0.0.1</p>
+      </div>
+      <div class="device-main">
+        <p class="device-ua">Chrome 140 · Windows 11</p>
+        <p class="device-meta">10 月 27 日过期</p>
+      </div>
+    </article>
+  </div>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>这台为什么留着 ─ 改口令的人就在这台机器前，把他一起踢下线只会逼他立刻再登一次。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 账号 · 未登录被挡 ═══════════ -->
+<div class="page" data-screen="account-guard" data-label="账号 · 未登录" data-auth="out">
+  <section class="piece row ruled">
+    <div class="piece-main">
+      <h1 class="form-title">需要先登录</h1>
+      <p class="form-lede">账号页要登录才能看。登录之后会直接回到这里。</p>
+      <div class="form-actions">
+        <a class="primary" href="#">去登录</a>
+        <a class="link-quiet" href="#">回文章列表</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>已删除的备注</b>
+    <p>实现上不会看到这一页 ─ 路由守卫进 /account 之前先问 /account/session，401 就直接跳到登录页，并把来路记下来。</p>
+    <p>登录之后 ─ 回到 /account，不是回首页。</p>
+  </aside>
+</div>
+
+
+</main>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="https://anxin-hitsz.com">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+<div class="mockbar" role="group" aria-label="稿样状态切换">
+  <span class="mockbar-label">稿样</span>
+</div>
+
+<script>
+const screens = [...document.querySelectorAll('[data-screen]')];
+const bar = document.querySelector('.mockbar');
+
+const notes = document.createElement('button');
+notes.type = 'button';
+notes.textContent = '显示已删除的备注';
+notes.addEventListener('click', () => {
+  const on = document.body.classList.toggle('show-notes');
+  notes.setAttribute('aria-pressed', String(on));
+});
+
+const separator = document.createElement('span');
+separator.className = 'mockbar-sep';
+
+function show(index) {
+  screens.forEach((screen, i) => screen.classList.toggle('is-active', i === index));
+  document.body.dataset.auth = screens[index].dataset.auth;
+  [...bar.querySelectorAll('button[data-screen-index]')].forEach((button, i) =>
+    button.setAttribute('aria-pressed', String(i === index)));
+  window.scrollTo(0, 0);
+}
+
+screens.forEach((screen, i) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.screenIndex = String(i);
+  button.textContent = screen.dataset.label;
+  button.addEventListener('click', () => show(i));
+  bar.append(button);
+});
+
+bar.append(separator, notes);
+show(0);
+</script>
+</body>
+</html>
