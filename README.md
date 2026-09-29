@@ -14,9 +14,9 @@ bash dev.sh
 
 按 SSH 隧道 → Go 后端 → Vite 前端的顺序起，每一环都等到**真正就绪**才继续下一环——后端要等到它自己打印 `MySQL 连接检查通过`，因此「起来了」就等于数据库链路确实通了，而不是端口恰好被占上。已经在跑的环节直接复用、不会重复拉起，退出时也只关它自己起的进程。按 Ctrl+C 或关掉终端窗口都会收尾；被强杀留下的进程用 `bash dev.sh --stop` 收回。
 
-开关：`--no-tunnel`（隧道已在跑）、`--no-frontend`（只调接口）、`--no-install`（依赖缺失时不自动安装）、`--help`。超时上限用 `READY_TIMEOUT`（秒）覆盖，隧道目标用 `SSH_ALIAS` / `TUNNEL_PORT` / `DB_PORT` 覆盖。
+开关：`--only-db`（只起隧道并保持前台，要用 `mysqlsh` 连库、跑迁移或 `-create-admin` 时用）、`--no-tunnel`（隧道已在跑）、`--no-frontend`（只调接口）、`--only-frontend`（只起前端，不碰数据库）、`--no-install`（依赖缺失时不自动安装）、`--help`。超时上限用 `READY_TIMEOUT`（秒）覆盖，隧道目标用 `SSH_ALIAS` / `TUNNEL_PORT` / `DB_PORT` 覆盖。
 
-前置：`ssh`、`go`、`node` 在 PATH 上；`backend/.env` 已按 [backend/.env.example](backend/.env.example) 填好，且 `MYSQL_PORT` 与隧道端口一致（不一致时脚本会在连库之前就拦下）；本地有能免密登录 ECS 的私钥。
+前置：本次要用到的命令在 PATH 上（只检查用得上的那些，`--only-db` 就只要 `ssh`，`--only-frontend` 就只要 `node`）；要用到数据库的那几种模式还要求 `backend/.env` 已按 [backend/.env.example](backend/.env.example) 填好，且 `MYSQL_PORT` 与隧道端口一致（不一致时脚本会在连库之前就拦下），以及本地有能免密登录 ECS 的私钥。
 
 ### 手动起
 
@@ -40,7 +40,11 @@ npm run preview # 查看构建结果：http://localhost:4173
 
 ### 只调界面
 
-在 `frontend/` 建 `.env.local` 写入 `VITE_DATA_SOURCE=mock`，重启 Vite。页面改用 `src/mocks/articles.js` 的示例数据，不需要 Go 和 MySQL。
+```sh
+bash dev.sh --only-frontend
+```
+
+再在 `frontend/` 建 `.env.local` 写入 `VITE_DATA_SOURCE=mock`，重启 Vite。页面改用 `src/mocks/articles.js` 的示例数据，不需要 Go 和 MySQL。mock 只覆盖公开的读页面——账号与写作没有 mock 数据源，在 mock 下会明确报错。不配 mock 而直接 `--only-frontend` 也可以，只是要读真实数据的页面会显示各自的失败态，脚本在结束时会把这句话再说一遍。
 
 ### 联调真实接口
 

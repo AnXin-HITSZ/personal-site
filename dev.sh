@@ -2,8 +2,10 @@
 # 本地开发一键启动：SSH 隧道 → Go 后端 → Vite 前端。
 #
 #   bash dev.sh                 三个都起
+#   bash dev.sh --only-db       只起隧道并保持前台（要用 mysqlsh 连库时）
 #   bash dev.sh --no-tunnel     隧道已在跑时，只起后端与前端
 #   bash dev.sh --no-frontend   只起隧道与后端（调接口用）
+#   bash dev.sh --only-frontend 只起前端（调界面用，不碰数据库）
 #   bash dev.sh --no-install    依赖缺失时不自动安装，只报错退出
 #   bash dev.sh --stop          收回三个端口（清理上次没收干净的遗留进程）
 #
@@ -29,19 +31,32 @@ HTTP_PORT=${HTTP_ADDR##*:}
 FRONTEND_PORT=${FRONTEND_PORT:-5173}
 READY_TIMEOUT=${READY_TIMEOUT:-60}      # 每个环节的等待上限（秒）
 
-WANT_TUNNEL=1 WANT_BACKEND=1 WANT_FRONTEND=1 WANT_INSTALL=1 WANT_STOP=0
+WANT_TUNNEL=1 WANT_BACKEND=1 WANT_FRONTEND=1 WANT_INSTALL=1 WANT_STOP=0 ONLY_DB=0 ONLY_FRONTEND=0
 for arg in "$@"; do
   case $arg in
-    --no-tunnel)   WANT_TUNNEL=0 ;;
-    --no-backend)  WANT_BACKEND=0 ;;
-    --no-frontend) WANT_FRONTEND=0 ;;
-    --no-install)  WANT_INSTALL=0 ;;
-    --stop)        WANT_STOP=1 ;;
+    --only-db)       ONLY_DB=1 ;;
+    --only-frontend) ONLY_FRONTEND=1 ;;
+    --no-tunnel)     WANT_TUNNEL=0 ;;
+    --no-backend)    WANT_BACKEND=0 ;;
+    --no-frontend)   WANT_FRONTEND=0 ;;
+    --no-install)    WANT_INSTALL=0 ;;
+    --stop)          WANT_STOP=1 ;;
     # 打印开头那段注释，遇到第一行非注释就停——不写死行号，改注释不会失效。
-    -h|--help)     awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$SELF"; exit 0 ;;
+    -h|--help)       awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$SELF"; exit 0 ;;
     *) echo "未知参数：$arg（用 --help 查看用法）" >&2; exit 2 ;;
   esac
 done
+
+# 放在循环之后推导，参数写的先后顺序就不影响结果。
+if [ "$ONLY_DB" = 1 ]; then
+  WANT_BACKEND=0
+  WANT_FRONTEND=0
+fi
+# 纯前端不碰数据库，隧道也就没有存在的理由：留着它只会让人以为后端也在跑。
+if [ "$ONLY_FRONTEND" = 1 ]; then
+  WANT_TUNNEL=0
+  WANT_BACKEND=0
+fi
 
 STARTED=()
 STARTED_NAMES=()
@@ -147,6 +162,21 @@ if [ "$WANT_STOP" = 1 ]; then
   exit 0
 fi
 
+# 一个环节都不起，走完全部前置检查再报一句「无需等待」是白费一轮。--only-db 配上
+# --no-tunnel 也落在这里：隧道被关掉之后它就没东西可起了。
+if [ "$WANT_TUNNEL" = 0 ] && [ "$WANT_BACKEND" = 0 ] && [ "$WANT_FRONTEND" = 0 ]; then
+  fail "隧道、后端、前端都被关掉了，没有可启动的环节"
+  # --only-db 与 --only-frontend 互相抵消：前者关掉前端，后者关掉隧道与后端。
+  if [ "$ONLY_DB" = 1 ] && [ "$ONLY_FRONTEND" = 1 ]; then
+    echo "     --only-db 与 --only-frontend 不能同时用" >&2
+  elif [ "$ONLY_DB" = 1 ]; then
+    echo "     --only-db 起的就是隧道，不能再加 --no-tunnel" >&2
+  elif [ "$ONLY_FRONTEND" = 1 ]; then
+    echo "     --only-frontend 起的就是前端，不能再加 --no-frontend" >&2
+  fi
+  exit 2
+fi
+
 LOG_DIR=$(mktemp -d) || exit 1
 TUNNEL_LOG=$LOG_DIR/tunnel.log
 BACKEND_LOG=$LOG_DIR/backend.log
@@ -159,25 +189,36 @@ trap cleanup EXIT INT TERM HUP
 
 step "检查前置条件"
 
-for cmd in ssh go node; do
+# 只查本次真正会用到的命令：--only-db 的人不该被要求先装好 go 和 node。
+# （三个都不起的情况上面已经拦掉了，所以这里至少有一项。）
+REQUIRED_CMDS=()
+[ "$WANT_TUNNEL" = 1 ]   && REQUIRED_CMDS+=(ssh)
+[ "$WANT_BACKEND" = 1 ]  && REQUIRED_CMDS+=(go)
+[ "$WANT_FRONTEND" = 1 ] && REQUIRED_CMDS+=(node)
+
+for cmd in "${REQUIRED_CMDS[@]}"; do
   command -v "$cmd" >/dev/null 2>&1 || { fail "找不到 $cmd，请先安装并加入 PATH"; exit 1; }
 done
-ok "ssh / go / node 均在 PATH 上"
+JOINED=$(printf '%s / ' "${REQUIRED_CMDS[@]}")
+ok "${JOINED% / } 在 PATH 上"
 
-if [ ! -f "$ROOT/backend/.env" ]; then
-  fail "缺 backend/.env —— 从 backend/.env.example 复制后填入数据库连接信息"
-  exit 1
-fi
-ok "backend/.env 存在"
+# 这两项说的都是数据库链路，--only-frontend 压根不碰库，就不该被它们拦下。
+if [ "$WANT_TUNNEL" = 1 ] || [ "$WANT_BACKEND" = 1 ]; then
+  if [ ! -f "$ROOT/backend/.env" ]; then
+    fail "缺 backend/.env —— 从 backend/.env.example 复制后填入数据库连接信息"
+    exit 1
+  fi
+  ok "backend/.env 存在"
 
-# 只读端口，不碰 .env 里的密码；这里也绝不打印密码。
-ENV_DB_PORT=$(grep -E '^MYSQL_PORT=' "$ROOT/backend/.env" | head -1 | cut -d= -f2 | tr -d '[:space:]')
-if [ -n "$ENV_DB_PORT" ] && [ "$ENV_DB_PORT" != "$TUNNEL_PORT" ]; then
-  fail "backend/.env 的 MYSQL_PORT=$ENV_DB_PORT，但隧道将监听 $TUNNEL_PORT —— 后端会连不上库"
-  echo "     改 .env 的 MYSQL_PORT=$TUNNEL_PORT，或用 MYSQL_PORT=$ENV_DB_PORT TUNNEL_PORT=$ENV_DB_PORT bash dev.sh" >&2
-  exit 1
+  # 只读端口，不碰 .env 里的密码；这里也绝不打印密码。
+  ENV_DB_PORT=$(grep -E '^MYSQL_PORT=' "$ROOT/backend/.env" | head -1 | cut -d= -f2 | tr -d '[:space:]')
+  if [ -n "$ENV_DB_PORT" ] && [ "$ENV_DB_PORT" != "$TUNNEL_PORT" ]; then
+    fail "backend/.env 的 MYSQL_PORT=$ENV_DB_PORT，但隧道将监听 $TUNNEL_PORT —— 后端会连不上库"
+    echo "     改 .env 的 MYSQL_PORT=$TUNNEL_PORT，或用 MYSQL_PORT=$ENV_DB_PORT TUNNEL_PORT=$ENV_DB_PORT bash dev.sh" >&2
+    exit 1
+  fi
+  ok "backend/.env 的 MYSQL_PORT=$ENV_DB_PORT 与隧道端口一致"
 fi
-ok "backend/.env 的 MYSQL_PORT=$ENV_DB_PORT 与隧道端口一致"
 
 if [ "$WANT_FRONTEND" = 1 ] && [ ! -d "$ROOT/frontend/node_modules" ]; then
   if [ "$WANT_INSTALL" = 1 ]; then
@@ -216,7 +257,10 @@ if [ "$WANT_TUNNEL" = 1 ]; then
   fi
 else
   step "SSH 隧道"
-  skip "--no-tunnel：假定已有隧道"
+  # 后端也不起时，隧道没有服务对象，「假定已有隧道」就成了一句空话。
+  if [ "$ONLY_FRONTEND" = 1 ]; then skip "--only-frontend：跳过"
+  elif [ "$WANT_BACKEND" = 0 ]; then skip "本次没有后端要用它，跳过"
+  else skip "--no-tunnel：假定已有隧道"; fi
 fi
 
 # ── 后端 ────────────────────────────────────────────────────────────────
@@ -259,7 +303,9 @@ if [ "$WANT_BACKEND" = 1 ]; then
   fi
 else
   step "Go 后端"
-  skip "--no-backend：跳过"
+  if [ "$ONLY_DB" = 1 ]; then skip "--only-db：跳过"
+  elif [ "$ONLY_FRONTEND" = 1 ]; then skip "--only-frontend：跳过"
+  else skip "--no-backend：跳过"; fi
 fi
 
 # ── 前端 ────────────────────────────────────────────────────────────────
@@ -285,17 +331,28 @@ if [ "$WANT_FRONTEND" = 1 ]; then
   fi
 else
   step "Vite 前端"
-  skip "--no-frontend：跳过"
+  if [ "$ONLY_DB" = 1 ]; then skip "--only-db：跳过"; else skip "--no-frontend：跳过"; fi
 fi
 
 # ── 就绪 ────────────────────────────────────────────────────────────────
 
 echo
-echo "  前端    http://localhost:$FRONTEND_PORT"
-echo "  接口    http://$HTTP_ADDR/api/v1/articles?page=1&pageSize=6"
-echo "  隧道    127.0.0.1:$TUNNEL_PORT → $SSH_ALIAS:$DB_PORT"
+# 没被本脚本启动的环节不印地址：--only-db 下报一个 8080 的接口地址是误导。
+[ "$WANT_FRONTEND" = 1 ] && echo "  前端    http://localhost:$FRONTEND_PORT"
+[ "$WANT_BACKEND" = 1 ]  && echo "  接口    http://$HTTP_ADDR/api/v1/articles?page=1&pageSize=6"
+# 隧道那行标的是数据库在哪，但只有后端在跑时它才指着什么活着的东西。
+if [ "$WANT_TUNNEL" = 1 ] || [ "$WANT_BACKEND" = 1 ]; then
+  echo "  隧道    127.0.0.1:$TUNNEL_PORT → $SSH_ALIAS:$DB_PORT"
+fi
 # 全部复用现有进程时一个日志都没写，别报一个空目录出来。
 [ ${#STARTED[@]} -gt 0 ] && echo "  日志    $LOG_DIR"
+# 前端在 5173 上把 /api 转给 8080。这次没起后端，那些请求会没人应答，
+# 页面落到错误态是意料之中——先说清楚，免得当成前端坏了。
+if [ "$WANT_TUNNEL" = 0 ] && [ "$WANT_BACKEND" = 0 ]; then
+  echo
+  echo "  本次没有起后端：接口请求无人应答，要读真实数据的页面会显示各自的失败态。"
+  echo "  只想看界面的话，在 frontend/.env.local 写 VITE_DATA_SOURCE=mock 再重启。"
+fi
 echo
 echo "  按 Ctrl+C 停止本脚本启动的进程。"
 echo "  端口被上次的遗留进程占着时，用 bash dev.sh --stop 收回。"
