@@ -13,15 +13,6 @@ import (
 	"anxin-hitsz.com/backend/internal/service"
 )
 
-const articleSlugMaxRunes = 120
-
-var articleCategories = map[string]struct{}{
-	"backend":  {},
-	"frontend": {},
-	"ai":       {},
-	"notes":    {},
-}
-
 type ArticlesList struct {
 	service *service.Article
 }
@@ -52,13 +43,12 @@ type ArticleGet struct {
 func NewArticleGet(service *service.Article) *ArticleGet { return &ArticleGet{service: service} }
 
 func (h *ArticleGet) Get(c *gin.Context) {
-	slug := strings.TrimSpace(c.Param("slug"))
-	if slug == "" || utf8.RuneCountInString(slug) > articleSlugMaxRunes {
-		c.JSON(http.StatusBadRequest, dto.NewInvalidArgument("slug", "文章标识不合法"))
+	id, ok := articleID(c)
+	if !ok {
 		return
 	}
 
-	detail, err := h.service.GetPublished(c.Request.Context(), slug)
+	detail, err := h.service.GetPublished(c.Request.Context(), id)
 	if errors.Is(err, service.ErrArticleNotFound) {
 		c.JSON(http.StatusNotFound, dto.NewNotFound("文章不存在"))
 		return
@@ -99,10 +89,8 @@ func parseArticleListQuery(c *gin.Context) (dto.ArticleListQuery, *queryError) {
 		return dto.ArticleListQuery{}, &queryError{"q", "搜索关键词不能超过 100 个字符"}
 	}
 
-	if params.Category != "" {
-		if _, ok := articleCategories[params.Category]; !ok {
-			return dto.ArticleListQuery{}, &queryError{"category", "未知的分类"}
-		}
+	if params.Category != "" && !service.IsArticleCategory(params.Category) {
+		return dto.ArticleListQuery{}, &queryError{"category", "未知的分类"}
 	}
 
 	return dto.ArticleListQuery{

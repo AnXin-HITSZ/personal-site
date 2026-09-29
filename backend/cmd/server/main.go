@@ -19,9 +19,11 @@ import (
 	"anxin-hitsz.com/backend/internal/handler"
 	"anxin-hitsz.com/backend/internal/mail"
 	"anxin-hitsz.com/backend/internal/middleware"
+	"anxin-hitsz.com/backend/internal/model"
 	"anxin-hitsz.com/backend/internal/ratelimit"
 	"anxin-hitsz.com/backend/internal/repository"
 	"anxin-hitsz.com/backend/internal/service"
+	"anxin-hitsz.com/backend/internal/storage"
 )
 
 func main() {
@@ -124,6 +126,19 @@ func newMailer(cfg config.Config) mail.Mailer {
 	return mail.LogMailer{}
 }
 
+// 和 newMailer 同一个形状：配了就用真的，开发环境用只打日志的，生产没配就用
+// 一律失败的。上传只有作者一个人用，没配 OSS 时让它在界面上明确报错，
+// 好过安静地成功、再给出一串打不开的图片链接。
+func newObjectStore(cfg config.Config) storage.Store {
+	if cfg.OSS != nil {
+		return storage.NewOSSStore(*cfg.OSS)
+	}
+	if cfg.AppEnv == "production" {
+		return storage.UnconfiguredStore{}
+	}
+	return storage.LogStore{}
+}
+
 // 限速策略集中在这里，一眼能看完每条是几分钟几次。
 // 具体数字的取舍：按 IP 的额度比按邮箱的宽，因为一个办公网出口后面可能坐着好几个人；
 // 按邮箱的额度收紧，因为那才是爆破的靶子。
@@ -157,6 +172,8 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 	articleService := service.NewArticle(repository.NewArticle(db))
 	articleList := handler.NewArticlesList(articleService)
 	articleGet := handler.NewArticleGet(articleService)
+	adminArticles := handler.NewAdminArticles(articleService)
+	uploads := handler.NewUploads(newObjectStore(cfg))
 
 	accountRepo := repository.NewAccount(db)
 	sessionService := service.NewSession(accountRepo)
@@ -169,7 +186,7 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 	api.Use(middleware.NewOriginPolicy(cfg.Session.AllowedOrigins).SameOrigin())
 
 	api.GET("/articles", articleList.List)
-	api.GET("/articles/:slug", articleGet.Get)
+	api.GET("/articles/:id", articleGet.Get)
 
 	// 没有登录态的接口。它们的响应体都被刻意做成不区分邮箱是否存在。
 	auth := api.Group("/auth")
@@ -187,6 +204,18 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 	me.POST("/password", account.ChangePassword)
 	me.GET("/sessions", account.ListSessions)
 	me.DELETE("/sessions/:id", account.RevokeSession)
+
+	// 写作的入口，只有 admin 进得来。注册一律产生 member，没有任何接口能改
+	// role——所以这是一道真的门，不是摆样子。
+	admin := api.Group("/admin",
+		middleware.RequireAuth(cookies, sessionService),
+		middleware.RequireRole(model.RoleAdmin))
+	admin.GET("/articles", adminArticles.List)
+	admin.POST("/articles", adminArticles.Create)
+	admin.GET("/articles/:id", adminArticles.Get)
+	admin.PUT("/articles/:id", adminArticles.Update)
+	admin.DELETE("/articles/:id", adminArticles.Delete)
+	admin.POST("/uploads", uploads.Create)
 
 	return router, nil
 }
