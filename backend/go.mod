@@ -3,6 +3,7 @@ module anxin-hitsz.com/backend
 go 1.27.1
 
 require (
+	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.6.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-sql-driver/mysql v1.8.1
@@ -42,5 +43,6 @@ require (
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )

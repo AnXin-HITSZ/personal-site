@@ -14,6 +14,7 @@ import (
 
 	"anxin-hitsz.com/backend/internal/auth"
 	"anxin-hitsz.com/backend/internal/mail"
+	"anxin-hitsz.com/backend/internal/storage"
 )
 
 type Config struct {
@@ -25,6 +26,8 @@ type Config struct {
 	SiteBaseURL string
 	// 邮件通道。nil 表示这台机器不发信，由 main.go 按环境挑一个占位实现顶上。
 	Mail *mail.SMTPConfig
+	// 图片存储。nil 表示这台机器不存图片，同样由 main.go 挑占位实现。
+	OSS *storage.OSSConfig
 }
 
 type SessionConfig struct {
@@ -63,6 +66,11 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	ossConfig, err := loadOSSConfig()
+	if err != nil {
+		return Config{}, err
+	}
+
 	appEnv := optionalString("APP_ENV", "development")
 
 	return Config{
@@ -78,6 +86,44 @@ func Load() (Config, error) {
 		// 去掉末尾斜杠，拼链接时才不用到处判断中间该有几个斜杠。
 		SiteBaseURL: strings.TrimRight(optionalString("SITE_BASE_URL", ""), "/"),
 		Mail:        mailConfig,
+		OSS:         ossConfig,
+	}, nil
+}
+
+// 「一个都没填」是合法的——那表示这台机器不存图片，由调用方挑占位实现顶上。
+// 但只要填了 bucket，其余四项就都是必填：半套配置不能拖到作者传第一张图时
+// 才暴露，那时他看到的会是一句和配置无关的 500。
+func loadOSSConfig() (*storage.OSSConfig, error) {
+	bucket := optionalString("OSS_BUCKET", "")
+	if bucket == "" {
+		return nil, nil
+	}
+
+	region, err := requiredString("OSS_REGION")
+	if err != nil {
+		return nil, err
+	}
+	accessKeyID, err := requiredString("OSS_ACCESS_KEY_ID")
+	if err != nil {
+		return nil, err
+	}
+	accessKeySecret, err := requiredString("OSS_ACCESS_KEY_SECRET")
+	if err != nil {
+		return nil, err
+	}
+	publicBaseURL, err := requiredString("OSS_PUBLIC_BASE_URL")
+	if err != nil {
+		return nil, err
+	}
+
+	return &storage.OSSConfig{
+		Region:          region,
+		Bucket:          bucket,
+		Endpoint:        optionalString("OSS_ENDPOINT", ""),
+		AccessKeyID:     accessKeyID,
+		AccessKeySecret: accessKeySecret,
+		// 去掉末尾斜杠，拼 URL 时才不用到处判断中间该有几个斜杠。
+		PublicBaseURL: strings.TrimRight(publicBaseURL, "/"),
 	}, nil
 }
 
