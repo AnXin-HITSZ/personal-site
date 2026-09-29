@@ -39,3 +39,20 @@ export function throttleText(failure, fallback) {
 export function commonText(failure) {
   return failure.offline ? OFFLINE : GENERIC;
 }
+
+/* 插图那四种结果各自说下一步做什么，位置一样，只有话不一样——这样眼睛不用去找。
+   「存储没配」说的是下一步，不是「请联系站长」：这一页只有作者进得来，他当然知道
+   是说给谁听的。 */
+export function uploadText(failure) {
+  if (failure.offline) return OFFLINE;
+  switch (failure.code) {
+    case codes.payloadTooLarge:
+      return '图片不能超过 4 MB。先压一下再传，截图存成 PNG 通常最大。';
+    case codes.invalidArgument:
+      return '这个文件不是图片。只收 JPEG、PNG、GIF 和 WebP——SVG 里面能藏脚本，而图是公开放的，不能收。';
+    case codes.serviceUnavailable:
+      return '图片存储未配置，无法上传。服务器的 backend/.env 里补上 OSS_ 那六个键，重启后端再来。';
+    default:
+      return GENERIC;
+  }
+}

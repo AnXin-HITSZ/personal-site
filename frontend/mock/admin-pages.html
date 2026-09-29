@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写作页面稿样 · Anxin</title>
+<style>
+/* 稿本：正文一栏，事实一律挂在左边注文栏里。 */
+:root {
+  --paper: #f5f5f4;
+  --ink: #14161a;
+  --muted: #5c5f65;
+  --rule: #d9d9d5;
+  --control: #8a8d90;
+  --seal: #a52a1e;
+  --fill: #e4e4e1;
+
+  --stack-body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --stack-display: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, "PingFang SC", "Microsoft YaHei", serif;
+  --stack-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shell: 67rem;
+  --pad: 3rem;
+  --margin: 13rem;
+  --gutter: 3rem;
+  --measure: 45rem;
+  --text-start: calc(var(--margin) + var(--gutter));
+
+  /* 报头自己那一档宽度，全站一个数：105rem／1680px。它比任何一页的正文框都宽 ——
+     报头不是这一页的正文，是站的门面；门面不跟里面放什么变，翻页时一个字都不挪。 */
+  --site-shell: 105rem;
+
+  --body-size: 1.0625rem;
+  --facts-size: .875rem;
+  --leading: 1.85;
+
+  /* 报头粘在顶上，淡出区从它底边往下铺这么高。 */
+  --masthead-fade: 3.25rem;
+  /* 报头实际高度加上一点余量，供锚点跳转让位。 */
+  --masthead-h: 5.6rem;
+
+  /* 稿样控制条的高度。它不属于设计，实现时这条连同用到它的两处一起删掉。 */
+  --mockbar-h: 3.5rem;
+
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+/* 滚动条要占掉十几像素的布局宽度，于是「内容比视口高」的页面比「不高」的页面窄这么多；
+   .shell 是居中的，这点宽度差就变成整块框架左右移半格，翻页时看得见。高度不该决定位置，
+   所以把这条槽位一直留着，不管当前有没有滚动条。 */
+html { scrollbar-gutter: stable; }
+/* 报头粘住之后锚点会落在它背后——「跳到主要内容」就是一个。留出报头的高度才看得见。 */
+html { scroll-padding-top: var(--masthead-h); }
+/* 底下那条稿样控制条是固定的，正文留出它的高度。 */
+body { margin: 0; padding-bottom: var(--mockbar-h); font: 400 var(--body-size)/var(--leading) var(--stack-body); }
+h1, h2, h3, p { margin: 0; }
+dl, dd { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+::selection { background: var(--seal); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+
+.shell { width: 100%; max-width: var(--shell); margin-inline: auto; padding-inline: var(--pad); }
+/* 报头挂在全站最宽的那一档上，各页的正文挂各自的框 —— 报头从此比它下面那段字宽。
+   这条的全部代价：报头不再和正文左沿对齐。 */
+.masthead.shell { max-width: var(--site-shell); }
+.row { display: grid; grid-template-columns: var(--margin) minmax(0, var(--measure)); column-gap: var(--gutter); align-items: start; }
+.ruled { position: relative; padding-top: 1.5rem; }
+.ruled::before { content: ""; position: absolute; top: 0; left: var(--text-start); right: 0; height: 1px; background: var(--rule); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 10; background: var(--paper); border: 1px solid var(--control); padding: .75rem 1rem; }
+.skip-link:focus { top: 1rem; }
+
+/* 注文栏与正文栏。.facts / .main 是从 .entry-facts / .entry-main 提出来的通用名字，
+   实现时这两组应当合并成一处，不要再写第二遍相同的值。 */
+.facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.main, .piece-main, .device-main, .archive-tools-main, .composer-form, .pager-nav { grid-column: 2; }
+.mark { color: var(--seal); margin-bottom: .35rem; }
+.key { color: var(--seal); }
+.date { font-variant-numeric: tabular-nums; }
+.facts > p + p { margin-top: .85rem; }
+
+/* ---------- 报头 ---------- */
+
+/* 报头粘在顶上，内容滑到它底下时先淡掉、再被盖住。底色取的正是纸色，所以它看上去
+   不像一个「条」，只是让内容到此为止。
+
+   淡出只能靠盖在内容上方的渐变。给主内容挂 mask 不行：mask 画在元素自己的坐标里，
+   会跟着内容一起滚，结果是一块固定的模糊区在页面上滑。渐变也不能加在报头自己身上：
+   淡的会是报头那一段高度，导航文字跟着一起变透明。所以挂在 ::after 上，由它伸到
+   报头盒子外面去。 */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 2.25rem;
+  background: var(--paper);
+}
+.masthead::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--masthead-fade);
+  /* 前 22% 保持不透明：留一点纯纸的空当，内容不会刚滑出报头就露头。收尾用 transparent
+     是安全的——渐变按预乘 alpha 插值，不会像老浏览器那样在中段泛出一层灰。 */
+  background: linear-gradient(to bottom, var(--paper) 0, var(--paper) 22%, transparent 100%);
+  /* 淡出区盖在内容上方，但它不该吃掉内容的点击。 */
+  pointer-events: none;
+}
+.brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
+.nav { display: flex; gap: 1.75rem; font-size: .875rem; }
+.nav a { position: relative; padding: .5rem 0; color: var(--muted); }
+.nav a:hover { color: var(--ink); }
+.nav a.nav-here { color: var(--ink); }
+.nav a.nav-here::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--seal); }
+/* 登录态只换报头最后一项，其余不动。「写作」是第三种情况：登录还不够，得是作者。 */
+body[data-auth="out"] .nav-signed-in, body[data-auth="in"] .nav-signed-out { display: none; }
+body[data-role="member"] .nav-admin { display: none; }
+
+/* ---------- 页 ---------- */
+.page { display: none; }
+.page.is-active { display: block; }
+
+/* ---------- 通用件（与 styles.css 同源，只保留这一稿用到的） ---------- */
+.piece { margin-top: 5.5rem; }
+.piece-title { font-family: var(--stack-display); font-weight: 400; font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.32; letter-spacing: .01em; }
+.piece-summary { margin-top: 1.25rem; color: var(--muted); font-size: calc(var(--body-size) + 1px); line-height: 1.85; }
+.piece-tags { margin-top: .9rem; color: var(--muted); font-size: var(--facts-size); }
+.prose { font-size: calc(var(--body-size) + 1px); }
+.prose > * + * { margin-top: 1.5rem; }
+.prose > :first-child { margin-top: 0; }
+.prose h1, .prose h2 { font-family: var(--stack-display); font-weight: 400; font-size: 1.5rem; line-height: 1.4; letter-spacing: .01em; margin-top: 3rem; }
+.prose h1 { font-size: 1.65rem; }
+.prose h3 { font-size: 1.0625rem; font-weight: 600; line-height: 1.6; margin-top: 2.25rem; }
+.prose strong { font-weight: 600; }
+.prose ul, .prose ol { padding-left: 1.5rem; }
+.prose li + li { margin-top: .4rem; }
+.prose blockquote { border-left: 2px solid var(--seal); padding-left: 1.25rem; color: var(--muted); }
+.prose a { color: var(--seal); border-bottom: 1px solid currentColor; }
+.prose hr { border: 0; height: 1px; background: var(--rule); margin-top: 3rem; }
+code { font-family: var(--stack-mono); font-size: .875em; background: var(--fill); border-radius: 2px; padding: .15em .35em; }
+.prose code { font-family: var(--stack-mono); font-size: .875em; background: var(--fill); border-radius: 2px; padding: .15em .35em; }
+.prose pre { background: var(--fill); border-radius: 2px; padding: 1rem 1.25rem; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; font-size: .875rem; line-height: 1.7; }
+
+.section { margin-top: 4rem; }
+
+.notice h1, .notice h3 { font-size: 1.1875rem; font-weight: 600; }
+.notice p { margin-top: .6rem; color: var(--muted); font-size: .9375rem; }
+.notice button, .notice .pager-btn, .notice .primary { margin-top: 1.4rem; }
+
+.entries { margin-top: 2.75rem; }
+.entry { padding-top: 2.25rem; }
+.entry + .entry { margin-top: 1.75rem; padding-top: 1.5rem; }
+.entry-title { font-size: 1.0625rem; font-weight: 600; line-height: 1.55; }
+.entry-summary { margin-top: .35rem; color: var(--muted); font-size: .9375rem; line-height: 1.75; }
+.entry-tags { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+.entry-title a:hover { color: var(--seal); }
+
+.filters { display: flex; flex-wrap: wrap; gap: .25rem; }
+.filter { border: 0; background: none; color: var(--muted); font-size: .875rem; min-height: 2.5rem; padding: 0 .7rem; border-bottom: 2px solid transparent; }
+.filter:first-child { padding-left: 0; }
+.filter:hover:not([aria-pressed="true"]) { color: var(--ink); }
+.filter[aria-pressed="true"] { color: var(--seal); border-bottom-color: var(--seal); }
+.search { display: flex; align-items: center; width: 100%; max-width: 22rem; margin-top: 1.25rem; background: #fff; border: 1px solid var(--control); border-radius: 2px; }
+.search:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: .7rem .85rem; font-size: .9375rem; }
+.search input::placeholder { color: var(--muted); }
+.search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); }
+.search button:hover { color: var(--ink); }
+
+.pager-btn { display: inline-flex; align-items: center; background: none; border: 1px solid var(--control); border-radius: 2px; padding: 0 1rem; min-height: 2.5rem; font-size: .875rem; }
+.pager-btn:hover:enabled { border-color: var(--seal); color: var(--seal); }
+.pager-count { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+
+/* 翻页这一行开头的那条细线要离最后一篇足够远，否则它读起来像最后一篇的下划线，
+   而不像这一行的开头。取的是条目彼此之间同一个数。 */
+.pager { margin-top: 1.75rem; }
+/* 页码居中排在版心底下，像印在书页下沿的那一行；两侧各一只手，左退右进。
+   1fr auto 1fr 保证中间那一格是真正居中，不随两侧按钮的宽窄漂。 */
+.pager-nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1.5rem; }
+.pager-prev { justify-self: start; }
+.pager-next { justify-self: end; }
+/* 「上一页」往左让一点，「下一页」往右让一点，指的就是它们各自要去的方向。 */
+.pager-prev, .pager-next { transition: transform .18s ease, border-color .18s, color .18s; }
+.pager-prev:hover:enabled { transform: translateX(-.2rem); }
+.pager-next:hover:enabled { transform: translateX(.2rem); }
+
+.primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
+.primary:hover { background: var(--ink); border-color: var(--ink); }
+
+.banner { border-left: 2px solid var(--seal); padding: .85rem 0 .85rem 1.1rem; max-width: 34rem; }
+.banner-done { border-left-color: var(--rule); }
+.banner h3 { font-size: 1.0625rem; font-weight: 600; }
+.banner p { margin-top: .4rem; color: var(--muted); font-size: .9375rem; }
+.banner-actions { margin-top: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.btn-danger { display: inline-flex; align-items: center; background: none; color: var(--seal); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
+.btn-danger:hover { background: var(--seal); color: var(--paper); }
+.form-actions { margin-top: 1.75rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; }
+.link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; font-size: var(--facts-size); }
+.link-quiet:hover { color: var(--ink); }
+/* 「放弃改动」是个 button（它不跳转，只丢改动），而 button 自带的边框和底色得先清掉，
+   不然它跟旁边那两条 a 长得不一样。 */
+button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background: none; padding: 0 0 .1rem; }
+
+.field + .field,
+.field + .field-pair { margin-top: 1.25rem; }
+/* 带提示的字段比不带的多占一行，后面得多留一点空气，否则那行提示会贴到下一个标签上，
+   读起来像是下一个字段的说明。 */
+.field:has(.field-hint, .field-error) + .field,
+.field:has(.field-hint, .field-error) + .field-pair,
+.field-pair + .field { margin-top: 2rem; }
+.field-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* select 的行高由系统画，和 input 天然差几像素。两边给同一个下限，并排时才齐平。 */
+.field-input, .select select { min-height: 2.9rem; }
+.field-input { display: block; width: 100%; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .7rem .85rem; font-size: .9375rem; }
+.field-input:focus { border-color: var(--seal); }
+.field-input[aria-invalid="true"] { border-color: var(--seal); }
+.field-hint { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
+.field-error { margin-top: .4rem; color: var(--seal); font-size: var(--facts-size); }
+/* 上传成功也用同一行位置，但说成「做完了」而不是「出错了」。 */
+.field-done { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); word-break: break-all; }
+
+/* ---------- 写作：列表 ---------- */
+
+/* 列表是索引，不是读物：首条不放大。选择器要压过 .entry:first-child 那一组，
+   所以写足 .entry 这一层，不靠源码顺序取胜。 */
+.entries-ledger > .entry:first-child .entry-title { font-family: inherit; font-size: 1.0625rem; font-weight: 600; line-height: 1.55; letter-spacing: 0; }
+.entries-ledger > .entry:first-child .entry-summary { margin-top: .35rem; font-size: .9375rem; line-height: 1.75; }
+.entries-ledger > .entry:first-child .entry-tags { margin-top: .4rem; }
+
+/* 条目上的动作写成安静的文字，不排成一列按钮——这一页要读的是文章，不是控件。
+   草稿给「继续写」，已发布给「编辑 / 查看公开页」：草稿没有公开地址可看。 */
+.entry-acts { margin-top: .9rem; display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; }
+.act, .act-danger { font-size: .8125rem; background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 0 0 .1rem; color: var(--muted); }
+.act:hover { color: var(--ink); border-bottom-color: currentColor; }
+.act-danger:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+.tools { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.25rem 2rem; flex-wrap: wrap; }
+.tools-find { flex: 1 1 18rem; min-width: 0; }
+
+/* 就地展开的删除确认，替掉那一行的动作，不弹窗——全站没有弹窗。 */
+.confirm { margin-top: 1rem; border-left: 2px solid var(--seal); padding: .2rem 0 .2rem 1.1rem; }
+.confirm p { color: var(--muted); font-size: .9375rem; margin-top: .35rem; }
+.confirm-actions { margin-top: .85rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+/* ---------- 写作：编辑台 ---------- */
+
+/* 左栏是这篇的事实（id、时间、字数），右栏是能改的字段。事实栏里没有一个输入框
+   ——能改的东西全在右边，「哪些不该动」因此不用解释。 */
+.composer { margin-top: 2.25rem; }
+
+/* 标题输入框按它在详情页上的体量给字号：填的时候就是印出来的样子。 */
+.input-title { font-family: var(--stack-display); font-size: clamp(1.375rem, 2.6vw, 1.75rem); line-height: 1.35; }
+
+/* 全站还没有 textarea、select 和标签输入，这里补上，描边与圆角和 .field-input 一套。
+
+   右下角那两个斜杠是浏览器自己画上去的，压在细边框和两像素圆角上，笔画对不齐，也和
+   这一站任何一支笔都不一样。而全站的东西都是量出来的，没有一处要人自己去拖版面 ——
+   这一格是唯一的例外，也正是系统那支笔唯一露出来的地方。所以不要了。 */
+.field-area { display: block; width: 100%; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .7rem .85rem; font-size: .9375rem; line-height: 1.75; resize: none; }
+.field-area:focus { border-color: var(--seal); }
+/* 撤掉拖拽就得替它把事办了：摘要写满了自己往下长，长到七行左右封顶再自己滚。
+   认这条的浏览器里没有损失；不认的退回固定三行、框内滚动，和撤掉拖拽之前一样。 */
+@supports (field-sizing: content) {
+  .field-area { field-sizing: content; min-height: 6.5rem; max-height: 14rem; }
+}
+
+/* 下拉框。系统那一套（灰底、立体边框、粗箭头、选中那条蓝色的横杠）在纸面上太吵，
+   所以整个拿掉重画：面和描边照抄 .field-input，角标是自己画的一条一像素折线，
+   和全站的横线同一种笔。
+
+   合上的那一面哪儿都能画。展开的那一层分两条路：认 appearance: base-select 的浏览器
+   里它是页面自己画的元素，一并画成稿本的样子；不认的浏览器退回系统那层——那一层
+   真的改不动，只能把 option 的底色字色给成纸面这一套，尽量不跳。 */
+.select { position: relative; display: block; }
+.select select {
+  display: block;
+  width: 100%;
+  appearance: none;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .7rem 2.6rem .7rem .85rem;
+  font-size: .9375rem;
+}
+.select::after {
+  content: "";
+  position: absolute;
+  right: 1.05rem;
+  top: 50%;
+  width: .42rem;
+  height: .42rem;
+  margin-top: -.34rem;
+  border-right: 1px solid var(--muted);
+  border-bottom: 1px solid var(--muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.select:focus-within select { border-color: var(--seal); }
+.select:focus-within::after { border-color: var(--seal); }
+/* 系统那层能塞进去的只有这两条。 */
+.select option { background: #fff; color: var(--ink); }
+
+@supports (appearance: base-select) {
+  .select select { appearance: base-select; }
+  /* 角标仍旧用外壳那一条，所以系统那颗自带的收掉——不收会并排出现两个箭头。 */
+  .select select::picker-icon { display: none; }
+
+  /* 弹层：全站零阴影，所以不靠投影分层，靠一条满墨的细线——灰线是页面内的分隔，
+     墨线是浮在上面的一层。 */
+  .select select::picker(select) {
+    appearance: base-select;
+    /* 默认是「围着选中那条摆」的，同一个下拉会随选中值上下跳，所以钉成一律从按钮
+       下沿展开、左沿对齐、宽度随按钮。隐式锚点就是它自己那个 select，不用取名，
+       一页上有几个下拉也不会撞。 */
+    position: fixed;
+    top: calc(anchor(bottom) + .35rem);
+    left: anchor(left);
+    bottom: auto;
+    right: auto;
+    margin: 0;
+    min-width: 10rem;
+    min-width: anchor-size(width);
+    background: #fff;
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    padding: .25rem;
+    font-size: .9375rem;
+    /* 按钮贴着视口底下时翻到上面去，否则最后几条会被切掉。 */
+    position-try-fallbacks: --select-above;
+  }
+  @position-try --select-above {
+    top: auto;
+    bottom: calc(anchor(top) + .35rem);
+  }
+  .select option { padding: .55rem .7rem; border-radius: 2px; }
+  .select option:hover { background: var(--fill); }
+  /* 选中的那个用印色，和列表页筛选器同一套记号；系统那个对勾收掉，免得两个记号打架。 */
+  .select option:checked { color: var(--seal); }
+  .select option::checkmark { display: none; }
+}
+
+/* 状态只有两个值，摊成两段并排，不用下拉。下拉要两下才改得动，而且把没选中的那个
+   藏起来 —— 可「草稿」在这一站是个正经名字，别处都在拿它说事（列表左栏、「其中 3 篇
+   还是草稿」），藏起来等于给它换个叫法。两段并排，两个名字都在，改一下只要一下。
+
+   滑块不带 JS：它跟着选中的那个走，全是 CSS。落到 Vue 里也就是两个 radio。 */
+.segmented {
+  position: relative;
+  display: inline-grid;
+  /* 两条等宽，所以滑块挪一格正好是它自己那么宽，不必去量第二段在哪儿。
+     下限给 0 是为了让 fr 说了算 —— 两条各自的字差一个字，不能让字多的那条更宽。 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 11rem;
+  min-height: 2.9rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: 2px;
+}
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  background: var(--fill);
+  border-radius: 2px;
+  transition: transform .18s cubic-bezier(.4, 0, .2, 1);
+}
+.segmented:has(input[value="published"]:checked)::before { transform: translateX(100%); }
+.segmented label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 .9rem;
+  font-size: .9375rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.segmented label:hover { color: var(--ink); }
+/* 选中那条用印色，和列表页筛选器、下拉弹层同一套记号。印色在这儿始终是墨、不是面
+   —— 全站唯一一块满印色的面留给「保存」，多一块就开始抢。 */
+.segmented input:checked + label { color: var(--seal); }
+/* 焦点交给外框整圈交代，和 .search、标签框同一套。 */
+.segmented:has(input:focus-visible) { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+/* 少动的人拿到的是同一次位置变化，只是不过渡。 */
+@media (prefers-reduced-motion: reduce) { .segmented::before { transition: none; } }
+
+/* 状态是发布开关，单独一行，后面跟一句它管什么。 */
+.status-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.status-row .field-hint { margin-top: 0; }
+/* 右边那句跟着选中的那个走：它说的是「按下保存会发生什么」，所以换的是它本身，
+   不是再加一句。两个值各一句，同一时刻只有一句在。 */
+.status-hint { display: none; }
+.segmented:has(input[value="draft"]:checked) ~ .status-hint-draft,
+.segmented:has(input[value="published"]:checked) ~ .status-hint-published { display: block; }
+
+/* 标签输入。框子长得和 .field-input 一样，只是会随着标签长高；键入后按 Enter 成签，
+   空框按退格去掉最后一个。里面那个 input 是一条没有边框的行，接在标签后面。 */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.9rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .5rem .6rem;
+}
+/* 和 .search 同一套：输入框自己不画焦点，改由外框整圈交代。 */
+.tags:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: .12rem .3rem .12rem .45rem;
+  font-size: .8125rem;
+  line-height: 1.5;
+}
+.tag button { background: none; border: 0; padding: 0 .1rem; color: var(--muted); font-size: .875rem; line-height: 1; }
+.tag button:hover { color: var(--seal); }
+.tags input { flex: 1 1 9rem; min-width: 9rem; border: 0; background: none; outline: none; padding: .3rem .2rem; font-size: .9375rem; }
+.tags input::placeholder { color: var(--muted); }
+/* 到上限后输入行整个收掉，不留一条灰着的空行把框撑成两行。已加的标签留着
+   ——人还得能删掉一个再换，删掉一个输入行自己回来。 */
+.tags-full input { display: none; }
+
+.field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; }
+.field-pair .field + .field { margin-top: 0; }
+
+/* 正文这一段自己占满整幅：原文要看得见行，校样要看得见版，两边都要宽度，
+   注文栏在这一段让位。 */
+.md { margin-top: 3rem; }
+.md-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+.md-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 正文框不给拖。原来那 34rem 是「再拖也只会更高」的下限，撤掉拖拽之后它就是这一格的
+   高度：一屏装满还有余，往下写靠页面滚，不再有内外两层滚动条打架。 */
+.md-source { display: block; width: 100%; min-height: 40rem; resize: none; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .85rem 1rem; font-family: var(--stack-mono); font-size: .875rem; line-height: 1.8; }
+.md-source:focus { border-color: var(--seal); }
+/* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。 */
+.md-tools { margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.md-tools .upload-btn { cursor: pointer; }
+.md-tools .field-hint { margin-top: 0; }
+
+/* 保存那一行粘在底下，和报头配成一对。做法故意不一样：报头底下铺的是淡出，这里铺的
+   还是那条 .ruled 的细线。淡出只能是常驻的，而报头上面永远没有东西；这一行上面永远
+   有东西 —— 连滚到底时正文最后几行也正贴在它上面，常驻的淡出会把那几行一直压暗。
+   细线没有这个代价，而且它本来就是这一页分段的记号，只是现在不跟着滚了。
+
+   用 sticky 不用 fixed：它在文档里照样占着那一行的位置，所以滚到底时不会盖住任何
+   东西，也不用给页面补垫。 */
+.save {
+  margin-top: 3rem;
+  position: sticky;
+  bottom: var(--mockbar-h); /* 稿样控制条占着底边，实现时改成 0。 */
+  z-index: 4;               /* 压不过报头（5）：同一屏里先让报头。 */
+  background: var(--paper);
+}
+/* 左栏两行，说的是「现在存没存」和「切走会怎样」。话比别处紧一点：这一条是钉住的，
+   每一行都是常驻的高度。 */
+.save .facts > p + p { margin-top: .35rem; }
+.save-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+/* 第二行有三个说法，同一时刻只出一个。 */
+.save-state-clean, .save-state-dirty, .save-note-clean, .save-note-dirty, .save-note-leaving { display: none; }
+.save[data-dirty="false"] .save-state-clean { display: block; }
+.save[data-dirty="true"] .save-state-dirty { display: block; }
+.save[data-dirty="false"] .save-note-clean { display: block; }
+.save[data-dirty="true"] .save-note-dirty { display: block; }
+/* 拦下时第二行指名道姓：点了「文章」什么都没发生，得有个交代，否则像是点漏了。 */
+.save[data-dirty="true"][data-leaving="true"] .save-note-dirty { display: none; }
+.save[data-dirty="true"][data-leaving="true"] .save-note-leaving { display: block; }
+/* 人在往外走，「放弃改动」和「查看公开页」「删除这一篇」换班 —— 后两个不是他此刻要的。 */
+.act-abandon { display: none; }
+.save[data-leaving="true"] .act-away { display: none; }
+.save[data-dirty="true"][data-leaving="true"] .act-abandon { display: inline-flex; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 56rem) {
+  :root { --margin: 7.5rem; --gutter: 1.75rem; }
+  .md-split { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+}
+@media (max-width: 44rem) {
+  :root { --pad: 1.25rem; --margin: 0rem; --gutter: 0rem; --measure: 100%; --text-start: 0rem; --body-size: 1rem; --facts-size: .8125rem; --leading: 1.75; --masthead-fade: 2.5rem; --masthead-h: 4.6rem; }
+  .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .main, .piece-main, .device-main, .archive-tools-main, .composer-form, .pager-nav { grid-column: 1; }
+  .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  .facts > p + p { margin-top: 0; }
+  .mark { margin-bottom: 0; }
+  .masthead { padding-top: 1.5rem; }
+  .piece { margin-top: 2.75rem; }
+  .piece-title { font-size: 1.75rem; }
+  .field-pair { grid-template-columns: minmax(0, 1fr); }
+  .field-pair .field + .field { margin-top: 1.25rem; }
+  .md-source { min-height: 22rem; }
+  .filters { gap: .35rem; }
+  .filter { padding: 0 .5rem; }
+  /* 窄屏上三个格子并排挤不下：页码单独占一行居中，两只手在它下面各守一边。 */
+  .pager-nav { grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
+  .pager-count { grid-column: 1 / -1; grid-row: 1; text-align: center; }
+  .pager-prev, .pager-next { grid-row: 2; }
+}
+
+/* ---------- 稿样控制条：不属于设计，实现时整个删掉 ---------- */
+.mockbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: .35rem; overflow-x: auto; padding: .5rem .75rem; background: var(--ink); color: var(--paper); }
+.mockbar-label { flex: none; font-family: var(--stack-mono); font-size: .6875rem; letter-spacing: .08em; color: var(--control); padding-right: .5rem; }
+.mockbar button { flex: none; background: none; border: 1px solid #3a3d42; border-radius: 2px; color: var(--paper); padding: .35rem .6rem; font-size: .75rem; white-space: nowrap; }
+.mockbar button:hover { border-color: var(--paper); }
+.mockbar button[aria-pressed="true"] { background: var(--seal); border-color: var(--seal); }
+.mockbar-sep { flex: none; width: 1px; align-self: stretch; margin-inline: .4rem; background: #3a3d42; }
+
+/* 读者视角的那句说明，只在这个视角下出现。 */
+.role-note { display: none; margin-top: 2rem; border-left: 2px solid var(--control); padding: .2rem 0 .2rem 1.1rem; max-width: 34rem; }
+.role-note p { color: var(--muted); font-size: .9375rem; }
+body[data-role="member"] .role-note { display: block; }
+
+/* 从页面上删掉、留给你复核的备注。默认不显示，也不属于设计。 */
+.draft-note { display: none; margin-top: 3.5rem; border: 1px dashed var(--control); border-radius: 2px; padding: 1rem 1.25rem; font-family: var(--stack-mono); font-size: .8125rem; line-height: 1.8; color: var(--muted); }
+body.show-notes .draft-note { display: block; }
+.draft-note b { display: block; margin-bottom: .6rem; font-family: var(--stack-body); font-size: .875rem; font-weight: 600; color: var(--seal); }
+.draft-note p + p { margin-top: .6rem; }
+</style>
+</head>
+<body data-auth="in" data-role="admin">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-admin nav-here" href="#">写作</a>
+    <a class="nav-signed-in" href="#">账号</a>
+    <a class="nav-signed-out" href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<aside class="role-note">
+  <p>现在是读者视角：报头上没有「写作」这一项。直接敲 /admin/articles 会被路由守卫送回首页——不解释，也不给一页「无权限」，因为这一页存不存在本来就不该让人知道。</p>
+</aside>
+
+
+<!-- ═══════════ 列表 ═══════════ -->
+<div class="page" data-screen="list" data-label="列表">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">9 篇</span><br>其中 3 篇还是草稿</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">写作</h1>
+      <p class="piece-summary">草稿只有你看得到。改成「已发布」并保存，那一篇才会出现在文章列表里。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">按最近改动排</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <div class="tools-find">
+          <div class="filters" role="group" aria-label="按状态筛选">
+            <button class="filter" type="button" aria-pressed="true">全部</button>
+            <button class="filter" type="button" aria-pressed="false">草稿</button>
+            <button class="filter" type="button" aria-pressed="false">已发布</button>
+          </div>
+          <div class="search">
+            <input type="search" aria-label="搜索标题和摘要" placeholder="搜标题和摘要">
+            <button type="button">搜索</button>
+          </div>
+        </div>
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p class="mark">草稿</p>
+        <p>改于 <time class="date" datetime="2026-09-28">9 月 28 日</time></p>
+        <p>约 7 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">从一次分页说起</a></h3>
+        <p class="entry-summary">列表页翻到第二页时数据会跳，原因不在前端。这篇把 offset 分页在写入频繁的表上为什么会漏行、错行说清楚，并给出一个不用改结构的缓解办法。</p>
+        <p class="entry-tags">backend / 分页</p>
+        <p class="entry-acts">
+          <a class="act" href="#">继续写</a>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>已发布</p>
+        <p>改于 <time class="date" datetime="2026-09-27">9 月 27 日</time></p>
+        <p>约 7 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">用 Go 写第一个接口</a></h3>
+        <p class="entry-summary">从路由到响应，把一次请求要经过的每一层都摆出来，看看哪些是自己写的、哪些是框架替我们做的。</p>
+        <p class="entry-tags">backend / Go</p>
+        <p class="entry-acts">
+          <a class="act" href="#">编辑</a>
+          <a class="act" href="#">查看公开页</a>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>已发布</p>
+        <p>改于 <time class="date" datetime="2026-09-24">9 月 24 日</time></p>
+        <p>约 9 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">前端的数据边界</a></h3>
+        <p class="entry-summary">接口回来的东西不能直接信。哪里做校验、哪里做兜底、校验失败之后页面该说什么，是三个不同的问题。</p>
+        <p class="entry-tags">frontend / 契约</p>
+        <p class="entry-acts">
+          <a class="act" href="#">编辑</a>
+          <a class="act" href="#">查看公开页</a>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p class="mark">草稿</p>
+        <p>改于 <time class="date" datetime="2026-09-21">9 月 21 日</time></p>
+        <p>约 3 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">检索笔记</a></h3>
+        <p class="entry-summary">还没写完。</p>
+        <p class="entry-acts">
+          <a class="act" href="#">继续写</a>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+  </div>
+
+  <nav class="pager row ruled" aria-label="翻页">
+    <div class="pager-nav" data-pages="2" data-articles="9">
+      <button class="pager-btn pager-prev" type="button" disabled>上一页</button>
+      <span class="pager-count">第 1 / 2 页 · 共 9 篇</span>
+      <button class="pager-btn pager-next" type="button">下一页</button>
+    </div>
+  </nav>
+
+  <aside class="draft-note">
+    <b>这一页想让你先看的几件事</b>
+    <p>报头粘在顶上并向下淡出 ─ 和首页、详情页同一套：内容滑到报头底下先淡掉、再被盖住，而不是被一条硬边切断。往下滚这一页就能看出来。</p>
+    <p>标题不再放大 ─ 公开列表的首条是头条体量，那是给读者看的。这一页是索引，四条一样大，扫起来才快。</p>
+    <p>状态写在注文栏第一行 ─ 草稿借用公开列表「最新」那个印色标记，已发布是灰的。一眼扫左栏，印色的就是还没发出去的。</p>
+    <p>草稿没有「查看公开页」─ 未发布的地址服务端回 404，所以那个动作对草稿不成立。给的是「继续写」。</p>
+    <p>翻页排在版心底下：页码居中，像印在书页下沿的那一行；两侧各一只手，左退右进。按钮悬停时往各自要去的方向让两像素 ─ 往哪边走就往哪边让，是这一行唯一的动作。</p>
+    <p>页码底下本来还有一条细线，印章色的那一段跟着页码滑。去掉了：它和页码说的是同一件事，重复得没有道理。稿样里点按钮仍然能翻，只为看两头到头的禁用态；实现时那段脚本删掉，页码由列表数据来。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 列表 · 空 ═══════════ -->
+<div class="page" data-screen="list-empty" data-label="列表 · 空">
+  <section class="piece row ruled">
+    <div class="facts"><p>0 篇</p></div>
+    <div class="piece-main">
+      <h1 class="piece-title">写作</h1>
+      <p class="piece-summary">还没有文章。写一篇，存成草稿也行——草稿只有你看得到。</p>
+      <div class="form-actions">
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>空态</b>
+    <p>空的时候不出筛选器和翻页 ─ 一列筛不出东西的按钮只是占位。也不出「共 0 篇」那种计数。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 列表 · 读不出来 ═══════════ -->
+<div class="page" data-screen="list-failed" data-label="列表 · 读不出来">
+  <section class="piece row ruled">
+    <div class="facts"><p>没有读到</p></div>
+    <div class="piece-main">
+      <h1 class="piece-title">写作</h1>
+      <div class="banner" style="margin-top:1.5rem">
+        <h3>文章列表没读出来</h3>
+        <p>服务端没有应答。列表没读到不代表文章没了，重试一次即可。</p>
+        <div class="banner-actions"><button class="pager-btn" type="button">重新加载</button></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>读不出来</b>
+    <p>明确说「文章还在，只是没读到」─ 这是后台，人会以为自己的东西丢了。公开页丢了最多是看不到，这里丢了是要命的。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 确认删除 ═══════════ -->
+<div class="page" data-screen="list-confirm" data-label="确认删除">
+  <section class="piece row ruled">
+    <div class="facts"><p><span class="key">9 篇</span><br>其中 3 篇还是草稿</p></div>
+    <div class="piece-main">
+      <h1 class="piece-title">写作</h1>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">按最近改动排</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <div class="tools-find">
+          <div class="filters" role="group" aria-label="按状态筛选">
+            <button class="filter" type="button" aria-pressed="true">全部</button>
+            <button class="filter" type="button" aria-pressed="false">草稿</button>
+            <button class="filter" type="button" aria-pressed="false">已发布</button>
+          </div>
+        </div>
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>已发布</p>
+        <p>改于 <time class="date" datetime="2026-09-27">9 月 27 日</time></p>
+        <p>约 7 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">用 Go 写第一个接口</a></h3>
+        <p class="entry-summary">从路由到响应，把一次请求要经过的每一层都摆出来，看看哪些是自己写的、哪些是框架替我们做的。</p>
+        <p class="entry-tags">backend / Go</p>
+        <div class="confirm">
+          <p><strong>删除《用 Go 写第一个接口》？</strong></p>
+          <p>这一篇已经发布，公开地址 <code>/articles/9k2m4p7r/go-api-first-step</code> 会立刻失效。没有回收站，删掉就找不回来了。</p>
+          <div class="confirm-actions">
+            <button class="btn-danger" type="button">删除这一篇</button>
+            <button class="pager-btn" type="button">取消</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>已发布</p>
+        <p>改于 <time class="date" datetime="2026-09-24">9 月 24 日</time></p>
+        <p>约 9 分钟</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">前端的数据边界</a></h3>
+        <p class="entry-summary">接口回来的东西不能直接信。哪里做校验、哪里做兜底、校验失败之后页面该说什么，是三个不同的问题。</p>
+        <p class="entry-tags">frontend / 契约</p>
+        <p class="entry-acts">
+          <a class="act" href="#">编辑</a>
+          <a class="act" href="#">查看公开页</a>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+  </div>
+
+  <aside class="draft-note">
+    <b>删除确认</b>
+    <p>就地展开，替掉那一行的动作，不弹窗 ─ 全站没有弹窗，也不该为一处破例。</p>
+    <p>三件事必须写在框里：文章标题、是草稿还是已发布、删了之后哪一个地址会失效。草稿的写法改成「还没发布过，对外没有链接，删掉不影响任何人」。</p>
+    <p>删除是真删（服务端硬删，没有软删），所以这句「没有回收站」不是吓唬人，是事实。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 新文章 ═══════════ -->
+<div class="page" data-screen="new" data-label="新文章">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>保存之后才有</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">写新的一篇</h1>
+    </div>
+  </section>
+
+  <form class="composer row ruled" onsubmit="return false">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+
+      <div class="field">
+        <span class="field-label" id="n-status-label">状态</span>
+        <div class="status-row">
+          <div class="segmented" role="radiogroup" aria-labelledby="n-status-label">
+            <input class="sr-only" type="radio" name="n-status" id="n-status-draft" value="draft" checked>
+            <label for="n-status-draft">草稿</label>
+            <input class="sr-only" type="radio" name="n-status" id="n-status-pub" value="published">
+            <label for="n-status-pub">已发布</label>
+          </div>
+          <p class="field-hint status-hint status-hint-draft">保存后只有你看得到。</p>
+          <p class="field-hint status-hint status-hint-published">保存后会出现在文章列表里，谁都能打开。</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="n-title">标题</label>
+        <input class="field-input input-title" id="n-title" type="text" placeholder="一句话说清这篇在讲什么">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="n-summary">摘要</label>
+        <textarea class="field-area" id="n-summary" rows="3" placeholder="列表页上跟在标题后面的那两三行"></textarea>
+        <p class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+      </div>
+
+      <div class="field-pair">
+        <div class="field">
+          <label class="field-label" for="n-slug">地址里的名字</label>
+          <input class="field-input" id="n-slug" type="text" placeholder="go-api-first-step">
+          <p class="field-hint">小写字母、数字和连字符。以后可以改，链接不会失效——地址里真正管用的是 id。</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="n-cat">分类</label>
+          <span class="select">
+            <select id="n-cat">
+              <option>后端</option>
+              <option>前端</option>
+              <option>AI</option>
+              <option>随笔</option>
+            </select>
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="n-tags">标签</label>
+        <div class="tags" data-tags>
+          <input id="n-tags" type="text" placeholder="键入后按 Enter" autocomplete="off">
+        </div>
+        <p class="field-hint" data-tags-hint></p>
+      </div>
+
+    </div>
+  </form>
+
+  <section class="md">
+    <div class="md-split">
+      <div>
+        <label class="md-label" for="n-body">Markdown 原文</label>
+        <textarea class="md-source" id="n-body" spellcheck="false">## 从哪里开始
+
+先跑起来，再谈结构。
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="n-file">插入图片</label>
+          <input class="sr-only" id="n-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div>
+        <span class="md-label">预览</span>
+        <div class="prose">
+          <h2>从哪里开始</h2>
+          <p>先跑起来，再谈结构。</p>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">还没有保存过</p>
+      <p class="save-state-dirty"><span class="mark">有改动没保存</span></p>
+      <p class="save-note-clean">关掉这一页就没了。</p>
+      <p class="save-note-dirty">离开这一页就没了。</p>
+      <p class="save-note-leaving">要去别的页，改动还没保存。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button">保存</button>
+      <button class="link-quiet act-abandon" type="button">放弃改动</button>
+      <a class="link-quiet act-away" href="#">放弃这一篇</a>
+    </div>
+  </div>
+
+  <aside class="draft-note">
+    <b>编辑台</b>
+    <p>左栏一律放改不了的事实 ─ id、时间、字数。这些是**库里那一篇**的事实，不是手上这一稿的，所以还没保存时它只有「保存之后才有」：一个字都没写下的地方写「0 字」，等于说库里存着一篇零个字的。能改的东西全在右栏，于是「哪些不该动」不用写一句解释。</p>
+    <p>字数与阅读时长由后端在保存时按正文算出来，随正文一起落库；编辑时不显示「正在敲的这一稿」是多少。这两个数是给读者的，不是给作者的 ── 作者不需要知道手上写到多少字。列表页那一行也要显示它，而列表根本不读正文，只能靠存下来的列。前端一个数都不算。</p>
+    <p>标题输入框用详情页的字号 ─ 填的时候就是印出来的样子。摘要、正文同理，右边那半幅就是真的 .prose。</p>
+    <p>正文这一段占满整幅，注文栏让位 ─ 原文要看得见行，校样要看得见版，各占一半。左边加框（它是控件），右边不加（它是印出来的那一页）。窄屏上下叠。</p>
+    <p>两个文本域都不给拖。右下角那两个斜杠是浏览器自己画的，压在细边框和两像素圆角上，笔画对不齐，也和这一站任何一支笔都不一样；而全站的东西都是量出来的，没有一处要人自己去拖版面。撤掉之后正文框按 40rem 定高往下写靠页面滚，摘要那一格改用 field-sizing: content 自己长到七行封顶。</p>
+    <p>发布不是单独的按钮，是表单里的状态开关 ─ 免得点一下发一次请求，两次请求之间还有半截状态。</p>
+    <p>「保存」是全页唯一的满印色按钮。删除、取消、放弃都退到文字级。</p>
+    <p>状态从下拉换成两段并排 ─ 两个值的东西展开成两段，比收在一个下拉里好：下拉要两下才改得动，而且把没选中的那个藏起来，可「草稿」在这一站是个正经名字，别处都在拿它说事，藏起来等于给它换个叫法。滑块跟着选中的那个走，全是 CSS，落到 Vue 里就是两个 radio。这条也顺手把下拉那套 @supports 分岔的范围缩到只剩「分类」一处。</p>
+    <p>右边那句提示跟着选中的那个走：它说的是「按下保存会发生什么」，所以换的是它本身，不是再加一句。这里有一处留给落 Vue 时做细：当选中值和存着的那个不一样、而存着的那个本来是「已发布」时，草稿那句还要带上「会从文章列表撤下来，公开地址同时失效」 ── 现在这稿里那句是常显的，比实际该出现的次数多。</p>
+    <p>下拉框整个重画 ─ 灰底、立体边框、粗箭头、选中那条蓝色的横杠，在纸面上都太吵。面和描边照抄 .field-input，角标是自己画的一条一像素折线，和全站的横线同一种笔；选中的那一条用印色，和列表页筛选器同一套记号。</p>
+    <p>展开的那一层靠 appearance: base-select 才画得动，所以走了 @supports 分岔：认的浏览器（Chrome 135 起）两层都是稿本的样子，不认的退回系统那层。弹层不加阴影 ─ 全站零阴影，分层靠一条满墨的细线，灰线是页面内的分隔，墨线才表示浮在上面。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 编辑 · 已发布 ═══════════ -->
+<div class="page" data-screen="edit" data-label="编辑 · 已发布">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>9k2m4p7r</p>
+      <p>写于 <time class="date" datetime="2026-08-30">8 月 30 日</time><br>改于 <time class="date" datetime="2026-09-27">9 月 27 日</time></p>
+      <p>2,140 字 · 约 7 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">用 Go 写第一个接口</h1>
+      <p class="piece-summary">公开地址 <code>/articles/9k2m4p7r/go-api-first-step</code></p>
+    </div>
+  </section>
+
+  <form class="composer row ruled" onsubmit="return false">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+
+      <div class="field">
+        <span class="field-label" id="e-status-label">状态</span>
+        <div class="status-row">
+          <div class="segmented" role="radiogroup" aria-labelledby="e-status-label">
+            <input class="sr-only" type="radio" name="e-status" id="e-status-draft" value="draft">
+            <label for="e-status-draft">草稿</label>
+            <input class="sr-only" type="radio" name="e-status" id="e-status-pub" value="published" checked>
+            <label for="e-status-pub">已发布</label>
+          </div>
+          <p class="field-hint status-hint status-hint-draft">保存后会从文章列表撤下来，公开地址同时失效。</p>
+          <p class="field-hint status-hint status-hint-published">保存后改动立刻在外面可见。</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="e-title">标题</label>
+        <input class="field-input input-title" id="e-title" type="text" value="用 Go 写第一个接口">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="e-summary">摘要</label>
+        <textarea class="field-area" id="e-summary" rows="3">从路由到响应，把一次请求要经过的每一层都摆出来，看看哪些是自己写的、哪些是框架替我们做的。</textarea>
+        <p class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+      </div>
+
+      <div class="field-pair">
+        <div class="field">
+          <label class="field-label" for="e-slug">地址里的名字</label>
+          <input class="field-input" id="e-slug" type="text" value="go-api-first-step">
+          <p class="field-hint">改它不会让任何既有链接失效——地址里真正管用的是 id。</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="e-cat">分类</label>
+          <span class="select">
+            <select id="e-cat">
+              <option selected>后端</option>
+              <option>前端</option>
+              <option>AI</option>
+              <option>随笔</option>
+            </select>
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="e-tags">标签</label>
+        <div class="tags" data-tags>
+          <span class="tag" data-value="Go">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+          <span class="tag" data-value="接口">接口<button type="button" aria-label="移除标签 接口">×</button></span>
+          <span class="tag" data-value="入门">入门<button type="button" aria-label="移除标签 入门">×</button></span>
+          <input id="e-tags" type="text" placeholder="键入后按 Enter" autocomplete="off">
+        </div>
+        <p class="field-hint" data-tags-hint></p>
+      </div>
+
+    </div>
+  </form>
+
+  <section class="md">
+    <div class="md-split">
+      <div>
+        <label class="md-label" for="e-body">Markdown 原文</label>
+        <textarea class="md-source" id="e-body" spellcheck="false">## 一个请求要经过几层
+
+浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。
+
+### 路由
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+
+`listArticles` 拿到的第一个东西不是参数，是上下文。
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="e-file">插入图片</label>
+          <input class="sr-only" id="e-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div>
+        <span class="md-label">预览</span>
+        <div class="prose">
+          <h2>一个请求要经过几层</h2>
+          <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
+          <h3>路由</h3>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+          <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">改动都保存了</p>
+      <p class="save-state-dirty"><span class="mark">有改动没保存</span></p>
+      <p class="save-note-clean">删掉就没有了。</p>
+      <p class="save-note-dirty">离开这一页就没了。</p>
+      <p class="save-note-leaving">要去别的页，改动还没保存。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button">保存</button>
+      <button class="link-quiet act-abandon" type="button">放弃改动</button>
+      <a class="link-quiet act-away" href="#">查看公开页</a>
+      <button class="act-danger act-away" type="button">删除这一篇</button>
+    </div>
+  </div>
+
+  <aside class="draft-note">
+    <b>保存那一行</b>
+    <p>粘在底下，和报头配成一对；做法故意不同，报头底下铺淡出，这里铺的还是那条 .ruled 的细线。淡出只能是常驻的，而报头上面永远没有东西；这一行上面永远有东西 —— 连滚到底时正文最后几行也正贴在它上面，常驻的淡出会把那几行一直压暗。细线没有这个代价。</p>
+    <p>用 sticky 不用 fixed：它在文档里照样占着那一行的位置，所以滚到底时不会盖住任何东西，也不用给页面补垫。把窗口调矮、往下滚就能看到它钉住。</p>
+    <p>左栏那两行是这一页的状态，不是标语：上面说存没存，下面说切走会怎样。第二行有三个说法，同一时刻只出一个 —— 干净时说「删掉就没有了」（那才是此刻该提醒的事），有改动时说「离开这一页就没了」，被拦下时改成指名道姓的那句。三句都短到一行放得下，因为这条是钉住的，每多一行就是常驻多占一行。</p>
+    <p>拦下时不弹窗 —— 全站零弹窗这条规矩不动。点的那一下不是没反应：这条就钉在眼前，第二行当场换成「要去别的页，改动还没保存」，同时「查看公开页」「删除这一篇」让位给「放弃改动」。人在往外走，那两个不是他此刻要的。</p>
+    <p>离开这一页有两条路，机制不一样，实现时两处都要写：站内跳转走 vue-router 的 onBeforeRouteLeave，返回 false 就地拦下，不跳；关标签页、刷新、直接改地址栏这三条路由管不着，只能挂 beforeunload 交给浏览器自己的对话框 —— 那个画不动，也只能在真的有改动时才挂上，常挂着很烦人。</p>
+    <p>「有改动」要拿现在的值和载入时那份快照比，不能敲一下就置个 true。打了字又删回去，就该回到干净。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 保存后 ═══════════ -->
+<div class="page" data-screen="saved" data-label="保存后">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>9k2m4p7r</p>
+      <p>写于 <time class="date" datetime="2026-08-30">8 月 30 日</time><br>改于 <time class="date" datetime="2026-09-28">9 月 28 日</time></p>
+      <p>2,186 字 · 约 7 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">用 Go 写第一个接口</h1>
+      <p class="piece-summary">公开地址 <code>/articles/9k2m4p7r/go-api-first-step</code></p>
+
+      <div class="banner banner-done" style="margin-top:1.75rem">
+        <h3>已保存</h3>
+        <p>这一篇仍然是已发布，改动现在外面就看得见。字数从 2,140 更新到 2,186，阅读时长还是 7 分钟。</p>
+        <div class="banner-actions"><a class="link-quiet" href="#">去公开页看一眼</a></div>
+      </div>
+    </div>
+  </section>
+
+  <form class="composer row ruled" onsubmit="return false">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+      <div class="field">
+        <span class="field-label" id="s-status-label">状态</span>
+        <div class="status-row">
+          <div class="segmented" role="radiogroup" aria-labelledby="s-status-label">
+            <input class="sr-only" type="radio" name="s-status" id="s-status-draft" value="draft">
+            <label for="s-status-draft">草稿</label>
+            <input class="sr-only" type="radio" name="s-status" id="s-status-pub" value="published" checked>
+            <label for="s-status-pub">已发布</label>
+          </div>
+          <p class="field-hint status-hint status-hint-draft">保存后会从文章列表撤下来，公开地址同时失效。</p>
+          <p class="field-hint status-hint status-hint-published">保存后改动立刻在外面可见。</p>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="s-title">标题</label>
+        <input class="field-input input-title" id="s-title" type="text" value="用 Go 写第一个接口">
+      </div>
+      <div class="field">
+        <label class="field-label" for="s-summary">摘要</label>
+        <textarea class="field-area" id="s-summary" rows="3">从路由到响应，把一次请求要经过的每一层都摆出来，看看哪些是自己写的、哪些是框架替我们做的。</textarea>
+        <p class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+      </div>
+      <div class="field-pair">
+        <div class="field">
+          <label class="field-label" for="s-slug">地址里的名字</label>
+          <input class="field-input" id="s-slug" type="text" value="go-api-first-step">
+          <p class="field-hint">改它不会让任何既有链接失效——地址里真正管用的是 id。</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="s-cat">分类</label>
+          <span class="select">
+            <select id="s-cat">
+              <option selected>后端</option>
+              <option>前端</option>
+              <option>AI</option>
+              <option>随笔</option>
+            </select>
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="s-tags">标签</label>
+        <div class="tags" data-tags>
+          <span class="tag" data-value="Go">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+          <span class="tag" data-value="接口">接口<button type="button" aria-label="移除标签 接口">×</button></span>
+          <span class="tag" data-value="入门">入门<button type="button" aria-label="移除标签 入门">×</button></span>
+          <input id="s-tags" type="text" placeholder="键入后按 Enter" autocomplete="off">
+        </div>
+        <p class="field-hint" data-tags-hint></p>
+      </div>
+
+    </div>
+  </form>
+
+  <section class="md">
+    <div class="md-split">
+      <div>
+        <label class="md-label" for="s-body">Markdown 原文</label>
+        <textarea class="md-source" id="s-body" spellcheck="false">## 一个请求要经过几层
+
+浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。
+
+### 路由
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+
+`listArticles` 拿到的第一个东西不是参数，是上下文。
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="s-file">插入图片</label>
+          <input class="sr-only" id="s-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div>
+        <span class="md-label">预览</span>
+        <div class="prose">
+          <h2>一个请求要经过几层</h2>
+          <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
+          <h3>路由</h3>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+          <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">改动都保存了</p>
+      <p class="save-state-dirty"><span class="mark">有改动没保存</span></p>
+      <p class="save-note-clean">删掉就没有了。</p>
+      <p class="save-note-dirty">离开这一页就没了。</p>
+      <p class="save-note-leaving">要去别的页，改动还没保存。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button">保存</button>
+      <button class="link-quiet act-abandon" type="button">放弃改动</button>
+      <a class="link-quiet act-away" href="#">查看公开页</a>
+      <button class="act-danger act-away" type="button">删除这一篇</button>
+    </div>
+  </div>
+
+  <aside class="draft-note">
+    <b>保存成功</b>
+    <p>成功提示里说清「这次保存让外面发生了什么」─ 已发布的改动立刻可见，草稿的仍然只有你看得到。同一句话在两处不能通用。</p>
+    <p>字数、阅读时长跟着更新，因为它们就在注文栏里，是事实的一部分。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ slug 被占用 ═══════════ -->
+<div class="page" data-screen="conflict" data-label="slug 被占用">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>9k2m4p7r</p>
+      <p>2,140 字 · 约 7 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">用 Go 写第一个接口</h1>
+    </div>
+  </section>
+
+  <form class="composer row ruled" onsubmit="return false">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+
+      <div class="banner">
+        <h3>没有保存</h3>
+        <p>地址里的名字被占用了，其余字段没有改动。</p>
+      </div>
+
+      <div class="field" style="margin-top:1.75rem">
+        <label class="field-label" for="c-slug">地址里的名字</label>
+        <input class="field-input" id="c-slug" type="text" value="go-api-first-step" aria-invalid="true">
+        <p class="field-error">这个 slug 已经被别的文章用了。</p>
+        <p class="field-hint">换个名字就行。链接不会因此失效——地址里真正管用的是 id，旧链接照样能打开。</p>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="c-title">标题</label>
+        <input class="field-input input-title" id="c-title" type="text" value="用 Go 写第一个接口">
+      </div>
+
+    </div>
+  </form>
+
+  <aside class="draft-note">
+    <b>字段级错误</b>
+    <p>冲突只报一个字段，不整页报错 ─ 服务端回的是 409 带 field，界面照着 field 定位到输入框。提示条负责说「整个保存没成功」，输入框下面那行负责说「改哪里」。</p>
+    <p>末尾那句「链接不会失效」是有用的信息，不是安慰：人第一反应是「改坏了」，而这里真的不会坏。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 标签 ═══════════ -->
+<div class="page" data-screen="tags" data-label="标签">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">标签</span><br>一个回车一个，不用打逗号</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">标签</h1>
+      <p class="piece-summary">五张框。第二张可以真的敲——键入之后按 Enter，再键入，再按 Enter。</p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">还没加</p>
+    <div class="main">
+      <div class="tags" data-tags>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+      <p class="field-hint" data-tags-hint></p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">加了三个</p>
+    <div class="main">
+      <div class="tags" data-tags>
+        <span class="tag" data-value="Go">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+        <span class="tag" data-value="接口">接口<button type="button" aria-label="移除标签 接口">×</button></span>
+        <span class="tag" data-value="入门">入门<button type="button" aria-label="移除标签 入门">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+      <p class="field-hint" data-tags-hint></p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">名字里带斜杠</p>
+    <div class="main">
+      <div class="tags" data-tags>
+        <span class="tag" data-value="CI/CD">CI/CD<button type="button" aria-label="移除标签 CI/CD">×</button></span>
+        <span class="tag" data-value="TCP/IP">TCP/IP<button type="button" aria-label="移除标签 TCP/IP">×</button></span>
+        <span class="tag" data-value="LangChain/LangGraph">LangChain/LangGraph<button type="button" aria-label="移除标签 LangChain/LangGraph">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+      <p class="field-hint" data-tags-hint></p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">撞上已有的</p>
+    <div class="main">
+      <div class="tags" data-tags data-tags-note="「Go」已经加过了。">
+        <span class="tag" data-value="Go">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+        <span class="tag" data-value="接口">接口<button type="button" aria-label="移除标签 接口">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+      <p class="field-hint" data-tags-hint></p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">到了上限</p>
+    <div class="main">
+      <div class="tags" data-tags>
+        <span class="tag" data-value="Go">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+        <span class="tag" data-value="接口">接口<button type="button" aria-label="移除标签 接口">×</button></span>
+        <span class="tag" data-value="入门">入门<button type="button" aria-label="移除标签 入门">×</button></span>
+        <span class="tag" data-value="HTTP">HTTP<button type="button" aria-label="移除标签 HTTP">×</button></span>
+        <span class="tag" data-value="调试">调试<button type="button" aria-label="移除标签 调试">×</button></span>
+        <span class="tag" data-value="中间件">中间件<button type="button" aria-label="移除标签 中间件">×</button></span>
+        <span class="tag" data-value="路由">路由<button type="button" aria-label="移除标签 路由">×</button></span>
+        <span class="tag" data-value="Gin">Gin<button type="button" aria-label="移除标签 Gin">×</button></span>
+        <span class="tag" data-value="笔记">笔记<button type="button" aria-label="移除标签 笔记">×</button></span>
+        <span class="tag" data-value="后端">后端<button type="button" aria-label="移除标签 后端">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+      <p class="field-hint" data-tags-hint></p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>标签</b>
+    <p>标签框长得就是 .field-input，只是会随着标签长高 ─ 不另起一种控件，人一眼知道那是能打字的地方。焦点和 .search 同一套：里面那条输入行自己不画框，由外框整圈交代。</p>
+    <p>每个标签右上角一个细边框的小方块，是全站唯一带框的小东西 ─ 边框和 .pager-btn 同一种笔（一像素、两像素圆角）。它必须有，否则打错一个字只能整条删掉重来。</p>
+    <p>斜杠是名字的一部分，不是分隔符 ─ CI/CD、TCP/IP、I/O、LangChain/LangGraph、客户端/服务端，这些都得能原样写进去。只按逗号、顿号拆。</p>
+    <p>另外还按「两边带空格的斜杠」拆。公开页上标签正是用「空格 斜杠 空格」连起来显示的，所以把那一行整个粘回来，正好还原成原来的几个标签，两边是一对互逆的写法。不加空格写 CI/CD 就是一条，加了空格的 CI / CD 才是两条 ─ 这也正是公开页上区分它们的方式。</p>
+    <p>撞上已有的不重复加，但在提示那行说一句「已经加过了」─ 默默吞掉会让人以为自己没按到。</p>
+    <p>空框按退格去掉最后一个 ─ 改错字时最常用的一下。到 10 个之后整条输入行收掉，不留一条灰着的空行把框撑成两行；已加的还留着，人得能删掉一个再换。</p>
+    <p>Enter 只加标签，不提交表单 ─ 实现时这一下 preventDefault 是必须的，否则敲到一半整页就保存走了。</p>
+    <p>提示那行不再写「标签不参与搜索」─ 那是这条规则的性质，不是打字时用得上的话。留在注释里就够。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 插图 ═══════════ -->
+<div class="page" data-screen="upload" data-label="插图">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>9k2m4p7r</p>
+      <p>2,140 字 · 约 7 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">用 Go 写第一个接口</h1>
+      <p class="piece-summary">四种结果，逐个看一遍。</p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">正常</p>
+    <div class="main">
+      <div class="md-tools" style="margin-top:0">
+        <label class="pager-btn upload-btn" for="u1">插入图片</label>
+        <input class="sr-only" id="u1" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+      </div>
+      <p class="field-done">已插入 ![请求经过的几层](https://anxin-hitsz-personal-site.oss-cn-shenzhen.aliyuncs.com/articles/c4/c414…ce77.png)</p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">太大</p>
+    <div class="main">
+      <div class="md-tools" style="margin-top:0">
+        <label class="pager-btn upload-btn" for="u2">插入图片</label>
+        <input class="sr-only" id="u2" type="file" accept="image/*">
+      </div>
+      <p class="field-error">图片不能超过 4 MB。先压一下再传，截图存成 PNG 通常最大。</p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">不是图片</p>
+    <div class="main">
+      <div class="md-tools" style="margin-top:0">
+        <label class="pager-btn upload-btn" for="u3">插入图片</label>
+        <input class="sr-only" id="u3" type="file" accept="image/*">
+      </div>
+      <p class="field-error">这个文件不是图片。SVG 也不收——它里面能藏脚本，而图是公开放的，等于给别人一个挂脚本的地方。</p>
+    </div>
+  </section>
+
+  <section class="section row ruled">
+    <p class="facts">存储没配</p>
+    <div class="main">
+      <div class="md-tools" style="margin-top:0">
+        <label class="pager-btn upload-btn" for="u4">插入图片</label>
+        <input class="sr-only" id="u4" type="file" accept="image/*">
+      </div>
+      <p class="field-error">图片存储未配置，无法上传。服务器的 backend/.env 里补上 OSS_ 那六个键，重启后端再来。</p>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>插图</b>
+    <p>「存储没配」说的是下一步做什么，不是「请联系站长」─ 这一页只有作者进得来，他当然知道是说给谁听的。</p>
+    <p>四条错误都跟在按钮下面，位置一样，只有话不一样 ─ 这样眼睛不用去找。</p>
+    <p>正文框里插入的是 Markdown，不是 HTML ─ 服务端渲染时 html: false，写 <code>&lt;img&gt;</code> 只会被转义成一行字。</p>
+  </aside>
+</div>
+
+
+</main>
+
+<footer class="footer row shell ruled" style="margin-top:4.5rem">
+  <p class="facts">© 2026 Anxin</p>
+  <div class="main" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:.75rem 1.5rem">
+    <p>记录，是为了走得更远。</p>
+    <a href="https://anxin-hitsz.com">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+<div class="mockbar" role="group" aria-label="稿样状态切换">
+  <span class="mockbar-label">稿样</span>
+</div>
+
+<script>
+/* 标签框在这一稿里是真的能用的，方便你敲两下试试。实现时整段换成 Vue 组件。
+   规则：Enter 加一个、粘贴按分隔符拆开、撞上已有的不重复加、空框按退格去掉最后一个。 */
+const TAGS_MAX = 10;
+const TAG_LEN_MAX = 32;
+
+document.querySelectorAll('[data-tags]').forEach(root => {
+  const input = root.querySelector('input');
+  const hint = root.parentElement.querySelector('[data-tags-hint]');
+  const values = () => [...root.querySelectorAll('.tag')].map(tag => tag.dataset.value);
+  let note = root.dataset.tagsNote || '';
+
+  function render() {
+    const count = values().length;
+    input.disabled = count >= TAGS_MAX;
+    root.classList.toggle('tags-full', count >= TAGS_MAX);
+    if (!hint) return;
+    /* 有话说的时候让它顶掉默认那句，说完了默认那句自己回来。 */
+    hint.textContent = note || (count >= TAGS_MAX
+      ? `到上限了，最多 ${TAGS_MAX} 个。删掉一个才能换。`
+      : `按 Enter 加一个。最多 ${TAGS_MAX} 个，每个不超过 ${TAG_LEN_MAX} 个字符。已加 ${count} 个。`);
+  }
+
+  function remove(tag) {
+    tag.remove();
+    note = '';
+    render();
+  }
+
+  function add(raw) {
+    /* 只按逗号、顿号拆，以及「两边带空格的斜杠」拆。
+       斜杠本身是名字的一部分——CI/CD、TCP/IP、LangChain/LangGraph 都不能拆；
+       而公开页上标签正是用「空格 斜杠 空格」连起来显示的，所以把那行粘回来，
+       正好还原成原来的几个标签，两边是一对互逆的写法。 */
+    const parts = raw.split(/,|，|、|\s+\/\s+/).map(part => part.trim()).filter(Boolean);
+    note = '';
+    for (const part of parts) {
+      if (values().length >= TAGS_MAX) break;
+      const value = [...part].slice(0, TAG_LEN_MAX).join('');
+      if (values().includes(value)) { note = `「${value}」已经加过了。`; continue; }
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.dataset.value = value;
+      tag.append(value);
+      const drop = document.createElement('button');
+      drop.type = 'button';
+      drop.setAttribute('aria-label', `移除标签 ${value}`);
+      drop.textContent = '×';
+      drop.addEventListener('click', () => { remove(tag); input.focus(); });
+      tag.append(drop);
+      root.insertBefore(tag, input);
+    }
+    input.value = '';
+    render();
+  }
+
+  root.querySelectorAll('.tag button').forEach(button =>
+    button.addEventListener('click', () => { remove(button.closest('.tag')); input.focus(); }));
+
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      /* 这一下必须拦掉，否则敲到一半整页表单就交出去了。 */
+      event.preventDefault();
+      if (input.value.trim()) add(input.value);
+    } else if (event.key === 'Backspace' && !input.value) {
+      const last = root.querySelector('.tag:last-of-type');
+      if (last) remove(last);
+    }
+  });
+  /* 打完最后一个标签直接去点保存，那一串不能丢。 */
+  input.addEventListener('blur', () => { if (input.value.trim()) add(input.value); });
+
+  render();
+});
+
+const screens = [...document.querySelectorAll('[data-screen]')];
+const bar = document.querySelector('.mockbar');
+
+const notes = document.createElement('button');
+notes.type = 'button';
+notes.textContent = '显示已删除的备注';
+notes.addEventListener('click', () => {
+  const on = document.body.classList.toggle('show-notes');
+  notes.setAttribute('aria-pressed', String(on));
+});
+
+const role = document.createElement('button');
+role.type = 'button';
+role.textContent = '读者视角';
+role.addEventListener('click', () => {
+  const member = document.body.dataset.role === 'admin';
+  document.body.dataset.role = member ? 'member' : 'admin';
+  role.setAttribute('aria-pressed', String(member));
+});
+
+const dirtyToggle = document.createElement('button');
+dirtyToggle.type = 'button';
+dirtyToggle.textContent = '有改动';
+
+const leavingToggle = document.createElement('button');
+leavingToggle.type = 'button';
+leavingToggle.textContent = '被拦下';
+
+/* 保存条有三种样子：干净、有改动、被拦下。后两种得能翻出来看，不然它们在稿样里
+   永远显示不到。被拦下必然有改动，所以两个一起按下时只认被拦下。 */
+function syncSaveBar() {
+  const leaving = leavingToggle.getAttribute('aria-pressed') === 'true';
+  const dirty = leaving || dirtyToggle.getAttribute('aria-pressed') === 'true';
+  if (leaving) dirtyToggle.setAttribute('aria-pressed', 'true');
+  document.querySelectorAll('.save').forEach(save => {
+    save.dataset.dirty = String(dirty);
+    save.dataset.leaving = String(leaving);
+  });
+}
+
+dirtyToggle.addEventListener('click', () => {
+  const on = dirtyToggle.getAttribute('aria-pressed') !== 'true';
+  dirtyToggle.setAttribute('aria-pressed', String(on));
+  if (!on) leavingToggle.setAttribute('aria-pressed', 'false');
+  syncSaveBar();
+});
+
+leavingToggle.addEventListener('click', () => {
+  leavingToggle.setAttribute('aria-pressed', String(leavingToggle.getAttribute('aria-pressed') !== 'true'));
+  syncSaveBar();
+});
+
+/* 翻页在这一稿里本来是死的，但两头到头的禁用态看不见就 review 不了，所以给它一副真页码。
+   实现时这一段删掉，页码由列表数据来。 */
+document.querySelectorAll('.page').forEach(page => {
+  const nav = page.querySelector('.pager-nav');
+  if (!nav) return;
+  const prev = nav.querySelector('.pager-prev');
+  const next = nav.querySelector('.pager-next');
+  const count = nav.querySelector('.pager-count');
+  const total = Number(nav.dataset.pages);
+  const articles = Number(nav.dataset.articles);
+  let current = 1;
+  function draw() {
+    count.textContent = `第 ${current} / ${total} 页 · 共 ${articles} 篇`;
+    prev.disabled = current === 1;
+    next.disabled = current === total;
+  }
+  prev.addEventListener('click', () => { current = Math.max(1, current - 1); draw(); });
+  next.addEventListener('click', () => { current = Math.min(total, current + 1); draw(); });
+});
+
+const separator = document.createElement('span');
+separator.className = 'mockbar-sep';
+
+/* 屏号记在地址的 # 上，方便直接把某一屏发给别人看。 */
+function show(index) {
+  screens.forEach((screen, i) => screen.classList.toggle('is-active', i === index));
+  [...bar.querySelectorAll('button[data-screen-index]')].forEach((button, i) =>
+    button.setAttribute('aria-pressed', String(i === index)));
+  history.replaceState(null, '', index ? `#${index + 1}` : location.pathname);
+  window.scrollTo(0, 0);
+}
+
+screens.forEach((screen, i) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.screenIndex = String(i);
+  button.textContent = screen.dataset.label;
+  button.addEventListener('click', () => show(i));
+  bar.append(button);
+});
+
+bar.append(separator, role, notes, dirtyToggle, leavingToggle);
+
+/* 控制条的实际高度量出来交给 --mockbar-h：它随系统差一条横向滚动条的高度，写死的话
+   钉住的那一行底边会露出一条缝。 */
+function measureBar() {
+  document.documentElement.style.setProperty('--mockbar-h', `${bar.getBoundingClientRect().height}px`);
+}
+measureBar();
+addEventListener('resize', measureBar);
+const start = Number(location.hash.slice(1)) - 1;
+show(Number.isInteger(start) && start >= 0 && start < screens.length ? start : 0);
+</script>
+</body>
+</html>
