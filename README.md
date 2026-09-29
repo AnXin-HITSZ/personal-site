@@ -173,6 +173,16 @@ bash /root/personal-site/deploy/start.sh status   # 只报告状态，不改动�
 
 迁移仍由人手动执行，两个脚本都不碰数据库。发布带新列或改列的版本时，先按[迁移约定](backend/migrations/README.md)在库上执行对应迁移，再发布。列表查询用 `Omit("Body")`，GORM 会据此展开成不含正文的显式列名；详情是 `Take(&model.Article)`，目标就是模型本身，GORM 发的是 `SELECT *`——因此迁移滞后**不会报错**，缺的那列会被扫成零值，正文静默为空。
 
+写作入口只对 `role = 'admin'` 的账号可见，而注册永远只产生 `member`，也没有任何接口能改 `role`（「写作只有我能够写入」）。第一个作者账号在服务器上这样建：
+
+```sh
+cd /root/personal-site/backend && ./dist/server -create-admin 你的邮箱@example.com
+```
+
+口令由它生成并只打印一次，参数里不带口令是因为参数会留在 `ps` 输出和 shell 历史里。这条命令只碰数据库，打印完就退出，不会顺带把服务起来。对已存在的账号它是「提升为管理员**并重置口令**」，所以它同时也是邮件通道修好之前唯一的找回口令手段——别为了看一眼就随手跑。
+
+网关模板这次多了两处，要人工同步到服务器上：`client_max_body_size 8m` 和 413 的 `error_page`，改完 `nginx -t` 再 `reload`（见下面「对象存储」）。**先改网关，再发布带上传入口的前端**：反过来的话，一张 1 MB 出头的图会撞上 nginx 内置的 1 MB 限制，而那时回的是它自己那页 HTML，页面上只显示「传输失败」。
+
 配置模板：[前端环境变量](frontend/.env.example)、[前端生产环境变量](frontend/.env.production.example)、[后端环境变量](backend/.env.example)、[Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example)、[systemd 单元](deploy/systemd/personal-site.service)。迁移与运行时使用分离的最小权限账号，迁移由人手动执行，见 [迁移约定](backend/migrations/README.md)。
 
 生产库不执行种子与清理；`ARTICLE_CACHE_ENABLED` 保持 `false`。
@@ -216,3 +226,73 @@ DNS 生效要时间，配完先发一封试试再往下走。数据库账号不�
 ### 换了端口或服务器之后
 
 `SMTP_HOST` 一旦填了，其余四项就是必填；半套配置会在启动时直接报错，不会退化成「安静地不发信」。发件地址会过一遍和注册邮箱相同的校验，格式不对或者夹了换行都在启动时挡住——发件地址会原样进 SMTP 命令和邮件头。
+
+## 对象存储
+
+文章配图走阿里云 OSS，路径是浏览器 → 自己的后端 → OSS：AK/SK 只留在服务器上，浏览器拿不到；阿里云入方向流量不计费。代码在 `backend/internal/storage/`，配置项见[后端环境变量](backend/.env.example)里的 `OSS_*`。
+
+键名按内容寻址：`articles/<sha256 前两位>/<sha256>.<扩展名>`。同一张图重复上传不会产生新对象；扩展名以服务端嗅探出的类型为准、不信文件名（文件名是用户说了算的）；响应带 `immutable` 缓存头，URL 不变则内容必然不变。**SVG 明确拒绝**：它是 XML，可以内嵌脚本，而 bucket 是公共读的，收下就等于给自己开一个 XSS 托管。
+
+上传成功但文章没保存，对象就留在 OSS 里成了孤儿。这里不做清理——内容寻址下重复上传不产生新对象，孤儿只在真正放弃那一篇时出现，量很小。
+
+### 三个体积上限
+
+| 层 | 值 | 位置 |
+| --- | --- | --- |
+| nginx 请求体 | 8m | [Nginx 模板](deploy/nginx/anxin-hitsz.com.conf.example) |
+| Go 的 JSON 体（正文） | 2 MiB | `maxArticleJSONBytes` |
+| 单张图片 | 4 MiB | `maxImageBytes` |
+
+图片是先传、拿到 URL 再写进 markdown 的，所以正文那 2 MiB 全留给文字。超限一律回 413 加 JSON 信封，但由谁来回取决于超了多少：4 MiB 以内和 4–8 MiB 都是 Go 判的，超过 8m 才轮到 nginx。**所以模板里那条 `error_page 413` 不是可选项**——少了它，最大那一档回的是一页 HTML，页面上只能显示「传输失败」。它也有它的限度：8m 那一档是 nginx 在浏览器还在上传时掐断的，客户端有可能连这页 JSON 都读不到，最后还是落回通用文案。
+
+超时是三层套着的，由内向外放宽，为的是让最里面那层先失败：这样用户看到的是应用自己说得出原因的错误，而不是网关的 504。Go 上传 10 秒 < 前端 `uploadTimeoutMs` 14 秒 < nginx `proxy_read_timeout` 15 秒。
+
+### 没配会怎样
+
+| 情况 | 上传接口的表现 |
+| --- | --- |
+| `OSS_BUCKET` 留空 | 503 `SERVICE_UNAVAILABLE`，界面直接说下一步是去补 `OSS_*` 那六个键 |
+| 留空且 `APP_ENV=development` | 同上，但走 `LogStore`：键名和大小打进日志，返回的链接打不开 |
+| 配了 bucket，但 RAM 权限不对、AK 过期、网络不通 | 500 `INTERNAL_ERROR`，界面上只有一句通用文案，原因在服务端日志里（SDK 报的是 `AccessDenied`） |
+
+前两种单独分出来，是因为「这台机器缺一步」和「这次请求坏了」该说给不同的人听。第三种在界面上分不出来是有意的：凭据怎么错的属于服务端。
+
+### 一次性准备
+
+这些是人工的活，代码不碰：
+
+1. bucket 设成公共读，但**不要**开列举（ListObjects）。图是给别人看的，列表不是。
+2. 建 RAM 用户 `personal-site-oss`，只给 `articles/*` 上的 `oss:PutObject` 与 `oss:GetObject`——不给列举、不给删、不给整个 bucket 的通配。
+3. 六个键写进 `/root/personal-site/backend/.env`：`OSS_BUCKET`、`OSS_REGION`、`OSS_ENDPOINT`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`、`OSS_PUBLIC_BASE_URL`。`OSS_ENDPOINT` 可以留空，SDK 按 region 推；`OSS_BUCKET` 一旦填了，其余几项就是必填，半套配置会在启动时报错，不会安静地降级。
+4. 重启后端让它读到新配置：`bash deploy/start.sh restart`。
+
+### 验证
+
+传一张 1 MB 出头的图。这个尺寸是关键：它刚越过 nginx 内置的 1 MB，又远没到应用的 4 MiB，所以一次就同时证明了网关那条 `client_max_body_size` 生效、Go 的上传路径通、OSS 凭据对。
+
+```sh
+# 登录，会话 cookie 留在 jar 里（口令就是 -create-admin 打印的那一个；那个账号
+# 建出来就是已验证状态，不用先走邮件）
+curl -sS -c /tmp/axh.txt -o /dev/null -w '%{http_code}\n' \
+  -H 'Origin: https://anxin-hitsz.com' \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"你的邮箱","password":"初始口令"}' \
+  https://anxin-hitsz.com/api/v1/auth/login
+
+# 造一张 1.2 MB 的「PNG」：嗅探只看前 512 字节，所以只要前 8 个字节是真签名
+{ printf '\x89PNG\r\n\x1a\n'; head -c 1200000 /dev/zero; } > /tmp/big.png
+
+# 传它，期望 201 和一段带 url 的 JSON
+curl -sS -b /tmp/axh.txt \
+  -H 'Origin: https://anxin-hitsz.com' \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -F 'file=@/tmp/big.png;type=image/png' \
+  https://anxin-hitsz.com/api/v1/admin/uploads -w '\n%{http_code}\n'
+
+rm -f /tmp/big.png /tmp/axh.txt
+```
+
+那两个请求头都是必需的：`X-Requested-With` 是写操作的跨站防线，`Origin` 要与站点同源（`ALLOWED_ORIGINS` 里列的也算）。少了哪个就回 403，响应体里写明了缺哪一个。
+
+这样传上去的对象没人引用，验完可以在控制台按 `articles/` 前缀自己删掉。
