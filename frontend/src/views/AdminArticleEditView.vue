@@ -3,13 +3,14 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import {
-  articleLimits, articleProblems, categoryOptions, createArticle, getAdminArticle, updateArticle, uploadImage,
+  articleLimits, articleProblems, createArticle, getAdminArticle, updateArticle, uploadImage,
 } from '../api/admin-articles.js';
+import { listAdminCategories } from '../api/categories.js';
 import { codes, describeFailure } from '../api/client.js';
 import { commonText, uploadText } from '../copy.js';
 import { clear } from '../session.js';
 import { useUnsavedChanges } from '../dirty.js';
-import { altFromFileName, imageMarkdown, insertAtCursor, shortenURL } from '../insert.js';
+import { altFromFileName, imageMarkdown, indentLines, insertAtCursor, outdentLines, shortenURL, tabIntent } from '../insert.js';
 import { formatMonthDay } from '../format.js';
 import { setMetadata } from '../metadata.js';
 import FormField from '../components/FormField.vue';
@@ -23,7 +24,8 @@ const route = useRoute();
 const router = useRouter();
 
 const isNew = computed(() => route.name === 'admin-article-new');
-const form = reactive({ slug: '', title: '', summary: '', body: '', category: 'backend', tags: [], status: 'draft' });
+/* 分类那一格留空等着读回来的第一个——它就是默认分类。 */
+const form = reactive({ slug: '', title: '', summary: '', body: '', category: '', tags: [], status: 'draft' });
 const local = reactive({ slug: '', title: '', summary: '', body: '' });
 /* record 是库里那一篇，form 是手上这一稿。注文栏只放前者，输入框只放后者。 */
 const record = ref(null);
@@ -33,7 +35,32 @@ const failing = ref(null);
 const saved = ref(null);
 const busy = ref(false);
 
+/* 分类是一份随写作变的数据，不是一张写死的表，所以它得现取。取不到的时候这一格
+   不能画一个空的下拉——一个点不开、或者点开什么都没有的控件只是占位。 */
+const cats = ref([]);
+const catsState = ref('loading');
+const categoryOptions = computed(() => cats.value.map(cat => ({ value: cat.id, label: cat.name })));
+
+/* 这一格说不了话的两种情况，各给各的一句：这次没读到，和真的一个都还没有，
+   不是同一件事，去路也不同。已经存过的那一篇不受影响——它本来就归在某个下面，
+   原样存回去就是了。 */
+const categoryProblem = computed(() => {
+  if (catsState.value === 'loading' || cats.value.length) return '';
+  /* 已经存过的那一篇不受影响：它本来就归在某个下面，这一格收起来也不挡着保存。 */
+  if (!isNew.value && record.value && catsState.value === 'failed') {
+    return '分类没读出来，这一格先收着。这一篇仍归在原来那个下面，保存不受影响。';
+  }
+  return catsState.value === 'failed'
+    ? '分类没读出来。文章必须归在其中一个下面——先重试一次，再回来存这一篇。'
+    : '还没有分类。文章必须归在其中一个下面——先去建一个，再回来存这一篇。';
+});
+/* 去路只有两条：这次没读到就再读一次；真的一个分类都没有，就去建一个。 */
+const retryCategories = computed(() => catsState.value === 'failed' || Boolean(record.value));
+
 const bodyArea = ref(null);
+/* 正文那一面。进来是原文——这一页是来写字的，预览是校对时看一眼的东西；
+   换到另一篇（同一个组件被复用）也回到原文。 */
+const mode = ref('source');
 const uploading = ref(false);
 const uploaded = ref('');
 const uploadError = ref('');
@@ -48,7 +75,7 @@ function snapshot(source) {
     title: source.title ?? '',
     summary: source.summary ?? '',
     body: source.body ?? '',
-    category: source.category ?? 'backend',
+    category: source.category ?? '',
     tags: [...(source.tags ?? [])],
     status: source.status ?? 'draft',
   };
@@ -111,6 +138,8 @@ function apply(detail) {
 }
 
 async function load() {
+  /* 换一篇就回到原文那一面。保存不走这里——正在校对时按保存，看的还是那一面。 */
+  mode.value = 'source';
   if (isNew.value) {
     state.value = 'ready';
     return;
@@ -140,9 +169,30 @@ watch(() => route.params.id, id => {
   load();
 });
 
+/* 分类和文章各问各的：分类读不到不该把整页拖住，这一页本来也还有别的字段要填。 */
+async function loadCategories() {
+  catsState.value = 'loading';
+  try {
+    const result = await listAdminCategories();
+    cats.value = result.items;
+    catsState.value = 'ready';
+    /* 「第一个是写新文章时的默认分类」。只在还没选过的时候替它选上，而且基线也要
+       跟着走——否则一进来就是「有改动没保存」，而人一个字都还没敲。 */
+    if (!form.category && cats.value.length) {
+      form.category = cats.value[0].id;
+      baseline.value = { ...baseline.value, category: form.category };
+    }
+  } catch (cause) {
+    if (authRedirect(cause)) return;
+    cats.value = [];
+    catsState.value = 'failed';
+  }
+}
+
 onMounted(() => {
   if (isNew.value) setMetadata({ title: '写新的一篇 · 写作 · Anxin', path: route.fullPath });
   load();
+  loadCategories();
 });
 
 function serverFieldError(name) {
@@ -217,6 +267,23 @@ async function save() {
    路由守卫——还有改动没保存的话，它先拦下来。 */
 function deleteHere() {
   router.push({ name: 'admin-articles', query: { confirm: record.value.id } });
+}
+
+/* Tab 落在正文框里该是缩进，不是跳到下一格。出路那条路（Esc 再 Tab）归 tabIntent
+   管，这里只管把它的答复落下来。 */
+const escaped = ref(false);
+
+function onBodyKeydown(event) {
+  const intent = tabIntent(event, escaped.value);
+  escaped.value = intent.armed;
+  if (!intent.indent) return;
+
+  event.preventDefault();
+  const area = bodyArea.value;
+  if (!area) return;
+  /* 这一格的文字走的是浏览器那套编辑命令：值改了，可它不会冒出 input 事件，所以
+     得把结果抄回表单里，否则存下去的仍是旧的那一份。 */
+  form.body = event.shiftKey ? outdentLines(area) : indentLines(area);
 }
 
 async function pickImage(event) {
@@ -306,8 +373,18 @@ async function pickImage(event) {
           :hint="slugHint" :error="fieldError('slug')" keep-hint :disabled="busy"
         />
         <FormSelect
-          id="article-category" v-model="form.category" label="分类" :options="categoryOptions" :disabled="busy"
+          v-if="!categoryProblem" id="article-category" v-model="form.category" label="分类"
+          :options="categoryOptions" :disabled="busy || catsState === 'loading'" :hint="catsState === 'loading' ? '正在读取分类…' : ''"
         />
+        <!-- 说不了话的时候这一格让位给一句话和一条去路，而不是一个空的下拉。 -->
+        <div v-else class="field">
+          <span class="field-label">分类</span>
+          <p class="field-error">{{ categoryProblem }}</p>
+          <p class="field-hint">
+            <button v-if="retryCategories" class="link-quiet" type="button" @click="loadCategories">重试</button>
+            <router-link v-else class="link-quiet" :to="{ name: 'admin-categories' }">去建一个分类</router-link>
+          </p>
+        </div>
       </div>
 
       <TagInput
@@ -318,28 +395,43 @@ async function pickImage(event) {
   </form>
 
   <section v-if="state === 'ready'" class="md">
-    <div class="md-split">
-      <div>
-        <label class="md-label" for="article-body">Markdown 原文</label>
-        <textarea
-          id="article-body" ref="bodyArea" class="md-source" spellcheck="false"
-          :value="form.body" :disabled="busy" @input="form.body = $event.target.value"
-        ></textarea>
-        <div class="md-tools">
-          <label class="pager-btn upload-btn" for="article-file">{{ uploading ? '正在上传…' : '插入图片' }}</label>
-          <input
-            id="article-file" class="sr-only" type="file" accept="image/*"
-            :disabled="uploading || busy" @change="pickImage"
-          >
-          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
-        </div>
-        <p v-if="uploadError" class="field-error">{{ uploadError }}</p>
-        <p v-else-if="uploaded" class="field-done">已插入 {{ uploaded }}</p>
+    <!-- 两个 radio 加 label，和「草稿／已发布」同一个来路：键盘、焦点圈、方向键都由
+         浏览器给。左边那个词写现在在哪一面，右边那枚写点下去会去哪一面。 -->
+    <div class="md-head">
+      <span class="md-label">{{ mode === 'source' ? 'Markdown 原文' : '预览' }}</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input id="article-body-source" v-model="mode" class="sr-only" type="radio" name="article-body-mode" value="source">
+        <input id="article-body-preview" v-model="mode" class="sr-only" type="radio" name="article-body-mode" value="preview">
+        <label
+          class="link-quiet"
+          :for="mode === 'source' ? 'article-body-preview' : 'article-body-source'"
+        >{{ mode === 'source' ? '看预览' : '看原文' }}</label>
       </div>
-      <div>
-        <span class="md-label">预览</span>
-        <div class="prose" v-html="preview"></div>
+    </div>
+
+    <!-- 换面用 v-show 不用 v-if：切回来时框里的字、光标、滚动位置都还在（只有焦点会丢，
+         那是该丢的）。 -->
+    <div v-show="mode === 'source'" class="md-pane" data-pane="source">
+      <textarea
+        id="article-body" ref="bodyArea" class="md-source" aria-label="Markdown 原文" spellcheck="false"
+        aria-describedby="article-body-keys" :value="form.body" :disabled="busy"
+        @input="form.body = $event.target.value" @keydown="onBodyKeydown" @blur="escaped = false"
+      ></textarea>
+      <p id="article-body-keys" class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="article-file">{{ uploading ? '正在上传…' : '插入图片' }}</label>
+        <input
+          id="article-file" class="sr-only" type="file" accept="image/*"
+          :disabled="uploading || busy" @change="pickImage"
+        >
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
       </div>
+      <p v-if="uploadError" class="field-error">{{ uploadError }}</p>
+      <p v-else-if="uploaded" class="field-done">已插入 {{ uploaded }}</p>
+    </div>
+
+    <div v-show="mode === 'preview'" class="md-pane" data-pane="preview">
+      <div class="prose" v-html="preview"></div>
     </div>
   </section>
 
@@ -354,7 +446,9 @@ async function pickImage(event) {
       <p class="save-note-leaving">要去别的页，改动还没保存。</p>
     </div>
     <div class="main save-actions">
-      <button class="primary" type="button" :disabled="busy" @click="save">{{ busy ? '保存中…' : '保存' }}</button>
+      <!-- 没有分类可选时保存是灰的。这不是前端自己加的规矩，是服务端本来就存不下去
+           （文章表到分类表之间有外键）——与其让人填完一整篇再吃一个 400，不如现在停住。 -->
+      <button class="primary" type="button" :disabled="busy || !form.category" @click="save">{{ busy ? '保存中…' : '保存' }}</button>
       <button class="link-quiet act-abandon" type="button" @click="discard">放弃改动</button>
       <template v-if="stored">
         <a

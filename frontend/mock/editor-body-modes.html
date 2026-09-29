@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正文的切换形态 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：正文那一段原来是「原文｜预览」并排两栏，改成点着切，切换键长什么样。
+   样式直接引 ../src/styles.css，一个字都不抄——这里只写新增的规则和还要定的几处。
+
+   ＊结论：选了 C（单枚切换键）。真正的形态在 admin-pages.html 的两屏编辑台里，
+   和产品逐字对得上；这一页留着记 A、B 当时长什么样、以及为什么没选——它不跟着
+   产品走，A/B 的标记也不打算再动。
+
+   A 分段控件   和「草稿／已发布」同一枚控件，坐在原来标签的位置（段 749.6px）
+   B 页签       两个词坐落在这一段新加的顶线上（段 750.3px）
+   C 单枚切换键 左端还是原来那个标签（写当前是哪一面），右端一枚安静的「看预览」（段 729.1px）
+
+   三条共用的部分：一个时刻只显示一面（.md-pane），上一栏的标签换成切换键，
+   .md-split 那个两栏网格连同它 56rem 的分栏规则一起删掉。 */
+
+.intro, .variant > p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant > p.why { margin-top: .5rem; }
+.variant .md { margin-top: 1.75rem; }
+.variant ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant ul li + li { margin-top: .4rem; }
+.variant ul b { color: var(--ink); font-weight: 600; }
+
+/* —— 三条共用的骨架 —— */
+/* 切换键那一行占的是原来标签那一行的位置，所以正文框的顶端不动。 */
+.md-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .45rem; }
+/* 标签自己那点下边距在这里由 .md-head 出，两处都留着会白多一段。 */
+.md-head .md-label { margin-bottom: 0; }
+/* 一个时刻只显示一面。radio 留在 DOM 里，键盘、焦点圈、滑块都和状态那一枚同一来路。 */
+.md-pane { display: none; }
+.md:has(input[value="source"]:checked) .md-pane[data-pane="source"],
+.md:has(input[value="preview"]:checked) .md-pane[data-pane="preview"] { display: block; }
+/* 正文框那个下限今天写死在 .md-source 里，另有一条 44rem 以下的媒体查询把它换成
+   22rem。预览那一面要跟着同一个数走，所以把这个数提到变量上，只此一处。
+   （产品里 .md-source 的 min-height 与它那条媒体查询各改一处，值不变。）
+   3.5rem 补的是原文那一面「插入图片」那一行：1rem 的上边距 + 2.5rem 的按钮。
+   不要把它写成 40rem：600px 宽时正文框只有 22rem，预览还按 40rem 兜底的话，
+   切过去整段会平白长高 288px（量过）。 */
+.md { --md-source-h: 40rem; }
+.md-source { min-height: var(--md-source-h); }
+.md-pane[data-pane="preview"] { min-height: calc(var(--md-source-h) + 3.5rem); }
+@media (max-width: 44rem) { .md { --md-source-h: 22rem; } }
+/* 正文框占满整幅，预览的字就不能跟着占满——公开页正文那一栏是 --measure（45rem）。 */
+.md-pane[data-pane="preview"] .prose { max-width: var(--measure); }
+
+/* —— A 分段控件 —— */
+/* 滑块那句现在是写死「选了 published」的。两个值的东西长得一样，把那一句改成认最后
+   一个 input，状态控件那边行为不变，两边共用一条。 */
+.md-modes:has(input:last-of-type:checked)::before { transform: translateX(100%); }
+/* 每一段要装下「Markdown 原文」这一串字，11rem 那个下限不够，字会折到第二行。 */
+.md-modes { min-width: 17rem; }
+
+/* —— B 页签 —— */
+.md-tabs { align-items: flex-end; border-bottom: 1px solid var(--rule); margin-bottom: 1.1rem; }
+.md-tabs .md-tab { margin-bottom: -1px; padding-bottom: .55rem; border-bottom: 2px solid transparent; cursor: pointer; }
+/* 选中的那一枚：印色加粗一线，压在细线上（-1px 正好盖住）。 */
+.md-tabs:has(input[value="source"]:checked) .md-tab-src,
+.md-tabs:has(input[value="preview"]:checked) .md-tab-pub { color: var(--seal); border-bottom-color: var(--seal); }
+
+/* —— C 单枚切换键 —— */
+/* 左端那个词是常驻的，谁显谁隐跟着选中的那个走——和保存条那五行同一个写法
+   （落到 Vue 里就是三元表达式）。右端那枚才是控件，说的是点下去会去哪一面。 */
+.md-now-preview, .md-switch-source { display: none; }
+.md:has(input[value="preview"]:checked) .md-now-source,
+.md:has(input[value="preview"]:checked) .md-switch-preview { display: none; }
+.md:has(input[value="preview"]:checked) .md-now-preview { display: block; }
+.md:has(input[value="preview"]:checked) .md-switch-source { display: inline; }
+/* 这一层的字号要跟着里面那枚字走：它默认继承正文的 17px，比那枚字（14px）大，
+   空行按大的那一行算，整行因此比原来那行标签高 5.5px（31.45 vs 25.9）。定成同一个
+   字号，正文框顶端就回到原来那个位置。 */
+.md-switch { margin-left: auto; cursor: pointer; font-size: var(--facts-size); }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-admin nav-here" href="#">写作</a>
+    <a class="nav-signed-in" href="#">账号</a>
+    <a class="nav-signed-out" href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+只截了「正文」那一段（编辑台里最下面那一段），前后那些字段和保存条三种形态一样、都不动。
+三条都点得动：切过去看高度跳不跳、看预览那一栏的行长、看当前在哪一面是否一眼看得出。
+</p>
+
+<!-- ═══════════ A 分段控件 ═══════════ -->
+<div class="variant v-a">
+  <h2>A 分段控件</h2>
+  <p class="why">和「草稿／已发布」同一枚控件：面、描边、滑块、焦点圈全部照搬，全站「从两个里挑一个」从此只有一个样子。</p>
+
+  <section class="md">
+    <div class="md-head">
+      <div class="segmented md-modes" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="a-mode" id="a-mode-src" value="source" checked>
+        <label for="a-mode-src">Markdown 原文</label>
+        <input class="sr-only" type="radio" name="a-mode" id="a-mode-pub" value="preview">
+        <label for="a-mode-pub">预览</label>
+      </div>
+      <p class="field-hint">写的时候在原文这一面，校对的时候切过去看一眼。</p>
+    </div>
+
+    <div class="md-panes">
+      <div class="md-pane" data-pane="source">
+        <textarea class="md-source" spellcheck="false">## 从哪里开始
+
+先跑起来，再谈结构。
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="a-file">插入图片</label>
+          <input class="sr-only" id="a-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div class="md-pane" data-pane="preview">
+        <div class="prose">
+          <h2>从哪里开始</h2>
+          <p>先跑起来，再谈结构。</p>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ul>
+    <li>三条里<b>最高的一条</b>：控件本身 46.4px，比原来那行标签（25.9px）高 20.5px，正文框顶端随之下移同样多（整段 729.1 → 749.6px）。</li>
+    <li>滑块走的是 CSS 的 transition，切换有一小段位移；「少动的人」那条媒体查询已经写在控件里，不用另加。</li>
+    <li>下限从 11rem 提到 17rem：两个值的东西各占一半，11rem 时每段只分到 5.5rem，「Markdown 原文」这一串会折行；17rem 时每段 138.5px，量过是一行。</li>
+    <li>代价是<b>同一页出现两枚一模一样的控件</b>（状态一枚、这里一枚）；好处是「两个里挑一个」这件事从此不必再想第三种画法。</li>
+    <li>控件里那句滑块只认「选了 published」。把它改成认<b>最后一个 input</b>，两处就共用一条：<code>StatusChoice.vue</code> 的 <code>choices</code> 是「草稿、已发布」，<code>已发布</code> 本来就在最后，行为一模一样。</li>
+  </ul>
+</div>
+
+<!-- ═══════════ B 页签 ═══════════ -->
+<div class="variant v-b">
+  <h2>B 页签</h2>
+  <p class="why">两个词坐在这一段的顶线上，谁在前谁在上都不占额外高度——那一行线本来就能当页签的基线。</p>
+
+  <section class="md">
+    <div class="md-head md-tabs">
+      <input class="sr-only" type="radio" name="b-mode" id="b-mode-src" value="source" checked>
+      <label class="md-label md-tab md-tab-src" for="b-mode-src">Markdown 原文</label>
+      <input class="sr-only" type="radio" name="b-mode" id="b-mode-pub" value="preview">
+      <label class="md-label md-tab md-tab-pub" for="b-mode-pub">预览</label>
+    </div>
+
+    <div class="md-panes">
+      <div class="md-pane" data-pane="source">
+        <textarea class="md-source" spellcheck="false">## 从哪里开始
+
+先跑起来，再谈结构。
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="b-file">插入图片</label>
+          <input class="sr-only" id="b-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div class="md-pane" data-pane="preview">
+        <div class="prose">
+          <h2>从哪里开始</h2>
+          <p>先跑起来，再谈结构。</p>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ul>
+    <li>比现在高 21.2px（整段 729.1 → 750.3px）：页签本体只比标签多一枚 2px 的下划线，多出来的主要是横线下面留的那 1.1rem——细线下面要留白，`.ruled` 那一套是 1.5rem。</li>
+    <li>代价是<b>这一段多一条横线</b>。它顺手当了页签的基线，但它是新加的元素——现在这一段上面什么都没有。</li>
+    <li>记号要定：这一稿用<b>印色 2px</b>（压在 1px 的灰线上）。改成 1px 更安静，切换时看着就是「那条线里红的一段挪了个位置」。</li>
+    <li>两个词靠左排，右边空着一截——那儿可以放原来那句提示，也可以就这么空着。</li>
+  </ul>
+</div>
+
+<!-- ═══════════ C 单枚切换键 ═══════════ -->
+<div class="variant v-c">
+  <h2>C 单枚切换键</h2>
+  <p class="why">标签照旧写当前这一面叫什么，右端一枚安静的字写另一面叫什么。位置、字号、行高都还是原来那一行。</p>
+
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label md-now-source">Markdown 原文</span>
+      <span class="md-label md-now-preview">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="c-mode" id="c-mode-source" value="source" checked>
+        <input class="sr-only" type="radio" name="c-mode" id="c-mode-preview" value="preview">
+        <label class="link-quiet md-switch-preview" for="c-mode-preview">看预览</label>
+        <label class="link-quiet md-switch-source" for="c-mode-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-panes">
+      <div class="md-pane" data-pane="source">
+        <textarea class="md-source" spellcheck="false">## 从哪里开始
+
+先跑起来，再谈结构。
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+</textarea>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="c-file">插入图片</label>
+          <input class="sr-only" id="c-file" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+      <div class="md-pane" data-pane="preview">
+        <div class="prose">
+          <h2>从哪里开始</h2>
+          <p>先跑起来，再谈结构。</p>
+          <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ul>
+    <li>三条里<b>唯一不花钱的一条</b>：正文框顶端和今天<b>一模一样</b>（段内偏移 33.1px；600px 宽时 29.9px）——切换键那一行占的正是原来标签那一行的高度。</li>
+    <li>整段反倒比今天<b>矮 41.9px</b>（771 → 729.1，1600px）：今天这一段的高是被右边那栏预览顶着的，改完只剩一面。</li>
+    <li>那一行的高度要对齐，靠的是把切换键那一层的字号定成和里面那枚字一样。它默认继承正文的 17px，比那枚字（14px）大，空行按大的那一行算，整行会平白高出 5.5px（31.45 vs 25.9）。</li>
+    <li>位置和字号都是现成的（<code>.link-quiet</code>，和保存条里「放弃改动」同一枚）。</li>
+    <li>「看预览」说的是<b>点下去会发生什么</b>，不是「现在在哪」；现在在哪由左端那个词交代，两句话各说一件事。</li>
+    <li>风险：一枚孤零零的链接容易被读成「去别处看预览」，而它就地换的是同一格内容。</li>
+    <li>切换键在行的右端，和左端那个词隔着一整幅——先看见词，再看见键，眼睛要走一趟。</li>
+  </ul>
+</div>
+
+<!-- ═══════════ 三条共通 ═══════════ -->
+<div class="variant">
+  <h2>三条共通</h2>
+  <ul>
+    <li><b>进去默认是「原文」</b>。这一页是来写字的，预览是校对时看一眼的东西。</li>
+    <li><b>切过去整段高度不动</b>：三条都量过，两个模式的段高逐条相同（1600px 时 749.6／750.3／729.1；600px 时 506.7／459.1／437.9）。靠的是预览那一面自己补上原文那一面「插入图片」那一行的高度（<code>calc(var(--md-source-h) + 3.5rem)</code>）。</li>
+    <li>那个 40rem 跟着正文框走：正文框在窄屏降到 22rem，预览这个数也得跟着降，所以把 40rem／22rem 提到一个变量上（<code>--md-source-h</code>）。写成死数的话，600px 宽时预览会兜到 696px 而正文框只有 392px，切过去整段<b>平白长高 288px</b>——这条是量出来的。</li>
+    <li><b>预览的行长对着公开页</b>：宽的视口（≥67rem）两边都是 <code>--measure</code>＝45rem＝720px；窄的（≤44rem）两边都是满幅（600px 时不带滚动条量到 545px）。中间那一段（44–67rem）公开页那一栏会被注文栏挤窄到 460–544px，预览仍按 720px 断行，宽出 148–176px，约 8–10 个汉字。要一模一样也能做——把 <code>.row</code> 那三笔算式（<code>--measure</code>、<code>--margin</code>、<code>--gutter</code>）搬到预览上、配一句 <code>container-type: inline-size</code>——但那是为一段校对时才看得出的差别添的机器，这一稿不添。原文那一面不封顶：它是控件，行越长越好。</li>
+    <li><b>「插入图片」跟着原文那一面</b>：按钮按的是光标位置，预览里没有光标。上传失败与「已插入」两句也跟着留在那一面。</li>
+    <li>预览短的时候下面留一截白——它和原文框同高。今天两栏并排时右边那栏也是这么留的，不是新出来的空。</li>
+    <li>切回原文时框里的字、光标、滚动位置都还在：换面容靠 <code>display</code>，DOM 不拆。落 Vue 用 <code>v-show</code> 不要用 <code>v-if</code>（只有焦点会丢，那是应该丢的）。</li>
+    <li>落 Vue 时两处要改：<code>AdminArticleEditView.vue</code> 那段 <code>.md-split</code> 换成上面这个骨架；<code>styles.css</code> 里 <code>.md-split</code> 与它 56rem 的分栏规则一起删掉，窄屏那条「上下叠」也跟着省掉——只剩一面，没有第二面可叠。</li>
+    <li>无障碍：两个 <code>radio</code> 加 <code>label</code>，和「草稿／已发布」同一个来路（radiogroup、焦点圈、方向键都由浏览器给）。不另铺 tablist 那一套。</li>
+  </ul>
+</div>
+
+</main>
+</body>
+</html>

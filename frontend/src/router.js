@@ -10,6 +10,7 @@ import ResetPasswordView from './views/ResetPasswordView.vue';
 import AccountView from './views/AccountView.vue';
 import AdminArticleListView from './views/AdminArticleListView.vue';
 import AdminArticleEditView from './views/AdminArticleEditView.vue';
+import AdminCategoryListView from './views/AdminCategoryListView.vue';
 import NotFoundView from './views/NotFoundView.vue';
 
 export const router = createRouter({
@@ -40,6 +41,12 @@ export const router = createRouter({
       path: '/admin/articles/:id',
       name: 'admin-article',
       component: AdminArticleEditView,
+      meta: { requiresAuth: true, requiresRole: 'admin' },
+    },
+    {
+      path: '/admin/categories',
+      name: 'admin-categories',
+      component: AdminCategoryListView,
       meta: { requiresAuth: true, requiresRole: 'admin' },
     },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },

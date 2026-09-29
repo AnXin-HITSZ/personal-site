@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { CONTRACT_ERROR, request, requestMultipart } from './client.js';
-import { ARTICLE_ID_PATTERN, categories } from './articles.js';
+import { ARTICLE_ID_PATTERN } from './articles.js';
+import { isCategoryID } from './categories.js';
 
 /* 写作这一路没有 mock 数据源：假的草稿变不出真的库，存下去的东西下次打开
    就不见了，跑起来只会骗人。理由和 account.js 一样。 */
@@ -10,11 +11,8 @@ function requireHttp() {
 
 export const statusText = Object.freeze({ draft: '草稿', published: '已发布' });
 
-/* 分类用公开页筛选器上的同一套名字，不另起一套简称——同一件事在站上只有一个
-   叫法。all 是「不筛」，不是分类，所以不在选项里。 */
-export const categoryOptions = Object.entries(categories)
-  .filter(([value]) => value !== 'all')
-  .map(([value, label]) => ({ value, label }));
+/* 分类的选项不在这儿：分类是一份随写作变的数据，不是一张写死的表，所以它由
+   /admin/categories 现取（见 api/categories.js）。这里只管收到的分类 id 像不像话。 */
 
 /* 与服务端 service 里那几个上限同一个数。本地先量一遍只为省一次往返，说了算的
    仍是服务端——它说不行就是不行。 */
@@ -65,7 +63,7 @@ function isSummary(a) {
   return Boolean(a) &&
     ARTICLE_ID_PATTERN.test(a.id) && a.id === a.id.toLowerCase() &&
     typeof a.slug === 'string' && typeof a.title === 'string' && typeof a.summary === 'string' &&
-    a.category !== 'all' && Object.hasOwn(categories, a.category) &&
+    isCategoryID(a.category) &&
     (a.status === 'draft' || a.status === 'published') &&
     Array.isArray(a.tags) && a.tags.every(tag => typeof tag === 'string') &&
     Number.isInteger(a.readingMinutes) && a.readingMinutes > 0 &&

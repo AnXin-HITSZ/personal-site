@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分类这一格长什么样 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：编辑台里「分类」那一格用哪种控件。
+   样式直接引 ../src/styles.css，一个字都不抄——这里只写新增的规则和待定的几处。
+
+   ＊结论：选了甲（贴齐的下拉）。真正的形态在 admin-pages.html 里，和产品逐字对得上；
+   这一页留着记乙、丙当时长什么样、以及为什么没选——它不跟着产品走。
+
+   甲 贴齐的下拉  现在的下拉，只把弹层和按钮之间那 5.6px 的缝去掉（段高不变 52.1px）
+   乙 药丸一排    摊开，四个名字全在，一次点击（四个分类时同样是一行 52.1px）
+   丙 药丸 + 就地新建  乙加一枚「＋ 新建」，不用离开编辑台
+
+   三条共用的部分：都是一个 radio + label，和「草稿／已发布」同一来路；分类这一格
+   从 .field-pair 的右半格挪成整幅（甲除外，甲和今天一样占半格）。 */
+
+/* 浏览器给 figure 留了 40px 的左右外边距，稿样里这几张图不要它。 */
+figure { margin: 0; }
+
+.intro, .variant > p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant > p.why { margin-top: .5rem; }
+.variant ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant ul li + li { margin-top: .4rem; }
+.variant ul b { color: var(--ink); font-weight: 600; }
+.variant .field { margin-top: 2rem; }
+.variant figure + figure { margin-top: 2.5rem; }
+.variant figcaption { margin-top: .6rem; color: var(--muted); font-size: var(--facts-size); }
+.variant code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* ═══ 甲 贴齐的下拉 ═══
+   弹层那一层是 @supports (appearance: base-select) 里我们自己画的（styles.css 里
+   .select select::picker(select)），所以那条缝是我们定的、也能由我们去掉：
+   top 从 anchor(bottom) + .35rem 改成 anchor(bottom) - 1px —— 弹层上沿压住按钮
+   下沿那 1px 的描边，两层线并成一条。相接的那两条圆角跟着抹平，否则接缝两端
+   会各露出一个小缺口。 */
+@supports (appearance: base-select) {
+  .select-flush select::picker(select) {
+    top: calc(anchor(bottom) - 1px);
+    border-radius: 0 0 2px 2px;
+    position-try-fallbacks: --select-flush-above;
+  }
+  @position-try --select-flush-above {
+    top: auto;
+    bottom: calc(anchor(top) - 1px);
+  }
+}
+
+/* 接缝那张图。左边是现在，右边是改后，两边画的是同一件事：
+   按钮的下沿 + 弹层的上沿，中间隔多少。 */
+.seam { display: flex; gap: 3.5rem; flex-wrap: wrap; }
+.seam .fig { width: 14rem; }
+.seam-field {
+  display: flex; align-items: center; height: 2.9rem; padding: 0 .85rem;
+  border: 1px solid var(--control); border-radius: 2px; background: #fff; font-size: .9375rem;
+}
+.seam-pop { border: 1px solid var(--ink); border-radius: 2px; background: #fff; padding: .25rem; font-size: .9375rem; }
+.seam-pop span { display: block; padding: .55rem .7rem; }
+.seam-now .seam-pop { margin-top: .35rem; }
+.seam-fix .seam-pop { margin-top: -1px; border-radius: 0 0 2px 2px; }
+
+/* ═══ 乙 药丸 ═══
+   一枚药丸就是一段：面和描边照抄 .field-input（同一条 --control、同一枚 2px 圆角、
+   同一个 2.9rem 下限），所以四个分类时整行和上面那些输入框一样高、一样宽。
+   选中那枚用 --fill 的面加印色的字——和 .segmented 的滑块同一套记号：印色在这一站
+   始终是墨不是面，全站唯一一块满印色的面留给「保存」。 */
+.cat-pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cat-pills label {
+  display: inline-flex; align-items: center; padding: .7rem .9rem;
+  background: #fff; border: 1px solid var(--control); border-radius: 2px;
+  font-size: .9375rem; cursor: pointer;
+}
+.cat-pills label:hover { border-color: var(--muted); }
+.cat-pills input:checked + label { background: var(--fill); border-color: var(--seal); color: var(--seal); }
+.cat-pills input:focus-visible + label { outline: 2px solid var(--seal); outline-offset: 2px; }
+
+/* ═══ 丙 就地新建 ═══
+   末了一枚不画成药丸的样子：它不是一个值，是一个动作。没有描边、字是灰的、
+   前面一个加号——和左边那四个一眼分得开。点开之后它那一格换成输入框。 */
+.cat-add { display: inline-flex; align-items: center; padding: .7rem .6rem; border: 0; background: none; color: var(--muted); font-size: .9375rem; }
+.cat-add:hover { color: var(--seal); }
+.cat-add-open { display: flex; align-items: stretch; gap: .5rem; flex-basis: 100%; margin-top: .25rem; }
+.cat-add-open input { flex: 1 1 12rem; max-width: 20rem; }
+
+/* 分类多了就折行。这里按产品的整幅宽度量，不另设窄框 —— 折算出来的行数才是真的。 */
+.many { max-width: var(--measure); }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-admin nav-here" href="#">写作</a>
+    <a class="nav-signed-in" href="#">账号</a>
+    <a class="nav-signed-out" href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+只截了「分类」那一格。前后那些字段和保存条三条一样、都不动。
+甲那条缝是我自己在稿样里加的（<code>top: calc(anchor(bottom) + .35rem)</code>），不是系统画的
+——弹层在 <code>appearance: base-select</code> 下是我们自己画的，所以改得动。
+</p>
+
+<!-- ═══════════ 甲 贴齐的下拉 ═══════════ -->
+<div class="variant v-a">
+  <h2>甲 贴齐的下拉</h2>
+  <p class="why">控件不动，只把弹层拉到贴着按钮：上沿压住按钮下沿那 1px 的描边，两层线并成一条。展开的那一层从此像是从这一格翻出来的，不是浮在旁边的一张纸。</p>
+
+  <div class="field-pair" style="max-width: var(--measure)">
+    <div class="field">
+      <label class="field-label" for="a-slug">地址里的名字</label>
+      <input class="field-input" id="a-slug" type="text" value="go-api-first-step">
+    </div>
+    <div class="field">
+      <label class="field-label" for="a-cat">分类</label>
+      <span class="select select-flush">
+        <select id="a-cat">
+          <option>后端开发</option>
+          <option>前端实践</option>
+          <option>AI 探索</option>
+          <option>学习随笔</option>
+        </select>
+      </span>
+    </div>
+  </div>
+
+  <div class="seam" style="margin-top:3rem">
+    <figure class="fig seam-now">
+      <div class="seam-field">后端开发</div>
+      <div class="seam-pop"><span>前端实践</span></div>
+      <figcaption>现在 ─ 两条线中间空 5.6px</figcaption>
+    </figure>
+    <figure class="fig seam-fix">
+      <div class="seam-field">后端开发</div>
+      <div class="seam-pop"><span>前端实践</span></div>
+      <figcaption>改后 ─ 弹层上沿压住按钮下沿 1px，两条线并成一条</figcaption>
+    </figure>
+  </div>
+
+  <ul>
+    <li>上面那一格是<b>活的</b>，点开看：缝没了。下面两张图是把接缝放大画出来的（不放大看不出，一条 1px 的线而已）。</li>
+    <li>改的是两行：接缝处的 <code>top</code> 从 <code>+ .35rem</code> 变成 <code>- 1px</code>，相接的那两条圆角抹成直角。翻到上面去的那一支（<code>--select-above</code>）同样处理。</li>
+    <li>量过：展开时按钮下沿往下 4px 的落点还是那个 select（弹层自己的描边加内边距），再往下就是 <code>option</code>；弹层上沿 820.3px，按钮下沿 821.3px —— 差的就是那 1px。闭合时按钮下面一个像素都不沾。</li>
+    <li>一处没兜住：按钮贴着视口底下时，<code>--select-above</code> 那条 fallback <b>没有生效</b>（视口 900px、按钮下沿 771px，弹层照样朝下开、被视口切掉）。这是 styles.css 里原有的写法，甲只是把它的间距一起改了，没修好它。</li>
+    <li>代价：<b>还是没有一次点击</b>。下拉要两下，而且把没选中的那三个藏起来——而「后端开发」在这一站是个正经名字，文章列表的筛选行、每篇的落款都在拿它说事。</li>
+    <li>这条对<b>控件本身的写法一个字都不改</b>，也不碰 Vue 里的 select，是最省的一条。</li>
+  </ul>
+</div>
+
+<!-- ═══════════ 乙 药丸一排 ═══════════ -->
+<div class="variant v-b">
+  <h2>乙 药丸一排</h2>
+  <p class="why">四个名字全摊在纸面上，当前是哪个一眼看得出，改一下只要一下。和「状态」那一格是同一条道理——它当初就是从下拉改成两段并排的，理由写在 styles.css 里：下拉把没选中的那个藏起来，可「草稿」在这一站是个正经名字。</p>
+
+  <div class="field" style="max-width: var(--measure)">
+    <span class="field-label" id="b-cat-label">分类</span>
+    <div class="cat-pills" role="radiogroup" aria-labelledby="b-cat-label">
+      <input class="sr-only" type="radio" name="b-cat" id="b-cat-1" value="backend" checked>
+      <label for="b-cat-1">后端开发</label>
+      <input class="sr-only" type="radio" name="b-cat" id="b-cat-2" value="frontend">
+      <label for="b-cat-2">前端实践</label>
+      <input class="sr-only" type="radio" name="b-cat" id="b-cat-3" value="ai">
+      <label for="b-cat-3">AI 探索</label>
+      <input class="sr-only" type="radio" name="b-cat" id="b-cat-4" value="notes">
+      <label for="b-cat-4">学习随笔</label>
+    </div>
+  </div>
+
+  <figure class="many" style="margin-top:3rem">
+    <span class="field-label">分类很多的时候（12 个）</span>
+    <div class="cat-pills" role="radiogroup" aria-label="分类 · 十二个">
+      <input class="sr-only" type="radio" name="b-many" id="bm-1" value="1" checked>
+      <label for="bm-1">后端开发</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-2" value="2">
+      <label for="bm-2">前端实践</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-3" value="3">
+      <label for="bm-3">AI 探索</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-4" value="4">
+      <label for="bm-4">学习随笔</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-5" value="5">
+      <label for="bm-5">读书笔记</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-6" value="6">
+      <label for="bm-6">工具链</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-7" value="7">
+      <label for="bm-7">数据库</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-8" value="8">
+      <label for="bm-8">运维</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-9" value="9">
+      <label for="bm-9">安全</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-10" value="10">
+      <label for="bm-10">随手记</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-11" value="11">
+      <label for="bm-11">翻译</label>
+      <input class="sr-only" type="radio" name="b-many" id="bm-12" value="12">
+      <label for="bm-12">杂谈</label>
+    </div>
+    <figcaption>一整幅 720px 时折成 2 行，600px 宽时也是 2 行（都是量出来的）。分类的上限是 20 个。真实的分类数是 4 到 6 个，这一屏出现的可能性很低。</figcaption>
+  </figure>
+
+  <figure style="margin-top:3rem;max-width: var(--measure)">
+    <span class="field-label">一个分类都没有的时候</span>
+    <div class="cat-pills">
+      <span class="field-error">还没有分类。文章必须归在其中一个下面。</span>
+    </div>
+    <figcaption>点不出东西的控件不画成控件，就是一句话（同「新文章 · 还没有分类」那一屏）。</figcaption>
+  </figure>
+
+  <ul>
+    <li><b>四个分类时整行 52.1px，和上面那些输入框（52.1px）、下拉（52.1px）逐像素一样</b>——600px 宽时三个又都是 50.6px。所以「摊开会不会把表单撑高」在这儿不成立：<b>一段都不用长</b>。</li>
+    <li>四个药丸加三条缝量到 376.6px。一整幅是 720px（1600px 时）、545px（600px 时），两边都是一行放得下。12 个的时候折成 2 行。</li>
+    <li>这一格得<b>从半格挪成整幅</b>：半格 350px，376.6px 正好放不进去，会折成两行——摊开的意义就没了。「地址里的名字」那一格因此独占一行。表单长出大概一行。</li>
+    <li>键盘、焦点圈、方向键由浏览器给，和「草稿／已发布」同一个来路，不用另写。</li>
+    <li>代价：<b>这一格比别的字段占地方</b>。它是表单里唯一一个「选项摆在纸面上」的字段，眼睛会先落在这儿——和「状态」那两段并排一样，这是有意的。</li>
+  </ul>
+</div>
+
+<!-- ═══════════ 丙 药丸 + 就地新建 ═══════════ -->
+<div class="variant v-c">
+  <h2>丙 药丸 + 就地新建</h2>
+  <p class="why">乙再加一枚。写到一半发现这篇该归到一个还没有的分类上——不用离开编辑台，也不用先把这一稿存下来再回来。</p>
+
+  <div class="field" style="max-width: var(--measure)">
+    <span class="field-label" id="c-cat-label">分类</span>
+    <div class="cat-pills" role="radiogroup" aria-labelledby="c-cat-label">
+      <input class="sr-only" type="radio" name="c-cat" id="c-cat-1" value="backend">
+      <label for="c-cat-1">后端开发</label>
+      <input class="sr-only" type="radio" name="c-cat" id="c-cat-2" value="frontend">
+      <label for="c-cat-2">前端实践</label>
+      <input class="sr-only" type="radio" name="c-cat" id="c-cat-3" value="ai">
+      <label for="c-cat-3">AI 探索</label>
+      <input class="sr-only" type="radio" name="c-cat" id="c-cat-4" value="notes">
+      <label for="c-cat-4">学习随笔</label>
+      <button class="cat-add" type="button">＋ 新建</button>
+    </div>
+  </div>
+
+  <div class="field" style="max-width: var(--measure)">
+    <span class="field-label">点开之后</span>
+    <div class="cat-pills">
+      <input class="sr-only" type="radio" name="c2-cat" id="c2-cat-1" value="backend">
+      <label for="c2-cat-1">后端开发</label>
+      <input class="sr-only" type="radio" name="c2-cat" id="c2-cat-2" value="frontend">
+      <label for="c2-cat-2">前端实践</label>
+      <input class="sr-only" type="radio" name="c2-cat" id="c2-cat-3" value="ai">
+      <label for="c2-cat-3">AI 探索</label>
+      <input class="sr-only" type="radio" name="c2-cat" id="c2-cat-4" value="notes">
+      <label for="c2-cat-4">学习随笔</label>
+      <div class="cat-add-open">
+        <input class="field-input" type="text" placeholder="新分类叫什么" aria-label="新分类的名字">
+        <button class="pager-btn" type="button">加上</button>
+        <button class="link-quiet" type="button">取消</button>
+      </div>
+    </div>
+    <p class="field-hint">加完它自动选中——刚建的那个就是这一篇要归的，不用再点一下。</p>
+  </div>
+
+  <ul>
+    <li>新分类排在最后、并且<b>立刻选中</b>：点「＋ 新建」的意图就是「这篇要归它」。</li>
+    <li>「加上」是描边的那种，不是满印色的——<b>这一页的主操作是「保存」</b>，styles.css 里写着全站唯一一块满印色的面留给主操作，多一块就开始抢。分类那一页上它可以是主操作，在编辑台里不是。</li>
+    <li>它走的是同一个接口（<code>POST /admin/categories</code>），撞名字、超 16 个字、到 20 个上限，说的都是同一句话——分类那一页上那几个错误态直接搬过来，不另写一套。</li>
+    <li>有了这一枚，<b>「一个分类都没有」那屏就不是死路</b>：不用先跳到分类页再跳回来，就地建一个就往下走。</li>
+    <li>代价：编辑台从此能改分类表。这一步不小——这一页别的地方都是「改这一篇」。真出事也只到「多了一个空分类」，删掉就是了。</li>
+    <li>不要这一枚也成立：乙单独就是完整的一条，丙是乙加上去的。</li>
+  </ul>
+</div>
+
+</main>
+</body>
+</html>

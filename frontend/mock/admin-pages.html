@@ -254,6 +254,14 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 .confirm p { color: var(--muted); font-size: .9375rem; margin-top: .35rem; }
 .confirm-actions { margin-top: .85rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 
+/* ---------- 写作：分类 ---------- */
+
+/* 列表那一行右侧有两个动作（去分类、写新的一篇），中间那道 1.25rem 和条目上的
+   动作同一个数——同一站里的两个链接之间不留两种空。 */
+.tools-acts { display: flex; align-items: center; gap: 1.25rem; }
+/* 分类名字是个短词。输入框占满版心会让人以为可以写很长，和搜索框取同一个宽度。 */
+.cat-name-field { max-width: 22rem; }
+
 /* ---------- 写作：编辑台 ---------- */
 
 /* 左栏是这篇的事实（id、时间、字数），右栏是能改的字段。事实栏里没有一个输入框
@@ -325,7 +333,11 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
        下沿展开、左沿对齐、宽度随按钮。隐式锚点就是它自己那个 select，不用取名，
        一页上有几个下拉也不会撞。 */
     position: fixed;
-    top: calc(anchor(bottom) + .35rem);
+    /* 上沿压住按钮下沿那 1px 的描边，两层线并成一条：弹层看着是从这一格里翻出来的，
+       不是浮在旁边的一张纸。中间留缝（原来是 + .35rem＝5.6px）读起来像没对齐——小到
+       不像有意留的，大到不像长在一起的。相接处那两条圆角跟着抹平，否则接缝两头会各
+       露出一个小缺口。 */
+    top: calc(anchor(bottom) - 1px);
     left: anchor(left);
     bottom: auto;
     right: auto;
@@ -334,15 +346,21 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
     min-width: anchor-size(width);
     background: #fff;
     border: 1px solid var(--ink);
-    border-radius: 2px;
+    border-radius: 0 0 2px 2px;
     padding: .25rem;
     font-size: .9375rem;
-    /* 按钮贴着视口底下时翻到上面去，否则最后几条会被切掉。 */
+    /* 按钮贴着视口底下时按理该翻到上面去。实测没翻 —— 视口 900px、按钮下沿 771px，
+       下面只剩 129px 放不下这 170px 的弹层，它照样朝下开、一直铺到视口底边被切掉
+       （沿中线每 10px 打点，到 891px 那一行落点还是 option）。这条 fallback 是
+       styles.css 里原有的，我没能测出它生效。留着，但别指望它兜住这种情况。 */
     position-try-fallbacks: --select-above;
   }
   @position-try --select-above {
     top: auto;
-    bottom: calc(anchor(top) + .35rem);
+    /* 翻上去时贴的是按钮的上沿。这一条只放定位属性 —— @position-try 里除定位之外的
+       声明会被整条丢掉（量过：写进去的 border-radius 在 CSSOM 里根本不存在），
+       所以万一真翻上去，圆角仍是上面那条的 0 0 2px 2px，方向正相反。差 2px。 */
+    bottom: calc(anchor(top) - 1px);
   }
   .select option { padding: .55rem .7rem; border-radius: 2px; }
   .select option:hover { background: var(--fill); }
@@ -445,16 +463,42 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 .field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; }
 .field-pair .field + .field { margin-top: 0; }
 
-/* 正文这一段自己占满整幅：原文要看得见行，校样要看得见版，两边都要宽度，
-   注文栏在这一段让位。 */
-.md { margin-top: 3rem; }
-.md-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+/* 正文这一段自己占满整幅：原文要看得见行，注文栏在这一段让位。
+   原文和预览不再并排——并排时两边各分走一半，都窄；改成点着切，一次只给一面。
+   换面在稿样里靠 :has，在产品里靠 v-show —— 那两条显示规则只在稿样这一份里。 */
+.md { margin-top: 3rem; --md-source-h: 40rem; }
 .md-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 切换键那一行占的是原来标签那一行的位置，所以正文框的顶端不动。左边那个词写
+   「现在在哪一面」，右边那枚写「点下去会去哪一面」——两句话各说一件事。 */
+.md-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .45rem; }
+.md-head .md-label { margin-bottom: 0; }
+/* 这一层的字号要跟着里面那枚字走：它默认继承正文的 17px，比那枚字（14px）大，
+   空行按大的那一行算，整行因此比原来那行标签高 5.5px（31.45 vs 25.9）。定成同一个
+   字号，正文框顶端就回到原来那个位置。 */
+.md-switch { margin-left: auto; cursor: pointer; font-size: var(--facts-size); }
+.md-pane { display: none; }
+.md:has(input[value="source"]:checked) .md-pane[data-pane="source"],
+.md:has(input[value="preview"]:checked) .md-pane[data-pane="preview"] { display: block; }
+/* 名字与切换键都是常驻的，谁显谁隐跟着选中的那个走（产品里这两处是三元表达式）。 */
+.md-now-preview, .md-switch-source { display: none; }
+.md:has(input[value="preview"]:checked) .md-now-source,
+.md:has(input[value="preview"]:checked) .md-switch-preview { display: none; }
+.md:has(input[value="preview"]:checked) .md-now-preview { display: block; }
+.md:has(input[value="preview"]:checked) .md-switch-source { display: inline; }
 /* 正文框不给拖。原来那 34rem 是「再拖也只会更高」的下限，撤掉拖拽之后它就是这一格的
-   高度：一屏装满还有余，往下写靠页面滚，不再有内外两层滚动条打架。 */
-.md-source { display: block; width: 100%; min-height: 40rem; resize: none; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .85rem 1rem; font-family: var(--stack-mono); font-size: .875rem; line-height: 1.8; }
+   高度：一屏装满还有余，往下写靠页面滚，不再有内外两层滚动条打架。
+   预览那一面按同一个下限加 3.5rem 兜底：「插入图片」那一行（1rem 上边距 + 2.5rem
+   按钮）只长在原文那一面，少了它切过去整段要短一截。再加一句按键说明（.4rem 上边距
+   + 一行字，1.61875rem）。 */
+.md-source { display: block; width: 100%; min-height: var(--md-source-h); resize: none; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .85rem 1rem; font-family: var(--stack-mono); font-size: .875rem; line-height: 1.8; }
+/* 原文这一格里插进去的是真制表符，预览那一面把它画出来 —— 两处得是同一个宽度，
+   不然同一个 go 代码块在两边缩进的格数看着不一样。浏览器默认 8。 */
+.md-source, .prose pre { tab-size: 4; }
 .md-source:focus { border-color: var(--seal); }
-/* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。 */
+/* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。
+   它的字长对着公开页：公开页正文那一栏就是 --measure。 */
+.md-pane[data-pane="preview"] { min-height: calc(var(--md-source-h) + 3.5rem + .4rem + var(--facts-size) * var(--leading)); }
+.md-pane[data-pane="preview"] .prose { max-width: var(--measure); }
 .md-tools { margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .md-tools .upload-btn { cursor: pointer; }
 .md-tools .field-hint { margin-top: 0; }
@@ -474,8 +518,14 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
   background: var(--paper);
 }
 /* 左栏两行，说的是「现在存没存」和「切走会怎样」。话比别处紧一点：这一条是钉住的，
-   每一行都是常驻的高度。 */
-.save .facts > p + p { margin-top: .35rem; }
+   每一行都是常驻的高度。
+
+   间距交给容器，不交给 p + p：那五行在 DOM 里始终互为兄弟，p + p 会把 display:none
+   的那几个也算进去，于是显示「有改动没保存」那一支时，第一行平白多出一段上边距，
+   整条保存条跟着长高 0.35rem（量过：74.4 → 80.0）。row-gap 只看显示出来的那两行，
+   切换状态时高度就不动了。 */
+.save .facts { display: grid; row-gap: .35rem; }
+.save .facts > p { margin-top: 0; }
 .save-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 /* 第二行有三个说法，同一时刻只出一个。 */
 .save-state-clean, .save-state-dirty, .save-note-clean, .save-note-dirty, .save-note-leaving { display: none; }
@@ -494,7 +544,6 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 /* ---------- 窄屏 ---------- */
 @media (max-width: 56rem) {
   :root { --margin: 7.5rem; --gutter: 1.75rem; }
-  .md-split { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 }
 @media (max-width: 44rem) {
   :root { --pad: 1.25rem; --margin: 0rem; --gutter: 0rem; --measure: 100%; --text-start: 0rem; --body-size: 1rem; --facts-size: .8125rem; --leading: 1.75; --masthead-fade: 2.5rem; --masthead-h: 4.6rem; }
@@ -503,12 +552,15 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
   .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
   .facts > p + p { margin-top: 0; }
   .mark { margin-bottom: 0; }
+  /* 保存条那两行也并进这一行。它在外面的 display:grid 比上面这条 .facts 更具体，
+     得在这里让回 flex，间距才跟着换到 gap 上。 */
+  .save .facts { display: flex; }
   .masthead { padding-top: 1.5rem; }
   .piece { margin-top: 2.75rem; }
   .piece-title { font-size: 1.75rem; }
   .field-pair { grid-template-columns: minmax(0, 1fr); }
   .field-pair .field + .field { margin-top: 1.25rem; }
-  .md-source { min-height: 22rem; }
+  .md { --md-source-h: 22rem; }
   .filters { gap: .35rem; }
   .filter { padding: 0 .5rem; }
   /* 窄屏上三个格子并排挤不下：页码单独占一行居中，两只手在它下面各守一边。 */
@@ -586,7 +638,10 @@ body.show-notes .draft-note { display: block; }
             <button type="button">搜索</button>
           </div>
         </div>
-        <a class="primary" href="#">写新的一篇</a>
+        <div class="tools-acts">
+          <a class="link-quiet" href="#">分类</a>
+          <a class="primary" href="#">写新的一篇</a>
+        </div>
       </div>
     </div>
   </div>
@@ -800,6 +855,536 @@ body.show-notes .draft-note { display: block; }
 </div>
 
 
+<!-- ═══════════ 分类 ═══════════ -->
+<div class="page" data-screen="cats" data-label="分类">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">第一个是写新文章时的默认分类</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <p class="facts">每一篇都归在其中一个下面，没有「未分类」这一档。</p>
+        <a class="primary" href="#">新建一个分类</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>4 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">后端开发</h3>
+        <p class="entry-acts">
+          <button class="act" type="button" disabled>上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端实践</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>2 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">AI 探索</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>1 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">学习随笔</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>分类这一页想让你先看的几件事</b>
+    <p>分类从写死的四个词变成一张表 ─ 在此之前它是文章表上的一条 CHECK 约束（<code>category IN ('backend','frontend','ai','notes')</code>），加一个分类要改表结构。现在加、改、删都在这一页上。</p>
+    <p>分类自己有一个 id，名字只是名字。四个内置分类的 id 直接沿用文章上原来那几个代号（<code>backend</code>、<code>frontend</code>、<code>ai</code>、<code>notes</code>）─ 于是文章表一个字节都不用改：老值本来就指着这四样东西，外键当场建得起来。新加的分类用和文章 id 同一个来路（<code>auth.NewShortID</code>，8 位随机码），看不见，也不用管。</p>
+    <p>改名字只动那个名字 ─ 文章存的是 id，一个字都不碰。名字也不进任何地址（进地址的是 id），所以「后端开发」改成「服务端」不会让任何一个链接失效，筛选链接也还是 <code>?category=backend</code>。</p>
+    <p>有文章的分类删不掉 ─ 外键拦着，不是代码里判一下。要删就得先把文章挪到别的分类，删除框里那一步就是干这个的。全库只剩一个分类时没有可挪的去处，那一屏会改成让你先建一个（这一稿没画）。</p>
+    <p>顺序是整份提交的 ─ 上移、下移把整张表的新顺序一次发上去，服务端一个事务写下来。两次单独的交换请求中间断一次，顺序就乱了。</p>
+    <p>读者那边的一行只列有已发布文章的分类 ─ 和「列表空着的时候不出筛选器」同一条道理：筛出来是空的按钮只是占位。所以 0 篇的分类在这里看得见、在读者那边看不见；读者那一行的容量在宽屏上一行放得下八个左右，多了就折行。</p>
+    <p>这一页不提供「看这几篇」 ─ 写作列表的分类筛选是下一步的事，这一轮不加。</p>
+    <p>名字最多 16 个字，分类最多 20 个 ─ 上限写死在这里是为了让读者那一行不至于长到没法看。名字不进任何地址，所以对它没有字符上的额外要求，只有「去掉首尾空格之后不能是空的」。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 一个都没有 ═══════════ -->
+<div class="page" data-screen="cats-empty" data-label="分类 · 一个都没有">
+  <section class="piece row ruled">
+    <div class="facts"><p>0 个分类</p></div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">还没有分类。文章必须归在其中一个下面，所以先建一个——读者那边的筛选项也是它。</p>
+    </div>
+  </section>
+
+  <div class="entries entries-ledger">
+    <article class="entry row ruled">
+      <div class="facts"><p class="mark">新的</p></div>
+      <div class="main">
+        <div class="cat-name-field field">
+          <label class="field-label" for="ce-name">名字</label>
+          <input class="field-input" id="ce-name" type="text" placeholder="比如：读书笔记">
+          <p class="field-hint">写的就是读者在文章列表上看见的那几个字。最多 16 个字。</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button">加上</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <aside class="draft-note">
+    <b>一个都没有</b>
+    <p>这是唯一一个没有「取消」的地方 ─ 没有列表可以退回去。表单直接摆在这一行上，不是点出来的。</p>
+    <p>文章表和分类表之间是外键，所以一个分类都没有的时候，谁也存不下文章；编辑台那一格会停下来（见「新文章 · 还没有分类」那一屏）。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 新建 ═══════════ -->
+<div class="page" data-screen="cats-new" data-label="分类 · 新建">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">第一个是写新文章时的默认分类</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <p class="facts">新建表单落在它将成为的那一行上：新分类排在最后。</p>
+        <a class="primary" href="#">新建一个分类</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>4 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">后端开发</h3>
+        <p class="entry-acts">
+          <button class="act" type="button" disabled>上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端实践</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>2 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">AI 探索</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>1 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">学习随笔</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p class="mark">新的</p></div>
+      <div class="main">
+        <div class="cat-name-field field">
+          <label class="field-label" for="cn-name">名字</label>
+          <input class="field-input" id="cn-name" type="text" placeholder="比如：读书笔记">
+          <p class="field-hint">写的就是读者在文章列表上看见的那几个字。最多 16 个字。</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button">加上</button>
+          <button class="pager-btn" type="button">取消</button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>新建</b>
+    <p>表单出现在最后一行，不是页面顶上 ─ 它会成为的那一行就在那儿，按一下「加上」它就落在原地，不用猜它去了哪。</p>
+    <p>一次只加一个。这一页总共也就一屏，没有排队的必要。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 改名 ═══════════ -->
+<div class="page" data-screen="cats-rename" data-label="分类 · 改名">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。</p>
+    </div>
+  </section>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>4 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <div class="cat-name-field field">
+          <label class="field-label" for="cr-name">名字</label>
+          <input class="field-input" id="cr-name" type="text" value="后端开发">
+          <p class="field-hint">改的是它在站上的叫法。文章存的是分类的 id，所以这 4 篇一个字都不动。</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button">保存</button>
+          <button class="pager-btn" type="button">取消</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端实践</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>2 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">AI 探索</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>改名</b>
+    <p>就地替掉名字那一行，页面上别的一个字都不动 ─ 改的是名字，不是这一页。</p>
+    <p>提示里那句「文章存的是分类的 id，所以这 4 篇一个字都不动」是这一屏最要紧的一句话：换掉的只有那个名字，别的什么都没发生。写出来，人才敢改。</p>
+    <p>顺序不动 ─ 改名字不改它在读者那一行里的位置。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 重名 ═══════════ -->
+<div class="page" data-screen="cats-conflict" data-label="分类 · 重名">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。</p>
+    </div>
+  </section>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>4 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <div class="cat-name-field field">
+          <label class="field-label" for="cc-name">名字</label>
+          <input class="field-input" id="cc-name" type="text" value="前端实践" aria-invalid="true">
+          <p class="field-error">已经有一个叫「前端实践」的分类了。名字在站上只能有一个。</p>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button">保存</button>
+          <button class="pager-btn" type="button">取消</button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>重名</b>
+    <p>名字上有一条唯一索引，所以撞名是服务端的 409，不是前端先比一遍 ─ 前端比不过服务端那一刻的状态。前端这一遍只为了少一次往返，说最后一句的仍然后端。</p>
+    <p>大小写不敏感：「AI 探索」和「ai 探索」算同一个名字。列上用的是 <code>utf8mb4_0900_as_ci</code>，这条由库保证，不靠代码记得去比。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 删除（下面有文章） ═══════════ -->
+<div class="page" data-screen="cats-inuse" data-label="分类 · 删除（有文章）">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。</p>
+    </div>
+  </section>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>4 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">后端开发</h3>
+        <div class="confirm">
+          <p><strong>删除「后端开发」？</strong></p>
+          <p>这个分类下还有 4 篇文章（1 篇草稿）。删掉分类之前，得先给它们找个去处。</p>
+          <div class="cat-name-field field">
+            <label class="field-label" for="ci-move">这 4 篇改归到</label>
+            <span class="select">
+              <select id="ci-move">
+                <option>前端实践</option>
+                <option>AI 探索</option>
+                <option>学习随笔</option>
+                <option>读书笔记</option>
+              </select>
+            </span>
+          </div>
+          <p>文章本身一个字都不动，只有分类换成新的那一个。它们的地址里带的是 id，也不会变。</p>
+          <div class="confirm-actions">
+            <button class="btn-danger" type="button">挪走这 4 篇，删掉分类</button>
+            <button class="pager-btn" type="button">取消</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端实践</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>删除：下面还有文章</b>
+    <p>删不掉不是前端拦的，是外键拦的（<code>ON DELETE RESTRICT</code>）。这一屏做的事是给那条约束一条出路：一次请求里先改这 4 篇的分类，再删分类，服务端一个事务。</p>
+    <p>挪的分类必须选，按钮才点得动 ─ 没有默认值。默认一个等于替人做了他正在犹豫的那个决定。</p>
+    <p>下拉里不含它自己 ─ 去处得是别的分类。空的分类也行。</p>
+    <p>挪分类不动 <code>updated_at</code> ─ 文章本身没被改过。跟着动的话，写作列表按最近改动排，一挪就是 4 篇跳到最前面，看着像今天重写了 4 篇。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 删除（空分类） ═══════════ -->
+<div class="page" data-screen="cats-delete" data-label="分类 · 删除（空）">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">5 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。</p>
+    </div>
+  </section>
+
+  <div class="entries entries-ledger">
+
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <div class="confirm">
+          <p><strong>删除「读书笔记」？</strong></p>
+          <p>这个分类下面还没有文章，删掉不影响任何一篇。读者那边本来也看不见它——没有已发布的文章，它就不在筛选项里。</p>
+          <div class="confirm-actions">
+            <button class="btn-danger" type="button">删除这个分类</button>
+            <button class="pager-btn" type="button">取消</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry row ruled">
+      <div class="facts">
+        <p>1 篇</p>
+        <p>其中 1 篇草稿</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title">学习随笔</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+
+  </div>
+
+  <aside class="draft-note">
+    <b>删除：空分类</b>
+    <p>没有文章就不问去处，一句话说完就完 ─ 多问一步只是走个形式。</p>
+    <p>空分类在读者那边看不见，所以这里也不用提「公开页会变」。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 分类 · 读不出来 ═══════════ -->
+<div class="page" data-screen="cats-failed" data-label="分类 · 读不出来">
+  <section class="piece row ruled">
+    <div class="facts"><p>没有读到</p></div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <div class="banner" style="margin-top:1.5rem">
+        <h3>分类没读出来</h3>
+        <p>服务端没有应答。分类还在，文章也还在——只是这一页没读到，重试一次即可。</p>
+        <div class="banner-actions"><button class="pager-btn" type="button">重新加载</button></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="draft-note">
+    <b>读不出来</b>
+    <p>和写作列表那一屏同一个说法：先说明东西没丢。这一页读不到分类，读者那边一点感觉都没有——公开的那一行也跟着没读到，但文章照常显示各自的分类名。</p>
+  </aside>
+</div>
+
+
 <!-- ═══════════ 新文章 ═══════════ -->
 <div class="page" data-screen="new" data-label="新文章">
   <section class="piece row ruled">
@@ -850,10 +1435,10 @@ body.show-notes .draft-note { display: block; }
           <label class="field-label" for="n-cat">分类</label>
           <span class="select">
             <select id="n-cat">
-              <option>后端</option>
-              <option>前端</option>
-              <option>AI</option>
-              <option>随笔</option>
+              <option>后端开发</option>
+              <option>前端实践</option>
+              <option>AI 探索</option>
+              <option>学习随笔</option>
             </select>
           </span>
         </div>
@@ -871,10 +1456,19 @@ body.show-notes .draft-note { display: block; }
   </form>
 
   <section class="md">
-    <div class="md-split">
-      <div>
-        <label class="md-label" for="n-body">Markdown 原文</label>
-        <textarea class="md-source" id="n-body" spellcheck="false">## 从哪里开始
+    <div class="md-head">
+      <span class="md-label md-now-source">Markdown 原文</span>
+      <span class="md-label md-now-preview">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="n-mode" id="n-mode-source" value="source" checked>
+        <input class="sr-only" type="radio" name="n-mode" id="n-mode-preview" value="preview">
+        <label class="link-quiet md-switch-preview" for="n-mode-preview">看预览</label>
+        <label class="link-quiet md-switch-source" for="n-mode-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" id="n-body" aria-label="Markdown 原文" spellcheck="false">## 从哪里开始
 
 先跑起来，再谈结构。
 
@@ -883,20 +1477,20 @@ r := gin.Default()
 r.GET("/api/v1/articles", listArticles)
 ```
 </textarea>
-        <div class="md-tools">
-          <label class="pager-btn upload-btn" for="n-file">插入图片</label>
-          <input class="sr-only" id="n-file" type="file" accept="image/*">
-          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
-        </div>
+      <p class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="n-file">插入图片</label>
+        <input class="sr-only" id="n-file" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
       </div>
-      <div>
-        <span class="md-label">预览</span>
-        <div class="prose">
-          <h2>从哪里开始</h2>
-          <p>先跑起来，再谈结构。</p>
-          <pre><code>r := gin.Default()
+    </div>
+
+    <div class="md-pane" data-pane="preview">
+      <div class="prose">
+        <h2>从哪里开始</h2>
+        <p>先跑起来，再谈结构。</p>
+        <pre><code>r := gin.Default()
 r.GET("/api/v1/articles", listArticles)</code></pre>
-        </div>
       </div>
     </div>
   </section>
@@ -923,12 +1517,143 @@ r.GET("/api/v1/articles", listArticles)</code></pre>
     <p>标题输入框用详情页的字号 ─ 填的时候就是印出来的样子。摘要、正文同理，右边那半幅就是真的 .prose。</p>
     <p>正文这一段占满整幅，注文栏让位 ─ 原文要看得见行，校样要看得见版，各占一半。左边加框（它是控件），右边不加（它是印出来的那一页）。窄屏上下叠。</p>
     <p>两个文本域都不给拖。右下角那两个斜杠是浏览器自己画的，压在细边框和两像素圆角上，笔画对不齐，也和这一站任何一支笔都不一样；而全站的东西都是量出来的，没有一处要人自己去拖版面。撤掉之后正文框按 40rem 定高往下写靠页面滚，摘要那一格改用 field-sizing: content 自己长到七行封顶。</p>
+    <p>正文框里 Tab 是缩进，不是跳到下一格。写的是 Markdown，可代码块里装的是真代码 —— 这一站的 Go 源码按制表符缩进，贴进来的也照着来。退回一格是 <b>Shift+Tab</b>，选中几行再按，整段跟着动。缩进的宽度两边对齐：原文那一面按 4 个字符画（浏览器默认 8，一个制表符会显得深得离谱），预览那一面的代码块也按 4 个。</p>
+    <p>Tab 被这一格拦住就得给一条出去的路，不然键盘只剩鼠标能走（WCAG 2.1.2）。先按 <b>Esc</b>，再按 Tab，就跳出去了；在别处点一下、或者接着打字，这条路自己收回。这一句写在框下面，因为它正是用键盘的人才需要的那句话。</p>
     <p>发布不是单独的按钮，是表单里的状态开关 ─ 免得点一下发一次请求，两次请求之间还有半截状态。</p>
     <p>「保存」是全页唯一的满印色按钮。删除、取消、放弃都退到文字级。</p>
     <p>状态从下拉换成两段并排 ─ 两个值的东西展开成两段，比收在一个下拉里好：下拉要两下才改得动，而且把没选中的那个藏起来，可「草稿」在这一站是个正经名字，别处都在拿它说事，藏起来等于给它换个叫法。滑块跟着选中的那个走，全是 CSS，落到 Vue 里就是两个 radio。这条也顺手把下拉那套 @supports 分岔的范围缩到只剩「分类」一处。</p>
     <p>右边那句提示跟着选中的那个走：它说的是「按下保存会发生什么」，所以换的是它本身，不是再加一句。这里有一处留给落 Vue 时做细：当选中值和存着的那个不一样、而存着的那个本来是「已发布」时，草稿那句还要带上「会从文章列表撤下来，公开地址同时失效」 ── 现在这稿里那句是常显的，比实际该出现的次数多。</p>
     <p>下拉框整个重画 ─ 灰底、立体边框、粗箭头、选中那条蓝色的横杠，在纸面上都太吵。面和描边照抄 .field-input，角标是自己画的一条一像素折线，和全站的横线同一种笔；选中的那一条用印色，和列表页筛选器同一套记号。</p>
     <p>展开的那一层靠 appearance: base-select 才画得动，所以走了 @supports 分岔：认的浏览器（Chrome 135 起）两层都是稿本的样子，不认的退回系统那层。弹层不加阴影 ─ 全站零阴影，分层靠一条满墨的细线，灰线是页面内的分隔，墨线才表示浮在上面。</p>
+  </aside>
+</div>
+
+
+<!-- ═══════════ 新文章 · 还没有分类 ═══════════ -->
+<div class="page" data-screen="new-nocats" data-label="新文章 · 还没有分类">
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>保存之后才有</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">写新的一篇</h1>
+    </div>
+  </section>
+
+  <form class="composer row ruled" onsubmit="return false">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+
+      <div class="field">
+        <span class="field-label" id="nc-status-label">状态</span>
+        <div class="status-row">
+          <div class="segmented" role="radiogroup" aria-labelledby="nc-status-label">
+            <input class="sr-only" type="radio" name="nc-status" id="nc-status-draft" value="draft" checked>
+            <label for="nc-status-draft">草稿</label>
+            <input class="sr-only" type="radio" name="nc-status" id="nc-status-pub" value="published">
+            <label for="nc-status-pub">已发布</label>
+          </div>
+          <p class="field-hint status-hint status-hint-draft">保存后只有你看得到。</p>
+          <p class="field-hint status-hint status-hint-published">保存后会出现在文章列表里，谁都能打开。</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nc-title">标题</label>
+        <input class="field-input input-title" id="nc-title" type="text" placeholder="一句话说清这篇在讲什么">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nc-summary">摘要</label>
+        <textarea class="field-area" id="nc-summary" rows="3" placeholder="列表页上跟在标题后面的那两三行"></textarea>
+        <p class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+      </div>
+
+      <div class="field-pair">
+        <div class="field">
+          <label class="field-label" for="nc-slug">地址里的名字</label>
+          <input class="field-input" id="nc-slug" type="text" placeholder="go-api-first-step">
+          <p class="field-hint">小写字母、数字和连字符。以后可以改，链接不会失效——地址里真正管用的是 id。</p>
+        </div>
+        <div class="field">
+          <span class="field-label">分类</span>
+          <p class="field-error">还没有分类。文章必须归在其中一个下面——先去建一个，再回来存这一篇。</p>
+          <p class="field-hint"><a class="link-quiet" href="#">去建一个分类</a></p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nc-tags">标签</label>
+        <div class="tags" data-tags>
+          <input id="nc-tags" type="text" placeholder="键入后按 Enter" autocomplete="off">
+        </div>
+        <p class="field-hint" data-tags-hint></p>
+      </div>
+
+    </div>
+  </form>
+
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label md-now-source">Markdown 原文</span>
+      <span class="md-label md-now-preview">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="nc-mode" id="nc-mode-source" value="source" checked>
+        <input class="sr-only" type="radio" name="nc-mode" id="nc-mode-preview" value="preview">
+        <label class="link-quiet md-switch-preview" for="nc-mode-preview">看预览</label>
+        <label class="link-quiet md-switch-source" for="nc-mode-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" id="nc-body" aria-label="Markdown 原文" spellcheck="false">## 从哪里开始
+
+先跑起来，再谈结构。
+
+```go
+r := gin.Default()
+r.GET("/api/v1/articles", listArticles)
+```
+</textarea>
+      <p class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="nc-file">插入图片</label>
+        <input class="sr-only" id="nc-file" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="preview">
+      <div class="prose">
+        <h2>从哪里开始</h2>
+        <p>先跑起来，再谈结构。</p>
+        <pre><code>r := gin.Default()
+r.GET("/api/v1/articles", listArticles)</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">还没有保存过</p>
+      <p class="save-state-dirty"><span class="mark">有改动没保存</span></p>
+      <p class="save-note-clean">关掉这一页就没了。</p>
+      <p class="save-note-dirty">离开这一页就没了。</p>
+      <p class="save-note-leaving">要去别的页，改动还没保存。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button" disabled>保存</button>
+      <button class="link-quiet act-abandon" type="button">放弃改动</button>
+      <a class="link-quiet act-away" href="#">放弃这一篇</a>
+    </div>
+  </div>
+
+  <aside class="draft-note">
+    <b>还没有分类</b>
+    <p>这一格不画一个空的下拉 ─ 一个点不开、或者点开什么都没有的控件只是占位。让位给一句话和一条去路。</p>
+    <p>「保存」同时灰掉：这不是前端自己加的规矩，是服务端本来就存不下去（文章表到分类表之间有外键）。与其让人填完一整篇再吃一个 400，不如现在就停在这里。</p>
+    <p>右边那一格比平时高两行，左边「地址里的名字」不受影响 —— 两格各排各的。</p>
+    <p>分类读不出来时（不是「一个都没有」，是这次没读到）用同一个位置说同一句话，只是去路换成「重试」。</p>
   </aside>
 </div>
 
@@ -986,10 +1711,10 @@ r.GET("/api/v1/articles", listArticles)</code></pre>
           <label class="field-label" for="e-cat">分类</label>
           <span class="select">
             <select id="e-cat">
-              <option selected>后端</option>
-              <option>前端</option>
-              <option>AI</option>
-              <option>随笔</option>
+              <option selected>后端开发</option>
+              <option>前端实践</option>
+              <option>AI 探索</option>
+              <option>学习随笔</option>
             </select>
           </span>
         </div>
@@ -1010,10 +1735,19 @@ r.GET("/api/v1/articles", listArticles)</code></pre>
   </form>
 
   <section class="md">
-    <div class="md-split">
-      <div>
-        <label class="md-label" for="e-body">Markdown 原文</label>
-        <textarea class="md-source" id="e-body" spellcheck="false">## 一个请求要经过几层
+    <div class="md-head">
+      <span class="md-label md-now-source">Markdown 原文</span>
+      <span class="md-label md-now-preview">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="e-mode" id="e-mode-source" value="source" checked>
+        <input class="sr-only" type="radio" name="e-mode" id="e-mode-preview" value="preview">
+        <label class="link-quiet md-switch-preview" for="e-mode-preview">看预览</label>
+        <label class="link-quiet md-switch-source" for="e-mode-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" id="e-body" aria-label="Markdown 原文" spellcheck="false">## 一个请求要经过几层
 
 浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。
 
@@ -1026,22 +1760,22 @@ r.GET("/api/v1/articles", listArticles)
 
 `listArticles` 拿到的第一个东西不是参数，是上下文。
 </textarea>
-        <div class="md-tools">
-          <label class="pager-btn upload-btn" for="e-file">插入图片</label>
-          <input class="sr-only" id="e-file" type="file" accept="image/*">
-          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
-        </div>
+      <p class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="e-file">插入图片</label>
+        <input class="sr-only" id="e-file" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
       </div>
-      <div>
-        <span class="md-label">预览</span>
-        <div class="prose">
-          <h2>一个请求要经过几层</h2>
-          <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
-          <h3>路由</h3>
-          <pre><code>r := gin.Default()
+    </div>
+
+    <div class="md-pane" data-pane="preview">
+      <div class="prose">
+        <h2>一个请求要经过几层</h2>
+        <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
+        <h3>路由</h3>
+        <pre><code>r := gin.Default()
 r.GET("/api/v1/articles", listArticles)</code></pre>
-          <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
-        </div>
+        <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
       </div>
     </div>
   </section>
@@ -1129,10 +1863,10 @@ r.GET("/api/v1/articles", listArticles)</code></pre>
           <label class="field-label" for="s-cat">分类</label>
           <span class="select">
             <select id="s-cat">
-              <option selected>后端</option>
-              <option>前端</option>
-              <option>AI</option>
-              <option>随笔</option>
+              <option selected>后端开发</option>
+              <option>前端实践</option>
+              <option>AI 探索</option>
+              <option>学习随笔</option>
             </select>
           </span>
         </div>
@@ -1153,10 +1887,19 @@ r.GET("/api/v1/articles", listArticles)</code></pre>
   </form>
 
   <section class="md">
-    <div class="md-split">
-      <div>
-        <label class="md-label" for="s-body">Markdown 原文</label>
-        <textarea class="md-source" id="s-body" spellcheck="false">## 一个请求要经过几层
+    <div class="md-head">
+      <span class="md-label md-now-source">Markdown 原文</span>
+      <span class="md-label md-now-preview">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input class="sr-only" type="radio" name="s-mode" id="s-mode-source" value="source" checked>
+        <input class="sr-only" type="radio" name="s-mode" id="s-mode-preview" value="preview">
+        <label class="link-quiet md-switch-preview" for="s-mode-preview">看预览</label>
+        <label class="link-quiet md-switch-source" for="s-mode-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" id="s-body" aria-label="Markdown 原文" spellcheck="false">## 一个请求要经过几层
 
 浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。
 
@@ -1169,22 +1912,22 @@ r.GET("/api/v1/articles", listArticles)
 
 `listArticles` 拿到的第一个东西不是参数，是上下文。
 </textarea>
-        <div class="md-tools">
-          <label class="pager-btn upload-btn" for="s-file">插入图片</label>
-          <input class="sr-only" id="s-file" type="file" accept="image/*">
-          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
-        </div>
+      <p class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="s-file">插入图片</label>
+        <input class="sr-only" id="s-file" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
       </div>
-      <div>
-        <span class="md-label">预览</span>
-        <div class="prose">
-          <h2>一个请求要经过几层</h2>
-          <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
-          <h3>路由</h3>
-          <pre><code>r := gin.Default()
+    </div>
+
+    <div class="md-pane" data-pane="preview">
+      <div class="prose">
+        <h2>一个请求要经过几层</h2>
+        <p>浏览器发出请求，中间经过网关、路由、中间件，最后落到一个函数上。</p>
+        <h3>路由</h3>
+        <pre><code>r := gin.Default()
 r.GET("/api/v1/articles", listArticles)</code></pre>
-          <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
-        </div>
+        <p><code>listArticles</code> 拿到的第一个东西不是参数，是上下文。</p>
       </div>
     </div>
   </section>

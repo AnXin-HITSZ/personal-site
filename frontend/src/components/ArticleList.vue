@@ -1,17 +1,22 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { config } from '../config.js';
-import { categories, listArticles } from '../api/articles.js';
+import { listArticles } from '../api/articles.js';
+import { ALL, listCategories } from '../api/categories.js';
 import ArticleEntry from './ArticleEntry.vue';
 
 const query = reactive({ page: 1, pageSize: 6, q: '', category: 'all' });
 const search = ref('');
 const items = ref([]);
+/* 筛选器是这一页上唯一要用到分类表的地方，而文章不靠它——所以这两个请求各走各的。
+   分类没读到时整排按钮不出现，搜索框照旧在，读者还是能找到文章。 */
+const cats = ref([]);
 const pagination = ref({ total: 0, totalPages: 0 });
 const loading = ref(true);
 const error = ref('');
 const heading = ref(null);
 let controller;
+let catsController;
 const status = computed(() => loading.value ? '正在整理文章…' : error.value ? '加载失败' : `${pagination.value.total} 篇文章${query.q ? ` · 搜索“${query.q}”` : ''}`);
 /* 「最新」标的是全站最新的一篇，不是「本页第一条」：列表未被筛选且停在第一页时，
    首条即最新（仓储层按 published_at desc, id asc 排序），其余情况无从判断，就不标。 */
@@ -37,14 +42,29 @@ async function load() {
     if (!current.signal.aborted) loading.value = false;
   }
 }
+/* 分类读不出来的话这一排就不出现——不为一个筛选项在页面上留一句错，读者本来也
+   没在等它。文章那边有它自己的错误分支，两件事分开说。 */
+async function loadCategories() {
+  catsController?.abort();
+  const current = new AbortController();
+  catsController = current;
+  try {
+    const result = await listCategories({ signal: current.signal });
+    if (current.signal.aborted) return;
+    cats.value = result.items;
+  } catch {
+    if (current.signal.aborted) return;
+    cats.value = [];
+  }
+}
 function filter(category) { query.category = category; query.page = 1; load(); }
 function submitSearch() { query.q = search.value.trim(); query.page = 1; load(); }
 async function focusHeading() { await nextTick(); heading.value?.focus({ preventScroll: true }); }
 function reset() { search.value = ''; Object.assign(query, { q: '', category: 'all', page: 1 }); load(); focusHeading(); }
 function turnPage(page) { query.page = page; load(); focusHeading(); heading.value?.scrollIntoView({ block: 'start' }); }
 function retry() { load(); focusHeading(); }
-onMounted(load);
-onUnmounted(() => controller?.abort());
+onMounted(() => { load(); loadCategories(); });
+onUnmounted(() => { controller?.abort(); catsController?.abort(); });
 </script>
 
 <template>
@@ -59,8 +79,9 @@ onUnmounted(() => controller?.abort());
 
     <div class="archive-tools row">
       <div class="archive-tools-main">
-        <div class="filters" role="group" aria-label="文章分类">
-          <button v-for="(label, key) in categories" :key="key" class="filter" type="button" :aria-pressed="query.category === key" @click="filter(key)">{{ label }}</button>
+        <div v-if="cats.length" class="filters" role="group" aria-label="文章分类">
+          <button class="filter" type="button" :aria-pressed="query.category === ALL" @click="filter(ALL)">全部</button>
+          <button v-for="cat in cats" :key="cat.id" class="filter" type="button" :aria-pressed="query.category === cat.id" @click="filter(cat.id)">{{ cat.name }}</button>
         </div>
         <form class="search" role="search" @submit.prevent="submitSearch">
           <label class="sr-only" for="search">搜索文章标题与摘要</label>

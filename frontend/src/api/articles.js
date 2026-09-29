@@ -1,9 +1,14 @@
 import { config } from '../config.js';
 import { articles } from '../mocks/articles.js';
-
-export const categories = { all: '全部', backend: '后端开发', frontend: '前端实践', ai: 'AI 探索', notes: '学习随笔' };
+import { isCategoryID, isCategoryRef } from './categories.js';
 
 const CONTRACT_ERROR = '服务返回的数据格式不符合约定，请检查接口契约';
+
+/* 分类名和正文一样是给人看的字，不是配置里那几个固定的词——所以它必须跟着文章
+   一起回来。这一行在 /categories 读不到的时候照样要显示，名字缺席就是契约坏了。 */
+function hasCategoryName(a) {
+  return isCategoryID(a.category) && typeof a.categoryName === 'string' && a.categoryName !== '';
+}
 
 export class ArticleNotFoundError extends Error {
   constructor() {
@@ -18,7 +23,7 @@ export class ArticleNotFoundError extends Error {
 export const ARTICLE_ID_PATTERN = /^[0-9a-z]{8}$/;
 
 export function normalizeQuery({ page = 1, pageSize = 6, q = '', category = 'all' } = {}) {
-  if (!Number.isInteger(page) || page < 1 || page > 1000000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50 || typeof q !== 'string' || [...q.trim()].length > 100 || !Object.hasOwn(categories, category)) {
+  if (!Number.isInteger(page) || page < 1 || page > 1000000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50 || typeof q !== 'string' || [...q.trim()].length > 100 || !isCategoryRef(category)) {
     throw new Error('查询参数不符合接口约定');
   }
   return { page, pageSize, q: q.trim(), category };
@@ -44,7 +49,7 @@ function withheldBody({ body, ...summary }) {
 function validateResponse(data, query) {
   const p = data?.pagination;
   if (!Array.isArray(data?.items) || !p || p.page !== query.page || p.pageSize !== query.pageSize || !Number.isSafeInteger(p.total) || p.total < 0 || p.totalPages !== Math.ceil(p.total / p.pageSize) || data.items.length !== Math.max(0, Math.min(p.pageSize, p.total - (p.page - 1) * p.pageSize)) || !data.items.every(a =>
-    a && ARTICLE_ID_PATTERN.test(a.id) && ['id', 'slug', 'title', 'summary', 'publishedAt'].every(key => typeof a[key] === 'string') && Number.isFinite(Date.parse(a.publishedAt)) && a.category !== 'all' && Object.hasOwn(categories, a.category) && Array.isArray(a.tags) && a.tags.every(t => typeof t === 'string') && Number.isInteger(a.readingMinutes) && a.readingMinutes > 0)) {
+    a && ARTICLE_ID_PATTERN.test(a.id) && ['id', 'slug', 'title', 'summary', 'publishedAt'].every(key => typeof a[key] === 'string') && Number.isFinite(Date.parse(a.publishedAt)) && hasCategoryName(a) && Array.isArray(a.tags) && a.tags.every(t => typeof t === 'string') && Number.isInteger(a.readingMinutes) && a.readingMinutes > 0)) {
     throw new Error(CONTRACT_ERROR);
   }
   return data;
@@ -53,7 +58,7 @@ function validateResponse(data, query) {
 /* 地址里那段 slug 只是给人看的，查库只按 id。所以这里比的是 id——slug 可以随时改，
    它和服务端返回值不一致是正常的，由详情页把地址归位。 */
 function validateDetail(data, id) {
-  if (!data || data.id !== id || !['id', 'slug', 'title', 'summary', 'body', 'publishedAt'].every(key => typeof data[key] === 'string') || !Number.isFinite(Date.parse(data.publishedAt)) || data.category === 'all' || !Object.hasOwn(categories, data.category) || !Array.isArray(data.tags) || !data.tags.every(t => typeof t === 'string') || !Number.isInteger(data.readingMinutes) || data.readingMinutes <= 0) {
+  if (!data || data.id !== id || !['id', 'slug', 'title', 'summary', 'body', 'publishedAt'].every(key => typeof data[key] === 'string') || !Number.isFinite(Date.parse(data.publishedAt)) || !hasCategoryName(data) || !Array.isArray(data.tags) || !data.tags.every(t => typeof t === 'string') || !Number.isInteger(data.readingMinutes) || data.readingMinutes <= 0) {
     throw new Error(CONTRACT_ERROR);
   }
   return data;

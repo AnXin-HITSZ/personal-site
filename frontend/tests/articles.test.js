@@ -34,10 +34,13 @@ test('keyword matching trims whitespace, ignores case, and combines with categor
 });
 
 test('invalid client parameters fail before making a request', () => {
-  for (const query of [{ page: 0 }, { page: 1.5 }, { page: 1000001 }, { pageSize: 0 }, { pageSize: 51 }, { category: 'invalid' }, { q: '字'.repeat(101) }]) {
+  for (const query of [{ page: 0 }, { page: 1.5 }, { page: 1000001 }, { pageSize: 0 }, { pageSize: 51 }, { category: 'Backend' }, { category: 'backend!' }, { category: '' }, { category: 'x'.repeat(17) }, { q: '字'.repeat(101) }]) {
     assert.throws(() => normalizeQuery(query));
   }
   assert.equal([...normalizeQuery({ q: '😀'.repeat(100) }).q].length, 100);
+  /* 形状对就行，存不存在不归前端判：服务端对不存在的分类回一个空列表，那是一个说得
+     通的答案（「这个分类下面还没有文章」），不是请求写错了。 */
+  assert.equal(normalizeQuery({ category: 'zzzz9999' }).category, 'zzzz9999');
 });
 
 test('HTTP adapter serializes contract parameters and validates the result', async () => {
@@ -131,4 +134,24 @@ test('cancelled detail request rejects so stale results cannot win', async () =>
   const request = getArticle(idOf('go-api-first-step'), { source: 'mock', signal: controller.signal });
   controller.abort();
   await assert.rejects(request, { name: 'AbortError' });
+});
+
+/* 分类名跟着文章一起回来，不从筛选器那份列表里现查：读者那一页的分类那行读不出来
+   时，条目上的落款照旧要写得出。所以名字缺席是契约坏了，不是「少了一段」。 */
+test('every mock article carries its category name', async () => {
+  for (const article of articles) assert.equal(typeof article.categoryName, 'string');
+  assert.equal(mockList().items[0].categoryName, '后端开发');
+
+  const row = mockList().items[0];
+  const respond = withName => listArticles({ page: 1, pageSize: 1 }, {
+    source: 'http',
+    fetchImpl: async () => new Response(JSON.stringify({
+      items: [{ ...row, categoryName: withName }],
+      pagination: { page: 1, pageSize: 1, total: 1, totalPages: 1 },
+    })),
+  });
+  for (const broken of [undefined, '', 7]) {
+    await assert.rejects(respond(broken), /数据格式/);
+  }
+  assert.equal((await respond('后端开发')).items[0].categoryName, '后端开发');
 });

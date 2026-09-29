@@ -1,4 +1,10 @@
-// 演示内容，不代表站点作者的真实经历或已发布文章。
+/* 演示内容，不代表站点作者的真实经历或已发布文章。 */
+const categoryNames = { backend: '后端开发', frontend: '前端实践', ai: 'AI 探索', notes: '学习随笔' };
+
+/* 读者那一行里的先后，和 0005 那支迁移播进去的四行一样。名字不住在文章上，是
+   跟着文章一起回来的（服务端每次现取），所以这里也照那个形状拼。 */
+export const mockCategories = Object.entries(categoryNames).map(([id, name]) => ({ id, name }));
+
 export const articles = [
   ['9k2m4p7r', 'go-api-first-step', '从一个接口开始，搭建自己的 Go 服务', '把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。', 'backend', ['Go', 'HTTP'], '2026-09-21T08:00:00Z', 8, `## 先定约定，再写实现
 
@@ -100,4 +106,5 @@ func (h *Handler) List(c *gin.Context) {
 - 暂时没有答案的问题
 
 先写下来，再慢慢想。`],
-].map(([id, slug, title, summary, category, tags, publishedAt, readingMinutes, body]) => ({ id, slug, title, summary, category, tags, publishedAt, readingMinutes, body }));
+].map(([id, slug, title, summary, category, tags, publishedAt, readingMinutes, body]) =>
+  ({ id, slug, title, summary, category, categoryName: categoryNames[category], tags, publishedAt, readingMinutes, body }));

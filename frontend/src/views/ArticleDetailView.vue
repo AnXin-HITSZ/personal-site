@@ -2,7 +2,7 @@
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
-import { ArticleNotFoundError, categories, getArticle } from '../api/articles.js';
+import { ArticleNotFoundError, getArticle } from '../api/articles.js';
 import { setMetadata } from '../metadata.js';
 import { formatDate } from '../format.js';
 
@@ -109,7 +109,7 @@ onUnmounted(() => controller?.abort());
       <article class="piece">
         <header class="piece-head row ruled">
           <div class="facts facts-stamp">
-            <p class="key">{{ categories[article.category] }}</p>
+            <p class="key">{{ article.categoryName }}</p>
             <p><time class="date" :datetime="article.publishedAt">{{ formatDate(article.publishedAt) }}</time></p>
             <p>{{ article.readingMinutes }} 分钟阅读</p>
           </div>

@@ -521,6 +521,14 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 }
 .btn-danger:hover:enabled { background: var(--seal); color: var(--paper); }
 
+/* ---------- 写作：分类 ---------- */
+
+/* 列表那一行右侧有两个动作（去分类、写新的一篇），中间那道 1.25rem 和条目上的
+   动作同一个数——同一站里的两个链接之间不留两种空。 */
+.tools-acts { display: flex; align-items: center; gap: 1.25rem; }
+/* 分类名字是个短词。输入框占满版心会让人以为可以写很长，和搜索框取同一个宽度。 */
+.cat-name-field { max-width: 22rem; }
+
 /* ---------- 写作：编辑台 ---------- */
 
 /* 左栏是这篇的事实（id、时间、字数），右栏是能改的字段。事实栏里没有一个输入框
@@ -610,7 +618,11 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   .select select::picker(select) {
     appearance: base-select;
     position: fixed;
-    top: calc(anchor(bottom) + .35rem);
+    /* 上沿压住按钮下沿那 1px 的描边，两层线并成一条：弹层看着是从这一格里翻出来的，
+       不是浮在旁边的一张纸。中间留缝（原来是 + .35rem＝5.6px）读起来像没对齐——小到
+       不像有意留的，大到不像长在一起的。相接处那两条圆角跟着抹平，否则接缝两头会各
+       露出一个小缺口。 */
+    top: calc(anchor(bottom) - 1px);
     left: anchor(left);
     bottom: auto;
     right: auto;
@@ -619,15 +631,21 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
     min-width: anchor-size(width);
     background: #fff;
     border: 1px solid var(--ink);
-    border-radius: 2px;
+    border-radius: 0 0 2px 2px;
     padding: .25rem;
     font-size: .9375rem;
-    /* 按钮贴着视口底下时翻到上面去，否则最后几条会被切掉。 */
+    /* 按钮贴着视口底下时按理该翻到上面去。实测没翻——视口 900px、按钮下沿 771px，
+       下面只剩 129px 放不下这 170px 的弹层，它照样朝下开、一直铺到视口底边被切掉
+       （沿中线每 10px 打点，到 891px 那一行落点还是 option）。这条 fallback 本来就
+       在这里，我没能测出它生效。留着，但别指望它兜住这种情况。 */
     position-try-fallbacks: --select-above;
   }
   @position-try --select-above {
     top: auto;
-    bottom: calc(anchor(top) + .35rem);
+    /* 翻上去时贴的是按钮的上沿。这一条只放定位属性——@position-try 里除定位之外的
+       声明会被整条丢掉（量过：写进去的 border-radius 在 CSSOM 里根本不存在），所以
+       万一真翻上去，圆角仍是上面那条的 0 0 2px 2px，方向正相反。差 2px。 */
+    bottom: calc(anchor(top) - 1px);
   }
   .select option { padding: .55rem .7rem; border-radius: 2px; }
   .select option:hover { background: var(--fill); }
@@ -722,17 +740,32 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 .field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; }
 .field-pair .field + .field { margin-top: 0; }
 
-/* 正文这一段自己占满整幅：原文要看得见行，校样要看得见版，两边都要宽度，
-   注文栏在这一段让位。 */
-.md { margin-top: 3rem; }
-.md-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+/* 正文这一段自己占满整幅：原文要看得见行，注文栏在这一段让位。
+   原文和预览不再并排——并排时两边各分走一半，都窄；改成点着切，一次只给一面。
+   换面靠 v-show（display），所以这里没有「谁藏起来」的规则，只有两面的尺寸。 */
+.md {
+  margin-top: 3rem;
+  /* 正文框那个下限。预览那一面要跟着同一个数走：它没有「插入图片」那一行，得自己
+     把这个高度补上，否则切过去整段短一截。窄屏降高也只改这一处。 */
+  --md-source-h: 40rem;
+}
 .md-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 切换键那一行占的是原来标签那一行的位置，所以正文框的顶端不动。左边那个词写
+   「现在在哪一面」，右边那枚写「点下去会去哪一面」——两句话各说一件事。 */
+.md-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .45rem; }
+/* 标签自己那点下边距在这里由 .md-head 出，两处都留着会白多一段 —— 留着它这一行就
+   比原来那行标签高，切面时整段跟着长。 */
+.md-head .md-label { margin-bottom: 0; }
+/* 这一层的字号要跟着里面那枚字走：它默认继承正文的 17px，比那枚字（14px）大，
+   空行按大的那一行算，整行因此比原来那行标签高 5.5px（31.45 vs 25.9）。定成同一个
+   字号，正文框顶端就回到原来那个位置。 */
+.md-switch { margin-left: auto; cursor: pointer; font-size: var(--facts-size); }
 /* 正文框不给拖，也不设高度上限：一屏装满还有余，往下写靠页面滚，不再有内外两层
    滚动条打架。 */
 .md-source {
   display: block;
   width: 100%;
-  min-height: 40rem;
+  min-height: var(--md-source-h);
   resize: none;
   background: #fff;
   border: 1px solid var(--control);
@@ -742,8 +775,20 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   font-size: .875rem;
   line-height: 1.8;
 }
+/* 原文这一格里插进去的是真制表符，预览那一面把它画出来 —— 两处得是同一个宽度，
+   不然同一个代码块在两边缩进的格数看着不一样。浏览器默认 8。 */
+.md-source, .prose pre { tab-size: 4; }
 .md-source:focus { border-color: var(--seal); }
 /* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。 */
+/* 预览那一面自己补上原文那一面「插入图片」那一行的高度：1rem 的上边距 + 2.5rem 的
+   按钮；再加框下面那句按键说明（.4rem 上边距 + 一行字，1.61875rem = .875 × 1.85）。
+   短文章切过去整段高度不动，靠的就是这一条。 */
+.md-pane[data-pane="preview"] { min-height: calc(var(--md-source-h) + 3.5rem + .4rem + var(--facts-size) * var(--leading)); }
+/* 预览的字长对着公开页：公开页正文那一栏就是 --measure。原文那一面不封顶——它是
+   控件，行越长越好。中间那一段视口（44–67rem）公开页那栏会被注文栏挤窄，预览仍按
+   45rem 断行，宽出 148–176px；要一模一样得把 .row 那三笔算式搬到这儿再配一句
+   container-type，为一段校对时才看得出的差别，不值当。 */
+.md-pane[data-pane="preview"] .prose { max-width: var(--measure); }
 .md-tools { margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .md-tools .upload-btn { cursor: pointer; }
 .md-tools .field-hint { margin-top: 0; }
@@ -765,8 +810,14 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   background: var(--paper);
 }
 /* 左栏两行，说的是「现在存没存」和「切走会怎样」。话比别处紧一点：这一条是钉住的，
-   每一行都是常驻的高度。 */
-.save .facts > p + p { margin-top: .35rem; }
+   每一行都是常驻的高度。
+
+   间距交给容器，不交给 p + p：那五行在 DOM 里始终互为兄弟，p + p 会把 display:none
+   的那几个也算进去，于是显示「有改动没保存」那一支时，第一行平白多出一段上边距，
+   整条保存条跟着长高 0.35rem（量过：74.4 → 80.0）。row-gap 只看显示出来的那两行，
+   切换状态时高度就不动了。 */
+.save .facts { display: grid; row-gap: .35rem; }
+.save .facts > p { margin-top: 0; }
 .save-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 /* 第二行有三个说法，同一时刻只出一个。 */
 .save-state-clean, .save-state-dirty, .save-note-clean, .save-note-dirty, .save-note-leaving { display: none; }
@@ -786,8 +837,6 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 
 @media (max-width: 56rem) {
   :root { --margin: 7.5rem; --gutter: 1.75rem; }
-  /* 两栏并排会各剩一半的一半，原文和校样都窄到看不清行，所以上下叠。 */
-  .md-split { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 }
 
 @media (max-width: 44rem) {
@@ -822,6 +871,9 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   /* 并成一行之后，间隔由上面的 gap 管；段距不撤掉会把这一行顶歪。 */
   .facts > p + p { margin-top: 0; }
   .mark { margin-bottom: 0; }
+  /* 保存条那两行也并进这一行。它在外面的 display:grid 比上面这条 .facts 更具体，
+     得在这里让回 flex，间距才跟着换到 gap 上。 */
+  .save .facts { display: flex; }
   .entry:first-child .entry-title { font-size: 1.6rem; }
 
   .form-title { font-size: 1.5rem; }
@@ -846,7 +898,8 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   /* 窄屏上并排的两个字段各自只剩一拃宽，填不下地址里的名字，所以摞起来。 */
   .field-pair { grid-template-columns: minmax(0, 1fr); }
   .field-pair .field + .field { margin-top: 1.25rem; }
-  .md-source { min-height: 22rem; }
+  /* 一屏放不下 40rem 的正文框，降下来；预览那一面跟着同一个数降。 */
+  .md { --md-source-h: 22rem; }
 
   /* 三个格子并排挤不下：页码单独占一行居中，两只手在它下面各守一边。 */
   .pager-nav { grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
