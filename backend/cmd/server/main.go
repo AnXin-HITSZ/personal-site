@@ -175,6 +175,10 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 	adminArticles := handler.NewAdminArticles(articleService)
 	uploads := handler.NewUploads(newObjectStore(cfg))
 
+	categoryService := service.NewCategory(repository.NewCategory(db))
+	categoriesList := handler.NewCategoriesList(categoryService)
+	adminCategories := handler.NewAdminCategories(categoryService)
+
 	accountRepo := repository.NewAccount(db)
 	sessionService := service.NewSession(accountRepo)
 	accountService := service.NewAccount(accountRepo, sessionService, newMailer(cfg), cfg.SiteBaseURL)
@@ -187,6 +191,8 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 
 	api.GET("/articles", articleList.List)
 	api.GET("/articles/:id", articleGet.Get)
+	// 读者那一行筛选项跟着写作变，所以要问一次；没有登录态。
+	api.GET("/categories", categoriesList.List)
 
 	// 没有登录态的接口。它们的响应体都被刻意做成不区分邮箱是否存在。
 	auth := api.Group("/auth")
@@ -216,6 +222,13 @@ func newRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, error) {
 	admin.PUT("/articles/:id", adminArticles.Update)
 	admin.DELETE("/articles/:id", adminArticles.Delete)
 	admin.POST("/uploads", uploads.Create)
+
+	// order 是 PUT 树上的静态路径，和 PATCH／DELETE 树上的 :id 各在各的树里，撞不上。
+	admin.GET("/categories", adminCategories.List)
+	admin.POST("/categories", adminCategories.Create)
+	admin.PUT("/categories/order", adminCategories.Reorder)
+	admin.PATCH("/categories/:id", adminCategories.Rename)
+	admin.DELETE("/categories/:id", adminCategories.Delete)
 
 	return router, nil
 }

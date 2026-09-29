@@ -12,6 +12,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"anxin-hitsz.com/backend/internal/model"
 )
 
 // 这个驱动不连任何数据库。GORM 的 DryRun 会跳过语句执行，但 Transaction
@@ -79,6 +81,20 @@ type recorder struct {
 	// Count 判存在——不把这个数补回去，每条更新都会在测试里被当成「记录不存在」。
 	// 默认 0，那恰好就是记录真的不存在时 MySQL 会给的答案。
 	rowCount int64
+
+	// 同一个道理，Pluck 也拿不到行。整份提交的顺序要和库里现有的那一份对一遍，
+	// 不给回去的话，Reorder 的每一条都会走进「对不上」那一支。默认 nil 表示
+	// 不插手，于是 *[]string 留空——那也是真查不到东西时它的样子。
+	plucked []string
+
+	// Delete 的 RowsAffected 同样来自驱动，DryRun 下永远是 0。默认 0 就是
+	// 「一行都没删到」，正好是记录真的不存在时它该有的样子。
+	deleted int64
+
+	// 文章和分类也查不出行来。读者那一份要带着分类名回来，而名字是拿到文章之后
+	// 才去对上的——两边都不给回几行，那一段就没得测。默认 nil 表示不插手。
+	articles   []model.Article
+	categories []model.Category
 }
 
 // 只影响 count 查询：Dest 是 *int64 且语句里有 count(*)。
@@ -96,10 +112,95 @@ func (r *recorder) answerRowCount(tx *gorm.DB) {
 	tx.RowsAffected = 1
 }
 
+// 只影响 Pluck 到 *[]string 的那种查询。
+func (r *recorder) answerPluck(tx *gorm.DB) {
+	r.mu.Lock()
+	ids := r.plucked
+	r.mu.Unlock()
+
+	if ids == nil {
+		return
+	}
+	dest, ok := tx.Statement.Dest.(*[]string)
+	if !ok {
+		return
+	}
+	*dest = append([]string(nil), ids...)
+	tx.RowsAffected = int64(len(ids))
+}
+
+// 只影响 DELETE 语句。
+func (r *recorder) answerDelete(tx *gorm.DB) {
+	r.mu.Lock()
+	deleted := r.deleted
+	r.mu.Unlock()
+
+	if deleted == 0 {
+		return
+	}
+	if !strings.HasPrefix(strings.TrimSpace(tx.Statement.SQL.String()), "DELETE") {
+		return
+	}
+	tx.RowsAffected = deleted
+}
+
+// 文章和分类的查询：Dest 是它们的切片，或者单个模型（详情那一条）。
+func (r *recorder) answerRows(tx *gorm.DB) {
+	r.mu.Lock()
+	articles, categories := r.articles, r.categories
+	r.mu.Unlock()
+
+	switch dest := tx.Statement.Dest.(type) {
+	case *[]model.Article:
+		if articles == nil {
+			return
+		}
+		*dest = append([]model.Article(nil), articles...)
+		tx.RowsAffected = int64(len(articles))
+	case *model.Article:
+		if len(articles) == 0 {
+			return
+		}
+		*dest = articles[0]
+		tx.RowsAffected = 1
+	case *[]model.Category:
+		if categories == nil {
+			return
+		}
+		*dest = append([]model.Category(nil), categories...)
+		tx.RowsAffected = int64(len(categories))
+	}
+}
+
 func (r *recorder) setRowCount(n int64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.rowCount = n
+}
+
+func (r *recorder) setDeleteRowCount(n int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deleted = n
+}
+
+// nil 表示不插手，让查询自己给出「一行都没有」。
+func (r *recorder) setPlucked(ids []string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.plucked = ids
+}
+
+func (r *recorder) setArticles(articles []model.Article) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.articles = articles
+}
+
+func (r *recorder) setCategories(categories []model.Category) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.categories = categories
 }
 
 func (r *recorder) record(tx *gorm.DB) {
@@ -109,6 +210,9 @@ func (r *recorder) record(tx *gorm.DB) {
 	}
 	text := tx.Dialector.Explain(stmt.SQL.String(), stmt.Vars...)
 	r.answerRowCount(tx)
+	r.answerPluck(tx)
+	r.answerDelete(tx)
+	r.answerRows(tx)
 
 	r.mu.Lock()
 	r.statements = append(r.statements, text)

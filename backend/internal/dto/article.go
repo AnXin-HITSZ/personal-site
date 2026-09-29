@@ -7,11 +7,14 @@ import (
 )
 
 type ArticleSummary struct {
-	ID             string    `json:"id"`
-	Slug           string    `json:"slug"`
-	Title          string    `json:"title"`
-	Summary        string    `json:"summary"`
+	ID      string `json:"id"`
+	Slug    string `json:"slug"`
+	Title   string `json:"title"`
+	Summary string `json:"summary"`
+	// category 是筛选用 ?category= 时带的那一段，categoryName 是页面上写出来的
+	// 那几个字。两个都要：一个是地址里的，一个是给人看的。
 	Category       string    `json:"category"`
+	CategoryName   string    `json:"categoryName"`
 	Tags           []string  `json:"tags"`
 	PublishedAt    time.Time `json:"publishedAt"`
 	ReadingMinutes int       `json:"readingMinutes"`
@@ -51,6 +54,7 @@ func NewArticleSummary(m model.Article) (ArticleSummary, bool) {
 		Title:          m.Title,
 		Summary:        m.Summary,
 		Category:       m.Category,
+		CategoryName:   m.CategoryName,
 		Tags:           normalizeTags(m.Tags),
 		PublishedAt:    m.PublishedAt.UTC(),
 		ReadingMinutes: m.ReadingMinutes,

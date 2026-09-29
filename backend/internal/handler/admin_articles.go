@@ -212,7 +212,7 @@ func parseAdminArticleListQuery(c *gin.Context) (dto.AdminArticleListQuery, *que
 	if category == "all" {
 		category = ""
 	}
-	if category != "" && !service.IsArticleCategory(category) {
+	if category != "" && !service.IsCategoryID(category) {
 		return dto.AdminArticleListQuery{}, &queryError{"category", "未知的分类"}
 	}
 

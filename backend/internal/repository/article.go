@@ -21,6 +21,17 @@ var (
 	// 分成两个错误，调用方才有得选。
 	ErrSlugTaken = errors.New("slug 已被占用")
 	ErrIDTaken   = errors.New("主键已被占用")
+
+	// 这一篇要归的那个分类不存在。由外键告诉我们，而不是先查一遍再写——先查后写
+	// 之间那个窗口里正好有人删掉这个分类的话，查得到、写不进去。
+	ErrCategoryNotFound = errors.New("分类不存在")
+)
+
+// MySQL 的这两个外键错误号在这里各只有一个含义，因为全库只有一个外键。
+const (
+	mysqlErrDuplicateEntry  = 1062
+	mysqlErrRowIsReferenced = 1451 // 父行还有子行：分类下面还有文章
+	mysqlErrNoReferencedRow = 1452 // 子行指向不存在的父行：分类不存在
 )
 
 type Article struct {
@@ -54,12 +65,16 @@ func (r *Article) ListPublished(ctx context.Context, keyword, category string, l
 			return err
 		}
 
-		return build(tx).
+		if err := build(tx).
 			Order("published_at desc").
 			Order("id asc").
 			Limit(limit).
 			Offset(offset).
-			Find(&articles).Error
+			Find(&articles).Error; err != nil {
+			return err
+		}
+
+		return fillCategoryNames(tx, articles)
 	}, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
 		return nil, 0, err
@@ -79,7 +94,41 @@ func (r *Article) GetPublishedByID(ctx context.Context, id string) (*model.Artic
 	if err != nil {
 		return nil, err
 	}
-	return &article, nil
+
+	/* 名字得再问一次分类表：上面那一条是 SELECT *，它只带得回文章自己的列。 */
+	articles := []model.Article{article}
+	if err := fillCategoryNames(r.db.WithContext(ctx), articles); err != nil {
+		return nil, err
+	}
+	return &articles[0], nil
+}
+
+/*
+读者那一份要多带一个分类名，而名字在另一张表上。分类最多二十个，整张读回来在
+
+	Go 里对上，比在每条查询里 JOIN 一趟稳妥：文章的列一直是显式写出来的，JOIN 要
+	在每一处都多写一列，还会让列名带上表前缀，多一个容易忘的地方。
+
+	列表那一支的读在同一个事务里，所以名字和文章是同一个快照——一页里不会出现一半
+	新一半旧的分类名。
+*/
+func fillCategoryNames(tx *gorm.DB, articles []model.Article) error {
+	if len(articles) == 0 {
+		return nil
+	}
+
+	var categories []model.Category
+	if err := tx.Find(&categories).Error; err != nil {
+		return err
+	}
+	names := make(map[string]string, len(categories))
+	for _, category := range categories {
+		names[category.ID] = category.Name
+	}
+	for i := range articles {
+		articles[i].CategoryName = names[articles[i].Category]
+	}
+	return nil
 }
 
 // 三个字段留空都表示不限。
@@ -218,17 +267,21 @@ func (r *Article) Delete(ctx context.Context, id string) error {
 // MySQL 的 1062 只说了「撞了唯一键」，撞的是哪个要看消息里的索引名。
 func (r *Article) uniqueKeyError(err error) error {
 	var mysqlErr *mysql.MySQLError
-	if !errors.As(err, &mysqlErr) || mysqlErr.Number != 1062 {
+	if !errors.As(err, &mysqlErr) {
 		return err
 	}
-	switch {
-	case strings.Contains(mysqlErr.Message, "uk_articles_slug"):
-		return ErrSlugTaken
-	case strings.Contains(mysqlErr.Message, "PRIMARY"):
-		return ErrIDTaken
-	default:
-		return err
+	switch mysqlErr.Number {
+	case mysqlErrDuplicateEntry:
+		switch {
+		case strings.Contains(mysqlErr.Message, "uk_articles_slug"):
+			return ErrSlugTaken
+		case strings.Contains(mysqlErr.Message, "PRIMARY"):
+			return ErrIDTaken
+		}
+	case mysqlErrNoReferencedRow:
+		return ErrCategoryNotFound
 	}
+	return err
 }
 
 func escapeLike(s string) string {

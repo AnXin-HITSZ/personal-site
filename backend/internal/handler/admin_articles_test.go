@@ -335,7 +335,10 @@ func TestAdminListQueryParsing(t *testing.T) {
 			want:  dto.AdminArticleListQuery{Page: 2, PageSize: 5, Status: "draft", Category: "ai", Keyword: "go"},
 		},
 		{name: "状态未知", query: "?status=archived", wantCode: http.StatusBadRequest, wantField: "status"},
-		{name: "分类未知", query: "?category=life", wantCode: http.StatusBadRequest, wantField: "category"},
+		// 分类是一张表，这一层只认形状：写得不像 id 的挡掉，库里恰好没有的那一个
+		// 筛出来就是空的，不在这一层报错。
+		{name: "分类形状不对", query: "?category=Life", wantCode: http.StatusBadRequest, wantField: "category"},
+		{name: "库里没有的分类", query: "?category=life", want: dto.AdminArticleListQuery{Page: 1, PageSize: 20, Category: "life"}},
 		{name: "页码为零", query: "?page=0", wantCode: http.StatusBadRequest},
 		{name: "每页太多", query: "?pageSize=101", wantCode: http.StatusBadRequest},
 	}

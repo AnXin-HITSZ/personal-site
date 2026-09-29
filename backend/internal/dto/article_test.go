@@ -35,7 +35,7 @@ func TestArticleDetailMarshalsFlat(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, key := range []string{"id", "slug", "title", "summary", "body", "category", "tags", "publishedAt", "readingMinutes"} {
+	for _, key := range []string{"id", "slug", "title", "summary", "body", "category", "categoryName", "tags", "publishedAt", "readingMinutes"} {
 		if _, present := fields[key]; !present {
 			t.Errorf("缺少字段 %s：%s", key, raw)
 		}
@@ -45,6 +45,23 @@ func TestArticleDetailMarshalsFlat(t *testing.T) {
 	}
 	if string(fields["tags"]) != "[]" {
 		t.Errorf("tags 为 nil 时应序列化为 []，实际为 %s", fields["tags"])
+	}
+}
+
+// category 是筛选地址里那一段，categoryName 是页面上写出来的那几个字。名字不住在
+// 文章表上，是仓储每次现取的；这一层只管把它搬过来，不要拿 id 去顶。
+func TestCategoryAndItsNameAreTwoFields(t *testing.T) {
+	publishedAt := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	summary, ok := NewArticleSummary(model.Article{
+		ID: "a1", Status: "published", PublishedAt: &publishedAt, ReadingMinutes: 3,
+		Category: "backend", CategoryName: "后端开发",
+	})
+	if !ok {
+		t.Fatal("已发布且有发布时间，应能转换")
+	}
+
+	if summary.Category != "backend" || summary.CategoryName != "后端开发" {
+		t.Errorf("两个字段应各是各的，实际 category=%q categoryName=%q", summary.Category, summary.CategoryName)
 	}
 }
 

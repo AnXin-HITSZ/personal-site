@@ -200,7 +200,7 @@ func TestNormalizeArticleInputRejects(t *testing.T) {
 		{name: "摘要太长", alter: func(in *ArticleInput) { in.Summary = strings.Repeat("摘", articleSummaryMaxRunes+1) }, want: ErrSummaryTooLong},
 		{name: "正文为空", alter: func(in *ArticleInput) { in.Body = "\n\n" }, want: ErrBodyRequired},
 		{name: "正文太长", alter: func(in *ArticleInput) { in.Body = strings.Repeat("正", articleBodyMaxRunes+1) }, want: ErrBodyTooLong},
-		{name: "未知分类", alter: func(in *ArticleInput) { in.Category = "life" }, want: ErrInvalidCategory},
+		// 「库里没有这个分类」不在这里判：分类是一张表，只有写下去的那一刻才知道它还在不在。
 		{name: "分类为空", alter: func(in *ArticleInput) { in.Category = "" }, want: ErrInvalidCategory},
 		{name: "未知状态", alter: func(in *ArticleInput) { in.Status = "archived" }, want: ErrInvalidStatus},
 		{name: "状态为空", alter: func(in *ArticleInput) { in.Status = "" }, want: ErrInvalidStatus},
@@ -248,6 +248,26 @@ func TestNormalizeArticleInputAccepts(t *testing.T) {
 		if normalized.Tags[i] != want[i] {
 			t.Errorf("第 %d 个标签应为 %q，实际 %q（保留第一次出现的写法）", i, want[i], normalized.Tags[i])
 		}
+	}
+}
+
+// 「这个分类不存在」现在只有外键知道，它从仓储那层一路传上来，在这一层被翻成
+// 用户看得懂的那句话。翻错方向就等于把一个数据库错误当成人填错了。
+func TestArticleWriteErrorMapsMissingCategory(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   error
+		want error
+	}{
+		{name: "分类不存在", in: repository.ErrCategoryNotFound, want: ErrInvalidCategory},
+		{name: "记录不存在", in: repository.ErrNotFound, want: ErrArticleNotFound},
+		{name: "slug 撞了", in: repository.ErrSlugTaken, want: ErrSlugTaken},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := articleWriteError(tc.in); !errors.Is(got, tc.want) {
+				t.Errorf("应为 %v，实际 %v", tc.want, got)
+			}
+		})
 	}
 }
 

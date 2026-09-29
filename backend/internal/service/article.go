@@ -46,19 +46,6 @@ const (
 	maxArticleIDAttempts = 3
 )
 
-// 留空都表示不限。
-var articleCategories = map[string]struct{}{
-	"backend":  {},
-	"frontend": {},
-	"ai":       {},
-	"notes":    {},
-}
-
-func IsArticleCategory(category string) bool {
-	_, ok := articleCategories[category]
-	return ok
-}
-
 // 后台要能注入假实现来测，所以服务只认这个接口，不认具体的仓储。
 type ArticleStore interface {
 	ListPublished(ctx context.Context, keyword, category string, limit, offset int) ([]model.Article, int, error)
@@ -279,6 +266,8 @@ func articleWriteError(err error) error {
 		return ErrArticleNotFound
 	case errors.Is(err, repository.ErrSlugTaken):
 		return ErrSlugTaken
+	case errors.Is(err, repository.ErrCategoryNotFound):
+		return ErrInvalidCategory
 	default:
 		return err
 	}
@@ -313,7 +302,9 @@ func normalizeArticleInput(input ArticleInput) (ArticleInput, error) {
 		return ArticleInput{}, ErrBodyRequired
 	case utf8.RuneCountInString(normalized.Body) > articleBodyMaxRunes:
 		return ArticleInput{}, ErrBodyTooLong
-	case !IsArticleCategory(normalized.Category):
+	// 分类存的是 id，它到底存不存在由外键说了算（见 articleWriteError）。这里只挡住
+	// 空的那个：一句话不说就存，落到库里是一条指向空气的外键。
+	case normalized.Category == "":
 		return ArticleInput{}, ErrInvalidCategory
 	case normalized.Status != model.ArticleStatusDraft && normalized.Status != model.ArticleStatusPublished:
 		return ArticleInput{}, ErrInvalidStatus

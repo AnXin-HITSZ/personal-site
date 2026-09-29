@@ -22,4 +22,9 @@ type Article struct {
 	BodyRunes      int
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+
+	// 分类名不在文章表上，它是每次从 categories 里现取的（见 repository 的
+	// fillCategoryNames）。`gorm:"-"` 让 GORM 当它不存在：建表不管它，任何一条
+	// 查询也不会去列它——所以没有哪一处需要记得把它排掉。
+	CategoryName string `gorm:"-"`
 }

@@ -89,7 +89,9 @@ func parseArticleListQuery(c *gin.Context) (dto.ArticleListQuery, *queryError) {
 		return dto.ArticleListQuery{}, &queryError{"q", "搜索关键词不能超过 100 个字符"}
 	}
 
-	if params.Category != "" && !service.IsArticleCategory(params.Category) {
+	// 只查形状，不查它是不是真的存在：分类是一张表，每来一个筛选请求就为它跑一次
+	// 查询不值当，而形状对、库里没有的那个筛出来本来就是空的。
+	if params.Category != "" && !service.IsCategoryID(params.Category) {
 		return dto.ArticleListQuery{}, &queryError{"category", "未知的分类"}
 	}
 

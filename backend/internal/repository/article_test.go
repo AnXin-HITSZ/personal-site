@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"anxin-hitsz.com/backend/internal/model"
 )
 
 type articleFixture struct {
@@ -220,6 +222,71 @@ func TestListAdminReadsInOneRepeatableReadTransaction(t *testing.T) {
 	}
 	if sql.IsolationLevel(opts.Isolation) != sql.LevelRepeatableRead {
 		t.Errorf("应为可重复读，实际 %d", opts.Isolation)
+	}
+}
+
+// 读者那一份带着分类名一起回来：名字在另一张表上，而读者那一页不该为了每篇的落款
+// 再问一次 /categories——那一次要是失败了，文章就成了一排没有落款的条目。
+func TestListPublishedBringsCategoryNames(t *testing.T) {
+	f := newArticleFixture(t)
+	f.rec.setArticles([]model.Article{
+		{ID: "a7k2m9pq", Category: "backend"},
+		{ID: "b8l3n0qr", Category: "notes"},
+		{ID: "c9m4p1rs", Category: "gone"},
+	})
+	f.rec.setCategories([]model.Category{
+		{ID: "backend", Name: "后端开发"},
+		{ID: "notes", Name: "学习随笔"},
+	})
+
+	articles, _, err := f.repo.ListPublished(context.Background(), "", "", 20, 0)
+	if err != nil {
+		t.Fatalf("查询失败：%v", err)
+	}
+	if len(articles) != 3 {
+		t.Fatalf("应回 3 篇，实际 %d", len(articles))
+	}
+
+	if articles[0].CategoryName != "后端开发" || articles[1].CategoryName != "学习随笔" {
+		t.Errorf("分类名没有对上：%q / %q", articles[0].CategoryName, articles[1].CategoryName)
+	}
+	// 外键拦着，指着不存在分类的文章不该存得下来；真撞上了也只是名字空着，
+	// 页面照样出，不该整页读不出来。
+	if articles[2].CategoryName != "" {
+		t.Errorf("对不上的分类应留空，实际 %q", articles[2].CategoryName)
+	}
+
+	// 名字和文章读在同一个事务里：分两次读，一页里会出现一半新一半旧的名字。
+	if begins := f.conn.beginCount(); begins != 1 {
+		t.Errorf("文章和分类名应在同一个事务里读完，实际开了 %d 个", begins)
+	}
+}
+
+func TestListPublishedSkipsTheLookupWhenThereIsNothingToName(t *testing.T) {
+	f := newArticleFixture(t)
+	f.rec.setCategories([]model.Category{{ID: "backend", Name: "后端开发"}})
+
+	if _, _, err := f.repo.ListPublished(context.Background(), "", "", 20, 0); err != nil {
+		t.Fatalf("查询失败：%v", err)
+	}
+
+	// 一页一篇文章都没有的时候还去读分类表，是白跑一趟。
+	f.rec.reject(t, "FROM `categories`")
+}
+
+func TestGetPublishedByIDBringsTheCategoryName(t *testing.T) {
+	f := newArticleFixture(t)
+	// 详情那一条是 SELECT *，它只带得回文章自己的列，名字得再问一次分类表。
+	f.rec.setArticles([]model.Article{{ID: "a7k2m9pq", Category: "backend"}})
+	f.rec.setCategories([]model.Category{{ID: "backend", Name: "后端开发"}})
+
+	article, err := f.repo.GetPublishedByID(context.Background(), "a7k2m9pq")
+	if err != nil {
+		t.Fatalf("查询失败：%v", err)
+	}
+
+	if article.CategoryName != "后端开发" {
+		t.Errorf("分类名应为「后端开发」，实际 %q", article.CategoryName)
 	}
 }
 
