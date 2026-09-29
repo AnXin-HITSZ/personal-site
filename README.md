@@ -72,12 +72,12 @@ bash dev.sh --only-frontend
 ## 当前交付
 
 - Vue 单文件组件：首页、文章列表、文章条目、文章详情、404 页。
-- vue-router 承载真实路由：`/`、`/articles/:slug`，其余路径落到 404，刷新任意路径都由网关回退到 `index.html`。
+- vue-router 承载真实路由：`/`、`/articles/:id/:slug?`，其余路径落到 404，刷新任意路径都由网关回退到 `index.html`。文章带 id，slug 只给人看、可随时改，因此旧 slug 的链接不会失效：进页面后按 id 取数，再 `replace` 成规范地址。
 - 关键词搜索、分类筛选、分页、加载中、空列表、错误重试、移动端布局与键盘焦点。
 - 正文以 Markdown 原文存库，详情页在前端用 markdown-it 渲染。markdown-it 默认 `html: false`，正文里的 HTML 转义后原样显示。
 - 路由切换回填 `<title>`、`meta description` 与 `link[rel="canonical"]`。
 - mock / HTTP 共用数据服务，请求取消与超时，响应结构校验。
-- Go 服务：`GET /api/v1/articles`、`GET /api/v1/articles/:slug`，参数校验、分页与关键词/分类过滤；列表不返回正文，详情对未发布文章与不存在的地址一律返回 404。
+- Go 服务：`GET /api/v1/articles`、`GET /api/v1/articles/:id`，参数校验、分页与关键词/分类过滤；列表不返回正文，详情对未发布文章与不存在的地址一律返回 404。`:id` 是 8 位 Crockford base32 小写，不合格的地址同样回 404。
 - QA-Agent 外链、站点域名与基础 metadata。
 
 接口契约以代码为准：[适配器与响应校验](frontend/src/api/articles.js)、[响应结构](backend/internal/dto/article.go)、[契约测试](frontend/tests/articles.test.js)。

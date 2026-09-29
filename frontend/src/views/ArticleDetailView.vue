@@ -1,12 +1,13 @@
 <script setup>
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import { ArticleNotFoundError, categories, getArticle } from '../api/articles.js';
 import { setMetadata } from '../metadata.js';
 import { formatDate } from '../format.js';
 
 const route = useRoute();
+const router = useRouter();
 const article = ref(null);
 const loading = ref(true);
 const error = ref('');
@@ -26,12 +27,18 @@ async function load() {
   error.value = '';
   missing.value = false;
   article.value = null;
-  const slug = String(route.params.slug);
+  const id = String(route.params.id);
   try {
-    const found = await getArticle(slug, { signal: current.signal });
+    const found = await getArticle(id, { signal: current.signal });
     if (current.signal.aborted) return;
     article.value = found;
-    setMetadata({ title: `${found.title} · Anxin`, description: found.summary, path: `/articles/${found.slug}` });
+    /* 地址里那段 slug 不参与查询，所以它可能是旧的、也可能整个没带。换成服务端返回
+       的那一份，用 replace 不留历史：一篇文章在地址栏里只有一个写法，canonical 也
+       才不会把旧 slug 原样写出去。 */
+    if (route.params.slug !== found.slug) {
+      router.replace({ name: 'article', params: { id: found.id, slug: found.slug } });
+    }
+    setMetadata({ title: `${found.title} · Anxin`, description: found.summary, path: `/articles/${found.id}/${found.slug}` });
   } catch (cause) {
     if (current.signal.aborted) return;
     if (cause instanceof ArticleNotFoundError) {
@@ -53,8 +60,9 @@ async function retry() {
   heading.value?.focus({ preventScroll: true });
 }
 
-/* 从一篇文章跳到另一篇时组件被复用，靠 slug 的变化重新取数；首次进入是页面加载，不抢焦点。 */
-watch(() => route.params.slug, async (slug, previous) => {
+/* 从一篇文章跳到另一篇时组件被复用，靠 id 的变化重新取数；首次进入是页面加载，不抢焦点。
+   上面那次 replace 只改 slug 段，id 不动，所以不会绕回来重新取数。 */
+watch(() => route.params.id, async (id, previous) => {
   await load();
   if (previous === undefined) return;
   await nextTick();
@@ -100,7 +108,7 @@ onUnmounted(() => controller?.abort());
     <template v-else>
       <article class="piece">
         <header class="piece-head row ruled">
-          <div class="facts">
+          <div class="facts facts-stamp">
             <p class="key">{{ categories[article.category] }}</p>
             <p><time class="date" :datetime="article.publishedAt">{{ formatDate(article.publishedAt) }}</time></p>
             <p>{{ article.readingMinutes }} 分钟阅读</p>

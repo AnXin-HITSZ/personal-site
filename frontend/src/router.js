@@ -14,7 +14,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'articles', component: ArticleListView },
-    { path: '/articles/:slug', name: 'article', component: ArticleDetailView },
+    { path: '/articles/:id/:slug?', name: 'article', component: ArticleDetailView },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
