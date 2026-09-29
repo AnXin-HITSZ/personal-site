@@ -26,24 +26,44 @@ type dryRunDriver struct{}
 func (dryRunDriver) Open(string) (driver.Conn, error) { return nil, errors.New("不应被调用") }
 
 type dryRunConn struct {
-	mu     sync.Mutex
-	begins int
+	mu        sync.Mutex
+	begins    int
+	txOptions []driver.TxOptions
 }
 
 func (c *dryRunConn) Prepare(string) (driver.Stmt, error) {
 	return nil, errors.New("DryRun 下不该有语句执行")
 }
 func (c *dryRunConn) Close() error { return nil }
+
 func (c *dryRunConn) Begin() (driver.Tx, error) {
+	return c.BeginTx(context.Background(), driver.TxOptions{})
+}
+
+// database/sql 只在驱动实现了 ConnBeginTx 时才会把隔离级别和只读透传下去，
+// 否则直接报「driver does not support non-default isolation level」。
+// 这里顺便把选项记下来，事务的隔离级别才有的可测。
+func (c *dryRunConn) BeginTx(_ context.Context, opts driver.TxOptions) (driver.Tx, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.begins++
+	c.txOptions = append(c.txOptions, opts)
 	return dryRunTx{}, nil
 }
+
 func (c *dryRunConn) beginCount() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.begins
+}
+
+func (c *dryRunConn) lastTxOptions() (driver.TxOptions, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.txOptions) == 0 {
+		return driver.TxOptions{}, false
+	}
+	return c.txOptions[len(c.txOptions)-1], true
 }
 
 type dryRunTx struct{}
@@ -54,6 +74,32 @@ func (dryRunTx) Rollback() error { return nil }
 type recorder struct {
 	mu         sync.Mutex
 	statements []string
+
+	// DryRun 下查询根本不执行，Count 拿到的永远是 0，而被测的 Update 正是用
+	// Count 判存在——不把这个数补回去，每条更新都会在测试里被当成「记录不存在」。
+	// 默认 0，那恰好就是记录真的不存在时 MySQL 会给的答案。
+	rowCount int64
+}
+
+// 只影响 count 查询：Dest 是 *int64 且语句里有 count(*)。
+func (r *recorder) answerRowCount(tx *gorm.DB) {
+	r.mu.Lock()
+	count := r.rowCount
+	r.mu.Unlock()
+
+	dest, ok := tx.Statement.Dest.(*int64)
+	if !ok || !strings.Contains(tx.Statement.SQL.String(), "count(*)") {
+		return
+	}
+	*dest = count
+	// Count 看到 RowsAffected != 1 时会拿它反过来覆盖 *count，所以这里一起摆平。
+	tx.RowsAffected = 1
+}
+
+func (r *recorder) setRowCount(n int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.rowCount = n
 }
 
 func (r *recorder) record(tx *gorm.DB) {
@@ -62,6 +108,7 @@ func (r *recorder) record(tx *gorm.DB) {
 		return
 	}
 	text := tx.Dialector.Explain(stmt.SQL.String(), stmt.Vars...)
+	r.answerRowCount(tx)
 
 	r.mu.Lock()
 	r.statements = append(r.statements, text)
@@ -129,6 +176,14 @@ type fixture struct {
 func newFixture(t *testing.T) fixture {
 	t.Helper()
 
+	db, rec, conn := newDryRunDB(t)
+	return fixture{repo: NewAccount(db), rec: rec, conn: conn}
+}
+
+// 不连任何数据库的 GORM 实例，外加一个把每条语句记下来的回调。
+func newDryRunDB(t *testing.T) (*gorm.DB, *recorder, *dryRunConn) {
+	t.Helper()
+
 	conn := &dryRunConn{}
 	db, err := gorm.Open(mysql.New(mysql.Config{
 		Conn:                      sql.OpenDB(dryRunConnector{conn: conn}),
@@ -159,5 +214,5 @@ func newFixture(t *testing.T) fixture {
 		}
 	}
 
-	return fixture{repo: NewAccount(db), rec: rec, conn: conn}
+	return db, rec, conn
 }

@@ -51,7 +51,7 @@ func (s *Article) ListPublished(ctx context.Context, query dto.ArticleListQuery)
 }
 
 func (s *Article) GetPublished(ctx context.Context, slug string) (dto.ArticleDetail, error) {
-	article, err := s.repo.GetPublishedBySlug(ctx, slug)
+	article, err := s.repo.GetPublishedByID(ctx, slug)
 	if errors.Is(err, repository.ErrNotFound) {
 		return dto.ArticleDetail{}, ErrArticleNotFound
 	}
