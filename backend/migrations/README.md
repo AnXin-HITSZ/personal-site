@@ -37,7 +37,7 @@ mysql personal_site_dev < 0001_create_articles.down.sql   # 回滚
 | 0001 | `0001_create_articles` | 已应用 | 已应用 2026-09-27 |
 | 0002 | `0002_add_article_body` | 已应用 2026-09-27 | 已应用 2026-09-27 |
 | 0003 | `0003_create_accounts` | 已应用 2026-09-27 | 已应用 2026-09-27 |
-| 0004 | `0004_add_article_body_runes` | 待应用 | 待应用 |
+| 0004 | `0004_add_article_body_runes` | 已应用 2026-09-29 | 已应用 2026-09-29 |
 
 `0002` 给文章表加了 `body`，`NOT NULL` 无默认值，存量行会填成空串。要在写入第一篇文章之前应用它：缺这一列不会报任何错，正文会静默为空——列表查询用 `Omit("Body")` 展开成不含它的显式列名，详情是 `Take(&model.Article)`，目标就是模型本身，GORM 发 `SELECT *`，扫不到就留零值。
 
