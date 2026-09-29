@@ -29,6 +29,22 @@ server {
     root /var/www/anxin-site/dist;
     index index.html;
 
+    # 三个体积上限里最外面的一层：Go 那边正文 JSON 限 2 MiB、单张图片限 4 MiB，
+    # 这一条要同时盖住两者。nginx 的内置默认是 1 MB，不写这条，一张 1 MB 出头
+    # 的截图会在这里被挡下。写 8m 而不是 4m，是因为图片那条线该由应用自己判——
+    # 它的「图片不能超过 4 MB」比这里一句通用的话有用。
+    client_max_body_size 8m;
+
+    # 413 是唯一一个由 nginx 生成、前端却必须读懂的错误：默认那页 HTML 会被前端
+    # 当成「传输失败」，说不清是图太大。这里换回和 Go 的 dto.ErrorResponse 一样的
+    # 信封。只影响 nginx 自己生成的 413——Go 回的 413 原样透传，不会被这里改写
+    # （proxy_intercept_errors 默认是关的）。
+    error_page 413 = @tooLarge;
+    location @tooLarge {
+        default_type application/json;
+        return 413 '{"error":{"code":"PAYLOAD_TOO_LARGE","message":"请求体过大"}}';
+    }
+
     # 不加这条，/api 会掉进 SPA 兜底并返回 index.html
     location = /api { return 404; }
 
