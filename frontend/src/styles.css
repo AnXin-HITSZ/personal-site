@@ -12,6 +12,7 @@
   /* 拉丁文一律用衬线体：Go、HTTP 这类词在中文里是被引用的对象，换个声音念。 */
   --stack-body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   --stack-display: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, "PingFang SC", "Microsoft YaHei", serif;
+  --stack-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --shell: 67rem;
   --pad: 3rem;
@@ -19,6 +20,10 @@
   --gutter: 3rem;
   --measure: 45rem;
   --text-start: calc(var(--margin) + var(--gutter));
+
+  /* 报头自己那一档宽度，全站一个数：105rem／1680px。它比任何一页的正文框都宽 ——
+     报头不是这一页的正文，是站的门面；门面不跟里面放什么变，翻页时一个字都不挪。 */
+  --site-shell: 105rem;
 
   --body-size: 1.0625rem;
   --facts-size: .875rem;
@@ -42,8 +47,13 @@
    自定义属性只向下继承，写在这一层，任何一层的覆写都能到达。 */
 body { margin: 0; font: 400 var(--body-size)/var(--leading) var(--stack-body); }
 h1, h2, h3, p { margin: 0; }
+/* 账号页的身份表是一行行「词条 + 值」的 dt/dd，浏览器给 dd 留了 40px 缩进、
+   给 dl 留了下边距，两样都不要。 */
+dl, dd { margin: 0; }
 a { color: inherit; text-decoration: none; }
-button, input { font: inherit; color: inherit; }
+/* textarea 和 select 不在这条里就会退回浏览器给它们的那套字体（等宽、系统字），
+   和纸面上其余的字不是一回事。 */
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; opacity: .45; }
 ::selection { background: var(--seal); color: var(--paper); }
@@ -61,6 +71,10 @@ html { scrollbar-gutter: stable; }
   margin-inline: auto;
   padding-inline: var(--pad);
 }
+
+/* 报头挂在全站最宽的那一档上，各页的正文挂各自的框 —— 报头从此比它下面那段字宽。
+   这条的全部代价：报头不再和正文左沿对齐。 */
+.masthead.shell { max-width: var(--site-shell); }
 
 /* 两栏骨架：注文栏 + 正文栏。 */
 .row {
@@ -85,9 +99,13 @@ html { scrollbar-gutter: stable; }
 /* 注文栏与正文栏。文章条目、文章详情、账号页共用同一套：左栏摆事实，
    右栏是正文，横线只从正文栏起笔。 */
 .facts { color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
-/* 账号页的注文是「词条 + 一行说明」的两行写法，段与段之间要空一行才分得开。
-   文章条目的注文是单行的，那点间距会把版面撑散，所以不并进 .facts。 */
-.facts-stacked > * + * { margin-top: .85rem; }
+/* 注文栏的通行口径是「词条 + 一行说明」的两行写法，两行之间要空一行才分得开
+   —— 账号页与写作后台的稿样都是这么排的（写作后台每条注文的
+   「草稿／改于…／约 N 分钟」就靠这一条）。 */
+.facts > p + p { margin-top: .85rem; }
+/* 阅读页的注文反过来是一枚戳记：分类、日期、读几分钟并成窄窄一叠，行距就是行高，
+   再撑开反而把版面撑散。公开列表与详情的稿样（sticky-masthead.html）就是这个写法。 */
+.facts-stamp > p + p { margin-top: 0; }
 /* 三个名字指的是同一件事：正文栏。必须显式钉在第二列——左栏没有内容时
    （验证、重置那几屏，注文是空的），自动排布会把它塞进第一列，正文整个左移一格。 */
 .main, .piece-main, .device-main { grid-column: 2; }
@@ -324,7 +342,7 @@ html { scroll-padding-top: var(--masthead-h); }
 .prose a:hover { color: var(--ink); }
 .prose hr { border: 0; height: 1px; background: var(--rule); margin-top: 3rem; }
 .prose code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--stack-mono);
   font-size: .875em;
   background: var(--fill);
   border-radius: 2px;
@@ -348,8 +366,18 @@ html { scroll-padding-top: var(--masthead-h); }
 
 /* ---------- 分页 ---------- */
 
-.pager { margin-top: 3rem; }
-.pager-nav { grid-column: 2; display: flex; align-items: center; gap: 1.25rem; }
+/* 翻页这一行开头的那条细线要离最后一篇足够远，否则它读起来像最后一篇的下划线，
+   而不像这一行的开头。取的是条目彼此之间同一个数。 */
+.pager { margin-top: 1.75rem; }
+/* 页码居中排在版心底下，像印在书页下沿的那一行；两侧各一只手，左退右进。
+   1fr auto 1fr 保证中间那一格是真正居中，不随两侧按钮的宽窄漂。 */
+.pager-nav { grid-column: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1.5rem; }
+.pager-prev { justify-self: start; }
+.pager-next { justify-self: end; }
+/* 「上一页」往左让一点，「下一页」往右让一点，指的就是它们各自要去的方向。 */
+.pager-prev, .pager-next { transition: transform .18s ease, border-color .18s, color .18s; }
+.pager-prev:hover:enabled { transform: translateX(-.2rem); }
+.pager-next:hover:enabled { transform: translateX(.2rem); }
 .pager-btn {
   display: inline-flex;
   align-items: center;
@@ -379,10 +407,19 @@ html { scroll-padding-top: var(--masthead-h); }
 .form-lede { margin-top: .75rem; color: var(--muted); font-size: .9375rem; line-height: 1.8; max-width: 30rem; text-wrap: pretty; }
 
 .form { margin-top: 2.25rem; max-width: 21rem; }
-.field + .field { margin-top: 1.25rem; }
+.field + .field,
+.field + .field-pair { margin-top: 1.25rem; }
+/* 带提示的字段比不带的多占一行，后面得多留一点空气，否则那行提示会贴到下一个标签上，
+   读起来像是下一个字段的说明。 */
+.field:has(.field-hint, .field-error) + .field,
+.field:has(.field-hint, .field-error) + .field-pair,
+.field-pair + .field { margin-top: 2rem; }
 .field-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
 /* 和 .search 同一套：白底、一像素描边、两像素圆角，聚焦时描边转为印色。 */
 .field-input { display: block; width: 100%; background: #fff; border: 1px solid var(--control); border-radius: 2px; padding: .7rem .85rem; font-size: .9375rem; }
+/* select 的行高由系统画，和 input 天然差几像素。并排出现的那一处（地址里的名字 /
+   分类）两边给同一个下限才齐平；单独一个 input 不需要，所以只圈这一处。 */
+.field-pair .field-input, .select select { min-height: 2.9rem; }
 .field-input:focus { border-color: var(--seal); }
 .field-input[aria-invalid="true"] { border-color: var(--seal); }
 .field-hint { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
@@ -393,6 +430,9 @@ html { scroll-padding-top: var(--masthead-h); }
 .form-alt a, .link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; }
 .form-alt a:hover, .link-quiet:hover { color: var(--ink); }
 .link-quiet { font-size: var(--facts-size); }
+/* <button> 长的安静链接要先拆掉浏览器那套按钮壳子（灰底、立体边、左右内边距），
+   否则「放弃改动」那颗会和旁边的 <a> 长得不一样。下划线要自己再画一遍。 */
+button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background: none; padding: 0 0 .1rem; }
 
 /* 一页只有一个主操作，所以它是全站唯一用满印色的面。 */
 .primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
@@ -402,7 +442,9 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 /* 账号页的提示条。文章列表里那两处 .notice 也表达同一件事，但它们没有左线，
    所以这里另起一个类，不去动已经定稿的版面。
    左线用印色表示「出事了」，用界色表示「办完了」——这两件事让人做的动作不同。 */
-.banner { border-left: 2px solid var(--seal); padding: .85rem 0 .85rem 1.1rem; max-width: 30rem; }
+/* 宽度取写作后台稿样的那个数（admin-pages.html 是 34rem）；账号页的稿样管这条叫
+   .notice、写的是 30rem。同一个东西两个数，这里跟新的那个，全站共用一条。 */
+.banner { border-left: 2px solid var(--seal); padding: .85rem 0 .85rem 1.1rem; max-width: 34rem; }
 .banner-done { border-left-color: var(--rule); }
 .banner h3 { font-size: 1.0625rem; font-weight: 600; }
 .banner p { margin-top: .4rem; color: var(--muted); font-size: .9375rem; }
@@ -430,10 +472,322 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 .device-meta { margin-top: .35rem; color: var(--muted); font-size: var(--facts-size); }
 .device-actions { margin-top: 1rem; }
 
+/* ---------- 写作：列表 ---------- */
+
+/* 列表是索引，不是读物：首条不放大。选择器要压过 .entry:first-child 那一组，
+   所以写足 .entry 这一层，不靠源码顺序取胜。 */
+.entries-ledger > .entry:first-child .entry-title {
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+.entries-ledger > .entry:first-child .entry-summary { margin-top: .35rem; font-size: .9375rem; line-height: 1.75; }
+.entries-ledger > .entry:first-child .entry-tags { margin-top: .4rem; }
+
+/* 条目上的动作写成安静的文字，不排成一列按钮——这一页要读的是文章，不是控件。 */
+.entry-acts { margin-top: .9rem; display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; }
+.act, .act-danger {
+  font-size: .8125rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 .1rem;
+  color: var(--muted);
+}
+.act:hover { color: var(--ink); border-bottom-color: currentColor; }
+.act-danger:hover { color: var(--seal); border-bottom-color: currentColor; }
+
+.tools { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.25rem 2rem; flex-wrap: wrap; }
+.tools-find { flex: 1 1 18rem; min-width: 0; }
+
+/* 就地展开的删除确认，替掉那一行的动作，不弹窗——全站没有弹窗。 */
+.confirm { margin-top: 1rem; border-left: 2px solid var(--seal); padding: .2rem 0 .2rem 1.1rem; }
+.confirm p { color: var(--muted); font-size: .9375rem; margin-top: .35rem; }
+.confirm p:first-child { margin-top: 0; }
+.confirm-actions { margin-top: .85rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  color: var(--seal);
+  border: 1px solid var(--seal);
+  border-radius: 2px;
+  min-height: 2.5rem;
+  padding: 0 1.4rem;
+  font-size: .9375rem;
+}
+.btn-danger:hover:enabled { background: var(--seal); color: var(--paper); }
+
+/* ---------- 写作：编辑台 ---------- */
+
+/* 左栏是这篇的事实（id、时间、字数），右栏是能改的字段。事实栏里没有一个输入框
+   ——能改的东西全在右边，「哪些不该动」因此不用解释。 */
+.composer { margin-top: 2.25rem; }
+.composer-form { grid-column: 2; }
+
+/* 保存没成功的那一条提示排在第一个字段上面，要跟它拉开——不然读起来像是
+   那个字段自己的说明。 */
+.banner + .field, .banner + .field-pair { margin-top: 1.75rem; }
+
+/* 公开地址在正文里是一段要照着念的东西，等宽字才分得清 l 和 1。 */
+.piece-summary code, .confirm code {
+  font-family: var(--stack-mono);
+  font-size: .875em;
+  background: var(--fill);
+  border-radius: 2px;
+  padding: .15em .35em;
+  word-break: break-all;
+}
+
+/* 标题输入框按它在详情页上的体量给字号：填的时候就是印出来的样子。 */
+.input-title { font-family: var(--stack-display); font-size: clamp(1.375rem, 2.6vw, 1.75rem); line-height: 1.35; }
+
+/* 右下角那两个斜杠是浏览器自己画上去的，压在细边框和两像素圆角上，笔画对不齐，
+   也和这一站任何一支笔都不一样；而全站的东西都是量出来的，没有一处要人自己去
+   拖版面。所以不要了。 */
+.field-area {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .7rem .85rem;
+  font-size: .9375rem;
+  line-height: 1.75;
+  resize: none;
+}
+.field-area:focus { border-color: var(--seal); }
+.field-area[aria-invalid="true"] { border-color: var(--seal); }
+/* 撤掉拖拽就得替它把事办了：摘要写满了自己往下长，长到七行左右封顶再自己滚。
+   认这条的浏览器里没有损失；不认的退回固定三行、框内滚动。 */
+@supports (field-sizing: content) {
+  .field-area { field-sizing: content; min-height: 6.5rem; max-height: 14rem; }
+}
+
+/* 系统那一套下拉（灰底、立体边框、粗箭头、选中那条蓝色的横杠）在纸面上太吵，
+   所以整个拿掉重画：面和描边照抄 .field-input，角标是自己画的一条一像素折线，
+   和全站的横线同一种笔。 */
+.select { position: relative; display: block; }
+.select select {
+  display: block;
+  width: 100%;
+  appearance: none;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .7rem 2.6rem .7rem .85rem;
+  font-size: .9375rem;
+  min-height: 2.9rem;
+}
+.select::after {
+  content: "";
+  position: absolute;
+  right: 1.05rem;
+  top: 50%;
+  width: .42rem;
+  height: .42rem;
+  margin-top: -.34rem;
+  border-right: 1px solid var(--muted);
+  border-bottom: 1px solid var(--muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.select:focus-within select { border-color: var(--seal); }
+.select:focus-within::after { border-color: var(--seal); }
+.select option { background: #fff; color: var(--ink); }
+
+@supports (appearance: base-select) {
+  .select select { appearance: base-select; }
+  /* 角标仍旧用外壳那一条，所以系统那颗自带的收掉——不收会并排出现两个箭头。 */
+  .select select::picker-icon { display: none; }
+
+  /* 弹层：全站零阴影，所以不靠投影分层，靠一条满墨的细线——灰线是页面内的分隔，
+     墨线是浮在上面的一层。默认是「围着选中那条摆」的，同一个下拉会随选中值上下
+     跳，所以钉成一律从按钮下沿展开、左沿对齐、宽度随按钮。 */
+  .select select::picker(select) {
+    appearance: base-select;
+    position: fixed;
+    top: calc(anchor(bottom) + .35rem);
+    left: anchor(left);
+    bottom: auto;
+    right: auto;
+    margin: 0;
+    min-width: 10rem;
+    min-width: anchor-size(width);
+    background: #fff;
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    padding: .25rem;
+    font-size: .9375rem;
+    /* 按钮贴着视口底下时翻到上面去，否则最后几条会被切掉。 */
+    position-try-fallbacks: --select-above;
+  }
+  @position-try --select-above {
+    top: auto;
+    bottom: calc(anchor(top) + .35rem);
+  }
+  .select option { padding: .55rem .7rem; border-radius: 2px; }
+  .select option:hover { background: var(--fill); }
+  /* 选中的那个用印色，和列表页筛选器同一套记号；系统那个对勾收掉，免得两个记号打架。 */
+  .select option:checked { color: var(--seal); }
+  .select option::checkmark { display: none; }
+}
+
+/* 状态只有两个值，摊成两段并排，不用下拉。下拉要两下才改得动，而且把没选中的那个
+   藏起来——可「草稿」在这一站是个正经名字，别处都在拿它说事，藏起来等于给它换个
+   叫法。两段并排，两个名字都在，改一下只要一下。 */
+.segmented {
+  position: relative;
+  display: inline-grid;
+  /* 两条等宽，所以滑块挪一格正好是它自己那么宽，不必去量第二段在哪儿。下限给 0
+     是为了让 fr 说了算——两条各自的字差一个字，不能让字多的那条更宽。 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 11rem;
+  min-height: 2.9rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: 2px;
+}
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  background: var(--fill);
+  border-radius: 2px;
+  transition: transform .18s cubic-bezier(.4, 0, .2, 1);
+}
+.segmented:has(input[value="published"]:checked)::before { transform: translateX(100%); }
+.segmented label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 .9rem;
+  font-size: .9375rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.segmented label:hover { color: var(--ink); }
+/* 选中那条用印色，和列表页筛选器、下拉弹层同一套记号。印色在这儿始终是墨、不是面
+   ——全站唯一一块满印色的面留给「保存」，多一块就开始抢。 */
+.segmented input:checked + label { color: var(--seal); }
+/* 焦点交给外框整圈交代，和 .search、标签框同一套。 */
+.segmented:has(input:focus-visible) { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+/* 少动的人拿到的是同一次位置变化，只是不过渡。 */
+@media (prefers-reduced-motion: reduce) { .segmented::before { transition: none; } }
+
+.status-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.status-row .field-hint { margin-top: 0; }
+
+/* 标签输入。框子长得和 .field-input 一样，只是会随着标签长高；键入后按 Enter 成签，
+   空框按退格去掉最后一个。里面那个 input 是一条没有边框的行，接在标签后面。 */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.9rem;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .5rem .6rem;
+}
+/* 和 .search 同一套：输入框自己不画焦点，改由外框整圈交代。 */
+.tags:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: .12rem .3rem .12rem .45rem;
+  font-size: .8125rem;
+  line-height: 1.5;
+}
+.tag button { background: none; border: 0; padding: 0 .1rem; color: var(--muted); font-size: .875rem; line-height: 1; }
+.tag button:hover { color: var(--seal); }
+.tags input { flex: 1 1 9rem; min-width: 9rem; border: 0; background: none; outline: none; padding: .3rem .2rem; font-size: .9375rem; }
+.tags input::placeholder { color: var(--muted); }
+/* 到上限后输入行整个收掉，不留一条灰着的空行把框撑成两行。已加的标签留着
+   ——人还得能删掉一个再换。 */
+.tags-full input { display: none; }
+
+.field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; }
+.field-pair .field + .field { margin-top: 0; }
+
+/* 正文这一段自己占满整幅：原文要看得见行，校样要看得见版，两边都要宽度，
+   注文栏在这一段让位。 */
+.md { margin-top: 3rem; }
+.md-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+.md-label { display: block; margin-bottom: .45rem; color: var(--muted); font-size: var(--facts-size); }
+/* 正文框不给拖，也不设高度上限：一屏装满还有余，往下写靠页面滚，不再有内外两层
+   滚动条打架。 */
+.md-source {
+  display: block;
+  width: 100%;
+  min-height: 40rem;
+  resize: none;
+  background: #fff;
+  border: 1px solid var(--control);
+  border-radius: 2px;
+  padding: .85rem 1rem;
+  font-family: var(--stack-mono);
+  font-size: .875rem;
+  line-height: 1.8;
+}
+.md-source:focus { border-color: var(--seal); }
+/* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。 */
+.md-tools { margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.md-tools .upload-btn { cursor: pointer; }
+.md-tools .field-hint { margin-top: 0; }
+/* 上传成功也用同一行位置，但说成「做完了」而不是「出错了」。 */
+.field-done { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); word-break: break-all; }
+
+/* 保存那一行粘在底下，和报头配成一对。做法故意不一样：报头底下铺的是淡出，这里
+   铺的还是那条 .ruled 的细线。淡出只能是常驻的，而报头上面永远没有东西；这一行上面
+   永远有东西——连滚到底时正文最后几行也正贴在它上面，常驻的淡出会把那几行一直压暗。
+   细线没有这个代价，而且它本来就是这一页分段的记号，只是现在不跟着滚了。
+
+   用 sticky 不用 fixed：它在文档里照样占着那一行的位置，所以滚到底时不会盖住任何
+   东西，也不用给页面补垫。 */
+.save {
+  margin-top: 3rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 4; /* 压不过报头（5）：同一屏里先让报头。 */
+  background: var(--paper);
+}
+/* 左栏两行，说的是「现在存没存」和「切走会怎样」。话比别处紧一点：这一条是钉住的，
+   每一行都是常驻的高度。 */
+.save .facts > p + p { margin-top: .35rem; }
+.save-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+/* 第二行有三个说法，同一时刻只出一个。 */
+.save-state-clean, .save-state-dirty, .save-note-clean, .save-note-dirty, .save-note-leaving { display: none; }
+.save[data-dirty="false"] .save-state-clean { display: block; }
+.save[data-dirty="true"] .save-state-dirty { display: block; }
+.save[data-dirty="false"] .save-note-clean { display: block; }
+.save[data-dirty="true"] .save-note-dirty { display: block; }
+/* 拦下时第二行指名道姓：点了「文章」什么都没发生，得有个交代，否则像是点漏了。 */
+.save[data-dirty="true"][data-leaving="true"] .save-note-dirty { display: none; }
+.save[data-dirty="true"][data-leaving="true"] .save-note-leaving { display: block; }
+/* 人在往外走，「放弃改动」和「查看公开页」「删除这一篇」换班——后两个不是他此刻要的。 */
+.act-abandon { display: none; }
+.save[data-leaving="true"] .act-away { display: none; }
+.save[data-dirty="true"][data-leaving="true"] .act-abandon { display: inline-flex; }
+
 /* ---------- 窄屏：注文栏立起来，变成标题上方的一行批注 ---------- */
 
 @media (max-width: 56rem) {
   :root { --margin: 7.5rem; --gutter: 1.75rem; }
+  /* 两栏并排会各剩一半的一半，原文和校样都窄到看不清行，所以上下叠。 */
+  .md-split { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 }
 
 @media (max-width: 44rem) {
@@ -455,7 +809,7 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   }
 
   .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
-  .statement-body, .archive-main, .archive-tools-main, .main, .piece-main, .device-main, .pager-nav, .footer-main, .project-body { grid-column: 1; }
+  .statement-body, .archive-main, .archive-tools-main, .main, .piece-main, .device-main, .pager-nav, .composer-form, .footer-main, .project-body { grid-column: 1; }
   .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
 
   .masthead { padding-top: 1.5rem; }
@@ -465,10 +819,9 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 
   /* 注文栏立起来，变成正文上方的一行批注，「最新」「本机」跟着并入那一行 */
   .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
+  /* 并成一行之后，间隔由上面的 gap 管；段距不撤掉会把这一行顶歪。 */
+  .facts > p + p { margin-top: 0; }
   .mark { margin-bottom: 0; }
-  /* 两行写法的注文不并成一行：并了之后每条都折行，反而更难读 */
-  .facts-stacked { display: block; }
-  .facts-stacked > * + * { margin-top: .55rem; }
   .entry:first-child .entry-title { font-size: 1.6rem; }
 
   .form-title { font-size: 1.5rem; }
@@ -489,6 +842,16 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 
   .filters { gap: .35rem; }
   .filter { padding: 0 .5rem; }
+
+  /* 窄屏上并排的两个字段各自只剩一拃宽，填不下地址里的名字，所以摞起来。 */
+  .field-pair { grid-template-columns: minmax(0, 1fr); }
+  .field-pair .field + .field { margin-top: 1.25rem; }
+  .md-source { min-height: 22rem; }
+
+  /* 三个格子并排挤不下：页码单独占一行居中，两只手在它下面各守一边。 */
+  .pager-nav { grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
+  .pager-count { grid-column: 1 / -1; grid-row: 1; text-align: center; }
+  .pager-prev, .pager-next { grid-row: 2; }
 
   .footer { margin-top: 3rem; }
   .footer-made { margin-bottom: .75rem; }
