@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ApiError, codes, describeFailure, fetchSession, listSessions, login, register, resetPassword, retryAfterText, revokeSession } from '../src/api/account.js';
+import { fetchSession, listSessions, login, register, resetPassword, revokeSession } from '../src/api/account.js';
+import { ApiError, codes, describeFailure, retryAfterText } from '../src/api/client.js';
 import { config } from '../src/config.js';
 
 const sessionBody = {

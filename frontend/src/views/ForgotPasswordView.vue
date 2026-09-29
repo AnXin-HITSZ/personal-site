@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { codes, describeFailure, requestPasswordReset } from '../api/account.js';
+import { requestPasswordReset } from '../api/account.js';
+import { codes, describeFailure } from '../api/client.js';
 import { commonText, throttleText } from '../copy.js';
 import { setMetadata } from '../metadata.js';
 import FormField from '../components/FormField.vue';

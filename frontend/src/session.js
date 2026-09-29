@@ -1,5 +1,6 @@
 import { computed, reactive, readonly } from 'vue';
-import { ApiError, codes, fetchSession } from './api/account.js';
+import { fetchSession } from './api/account.js';
+import { ApiError, codes } from './api/client.js';
 
 /* 全站唯一的登录态。报头那一项、路由守卫、账号页都读它，谁也不各自去问。
    status 的三态是有意的：unknown 是「还没问过」，ready 是「问清楚了」。

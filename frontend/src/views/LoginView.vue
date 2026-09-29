@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { codes, describeFailure, login, resendVerification } from '../api/account.js';
+import { login, resendVerification } from '../api/account.js';
+import { codes, describeFailure } from '../api/client.js';
 import { commonText, throttleText } from '../copy.js';
 import { safeNext } from '../redirect.js';
 import { apply } from '../session.js';

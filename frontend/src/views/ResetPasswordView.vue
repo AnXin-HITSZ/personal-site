@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { codes, describeFailure, resetPassword } from '../api/account.js';
+import { resetPassword } from '../api/account.js';
+import { codes, describeFailure } from '../api/client.js';
 import { commonText, passwordProblem } from '../copy.js';
 import { clear } from '../session.js';
 import { setMetadata } from '../metadata.js';
