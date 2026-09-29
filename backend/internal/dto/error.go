@@ -11,6 +11,9 @@ const (
 	CodeAccountDisabled    = "ACCOUNT_DISABLED"
 	CodeInvalidToken       = "INVALID_TOKEN"
 	CodeTooManyRequests    = "TOO_MANY_REQUESTS"
+	CodeConflict           = "CONFLICT"
+	CodePayloadTooLarge    = "PAYLOAD_TOO_LARGE"
+	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 )
 
 type ErrorBody struct {
@@ -117,6 +120,41 @@ func NewTooManyRequests(message string) ErrorResponse {
 	return ErrorResponse{
 		Error: ErrorBody{
 			Code:    CodeTooManyRequests,
+			Message: message,
+		},
+	}
+}
+
+// 请求本身没毛病，只是和已有的数据撞了——比如 slug 已经被占。带上 field
+// 是因为这类冲突总能指到表单里的某一格。
+func NewConflict(field, message string) ErrorResponse {
+	return ErrorResponse{
+		Error: ErrorBody{
+			Code:    CodeConflict,
+			Message: message,
+			Field:   field,
+		},
+	}
+}
+
+// 和 INVALID_ARGUMENT 分开，是因为用户要做的事不一样：格式错了要改内容，
+// 体积超了要换文件。混在一个码里，前端只能去解析那句提示才知道该说什么。
+func NewPayloadTooLarge(message string) ErrorResponse {
+	return ErrorResponse{
+		Error: ErrorBody{
+			Code:    CodePayloadTooLarge,
+			Message: message,
+		},
+	}
+}
+
+// 服务端缺一步配置，重试不会变好，但原因说得出。和 INTERNAL_ERROR 分开是为了让
+// 界面能把「这台机器还没配好」和「这次请求本身坏了」分开讲——前者有明确的下一步，
+// 后者只能请人稍后再来。
+func NewServiceUnavailable(message string) ErrorResponse {
+	return ErrorResponse{
+		Error: ErrorBody{
+			Code:    CodeServiceUnavailable,
 			Message: message,
 		},
 	}

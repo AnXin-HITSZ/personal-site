@@ -53,3 +53,35 @@ func TestArticleDetailRejectsUnpublished(t *testing.T) {
 		t.Fatal("没有发布时间的文章不应能转换")
 	}
 }
+
+func TestBodyRunesStaysInTheAdminFamily(t *testing.T) {
+	publishedAt := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	article := model.Article{ID: "a1", Status: "published", PublishedAt: &publishedAt, ReadingMinutes: 3, BodyRunes: 1200}
+
+	fieldsOf := func(t *testing.T, v any) map[string]json.RawMessage {
+		t.Helper()
+		raw, err := json.Marshal(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &fields); err != nil {
+			t.Fatal(err)
+		}
+		return fields
+	}
+
+	admin := fieldsOf(t, NewAdminArticleSummary(article))
+	if string(admin["bodyRunes"]) != "1200" {
+		t.Errorf("后台响应应带上正文字数，实际 %s", admin["bodyRunes"])
+	}
+
+	public, ok := NewArticleSummary(article)
+	if !ok {
+		t.Fatal("已发布且有发布时间，应能转换")
+	}
+	// 读者看的是「几分钟」，字数只有写的人关心，不必进公开响应。
+	if _, present := fieldsOf(t, public)["bodyRunes"]; present {
+		t.Error("公开响应不该带正文字数")
+	}
+}
