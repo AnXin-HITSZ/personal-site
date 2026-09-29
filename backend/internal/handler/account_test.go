@@ -768,10 +768,13 @@ func TestMalformedRequestsAreRejected(t *testing.T) {
 	cases := []struct {
 		name string
 		body string
+		// 超限回 413 而不是 400：它和 JSON 语法错在 ShouldBindJSON 眼里是同一个
+		// 失败，但对作者来说要做的事完全不同，所以刻意分开。
+		want int
 	}{
-		{name: "不是 JSON", body: "这不是 JSON"},
-		{name: "空 body", body: ""},
-		{name: "超大 body", body: `{"email":"` + strings.Repeat("a", 5<<10) + `"}`},
+		{name: "不是 JSON", body: "这不是 JSON", want: http.StatusBadRequest},
+		{name: "空 body", body: "", want: http.StatusBadRequest},
+		{name: "超大 body", body: `{"email":"` + strings.Repeat("a", 5<<10) + `"}`, want: http.StatusRequestEntityTooLarge},
 	}
 
 	for _, tc := range cases {
@@ -782,8 +785,8 @@ func TestMalformedRequestsAreRejected(t *testing.T) {
 
 			rec := f.post("/api/v1/auth/register", tc.body, "")
 
-			if rec.Code != http.StatusBadRequest {
-				t.Fatalf("应为 400，实际 %d：%s", rec.Code, rec.Body.String())
+			if rec.Code != tc.want {
+				t.Fatalf("应为 %d，实际 %d：%s", tc.want, rec.Code, rec.Body.String())
 			}
 			if called {
 				t.Error("解析都没过就不该调用 service")

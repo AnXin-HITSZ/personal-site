@@ -21,6 +21,10 @@ import (
 // 不设上限的话，一个几 GB 的 body 就能把内存吃干。
 const maxRequestBodyBytes = 4 << 10
 
+// 一篇文章的正文比邮箱口令大两个数量级，沿用上面那个上限会把正常的长文截掉。
+// 它必须小于 nginx 的 client_max_body_size，否则请求根本到不了这里。
+const maxArticleJSONBytes = 2 << 20
+
 // 这一层只声明限速器「能回答什么」，不声明它是怎么算的——所以 handler 不认识
 // ratelimit 包，换一个实现（进程内换成共享存储、固定窗口换成令牌桶）不必动
 // 这一层的任何决策代码：用哪个 key、什么顺序、什么时候清，都留在下面。
@@ -395,12 +399,27 @@ func (h *Account) tooMany(c *gin.Context, limiter rateLimiter, key, message stri
 
 // 截断请求体，免得一个超大 body 把内存吃干。
 func bindJSON(c *gin.Context, target any) bool {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBodyBytes)
-	if err := c.ShouldBindJSON(target); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewInvalidArgument("body", "请求格式不正确"))
+	return bindJSONLimit(c, target, maxRequestBodyBytes)
+}
+
+// 截断和 JSON 语法错在 ShouldBindJSON 眼里都是同一个失败。回一句「请求格式不正确」，
+// 会让人对着明明合法的 JSON 找半天的格式问题——所以超限要单独认出来说清楚。
+func bindJSONLimit(c *gin.Context, target any, limit int64) bool {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
+
+	err := c.ShouldBindJSON(target)
+	if err == nil {
+		return true
+	}
+
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		c.JSON(http.StatusRequestEntityTooLarge, dto.NewPayloadTooLarge("请求体过大"))
 		return false
 	}
-	return true
+
+	c.JSON(http.StatusBadRequest, dto.NewInvalidArgument("body", "请求格式不正确"))
+	return false
 }
 
 // 只认这几种错误是用户输入的问题。其余一律当服务端故障——把数据库错误
