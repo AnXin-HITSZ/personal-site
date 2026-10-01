@@ -22,6 +22,8 @@ export class ArticleNotFoundError extends Error {
    两边要一起改。 */
 export const ARTICLE_ID_PATTERN = /^[0-9a-z]{8}$/;
 
+/* 参数先在这里量一遍，不合约定就当场抛：省掉一次注定 400 的往返，也让越界在开发时就响，
+   而不是等到线上出现一个空列表。这几个上限与服务端 handler 里的那几条是一致的。 */
 export function normalizeQuery({ page = 1, pageSize = 6, q = '', category = 'all' } = {}) {
   if (!Number.isInteger(page) || page < 1 || page > 1000000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50 || typeof q !== 'string' || [...q.trim()].length > 100 || !isCategoryRef(category)) {
     throw new Error('查询参数不符合接口约定');
@@ -29,6 +31,8 @@ export function normalizeQuery({ page = 1, pageSize = 6, q = '', category = 'all
   return { page, pageSize, q: q.trim(), category };
 }
 
+/* 排序要跟服务端一致：先按发布时间倒序，同一时刻再按 id——少了这第二把钥匙，
+   同一秒发的两篇在两条实现里的先后就是随机的，翻页会跳行。 */
 export function mockList(query = {}) {
   const { page, pageSize, q, category } = normalizeQuery(query);
   const keyword = q.toLowerCase();
@@ -42,10 +46,15 @@ export function mockDetail(id) {
   return article ? { ...article } : null;
 }
 
+/* 列表不带正文——服务端也不带（正文只在详情里读），mock 跟着照做，
+   免得本地开发时页面悄悄依赖了线上永远不会给的字段。 */
 function withheldBody({ body, ...summary }) {
   return summary;
 }
 
+/* 回来的东西要逐项对回契约，连分页算术都对一遍：对不上就抛 CONTRACT_ERROR。
+   宁可当场看见一句「格式不符合约定」，也不要让半截数据流进页面——
+   那种坏法在界面上只是一个 undefined，回头很难查到是哪一层丢的。 */
 function validateResponse(data, query) {
   const p = data?.pagination;
   if (!Array.isArray(data?.items) || !p || p.page !== query.page || p.pageSize !== query.pageSize || !Number.isSafeInteger(p.total) || p.total < 0 || p.totalPages !== Math.ceil(p.total / p.pageSize) || data.items.length !== Math.max(0, Math.min(p.pageSize, p.total - (p.page - 1) * p.pageSize)) || !data.items.every(a =>
@@ -64,6 +73,9 @@ function validateDetail(data, id) {
   return data;
 }
 
+/* mock 与真接口在这同一支函数里分叉，共用上面那套参数校验和响应校验——
+   契约只有一份，改的时候不会只改一边。那 180 毫秒是假的等待，留着它，
+   加载态与骨架屏在本地才看得见。 */
 export async function listArticles(query = {}, { signal, source = config.dataSource, fetchImpl = fetch } = {}) {
   const normalized = normalizeQuery(query);
   if (source === 'mock') {

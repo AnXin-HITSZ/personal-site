@@ -5,6 +5,8 @@ import { listArticles } from '../api/articles.js';
 import { ALL, listCategories } from '../api/categories.js';
 import ArticleEntry from './ArticleEntry.vue';
 
+/* query 是「已经生效的那份条件」，search 是输入框里正在敲的那串字——搜索要按回车或
+   点按钮才生效，所以两者不能是同一个值。 */
 const query = reactive({ page: 1, pageSize: 6, q: '', category: 'all' });
 const search = ref('');
 const items = ref([]);
@@ -22,6 +24,8 @@ const status = computed(() => loading.value ? '正在整理文章…' : error.va
    首条即最新（仓储层按 published_at desc, id asc 排序），其余情况无从判断，就不标。 */
 const latestId = computed(() => !query.q && query.category === 'all' && query.page === 1 ? items.value[0]?.id : undefined);
 
+/* 每次取数先掐掉上一次：连点筛选时两个请求会在天上赛跑，先发的未必先回，晚到的旧结果
+   会把新的盖掉。current 是这一次的控制器——回调里靠它认「我还是最新的那一次吗」。 */
 async function load() {
   controller?.abort();
   const current = new AbortController();
@@ -59,8 +63,11 @@ async function loadCategories() {
 }
 function filter(category) { query.category = category; query.page = 1; load(); }
 function submitSearch() { query.q = search.value.trim(); query.page = 1; load(); }
+/* 换过页或筛过之后把焦点送回标题：读屏会念出新的一段，键盘用户的下一次 Tab 也从这里
+   重新走。preventScroll 是因为滚动位置由调用方另外决定（见 turnPage）。 */
 async function focusHeading() { await nextTick(); heading.value?.focus({ preventScroll: true }); }
 function reset() { search.value = ''; Object.assign(query, { q: '', category: 'all', page: 1 }); load(); focusHeading(); }
+// 换页之后连视口一起带回列表顶端，否则读者会停在页脚那条分页栏旁边。
 function turnPage(page) { query.page = page; load(); focusHeading(); heading.value?.scrollIntoView({ block: 'start' }); }
 function retry() { load(); focusHeading(); }
 onMounted(() => { load(); loadCategories(); });

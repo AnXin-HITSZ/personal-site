@@ -10,11 +10,14 @@ const isAuthor = computed(() => session.account?.role === 'admin');
 </script>
 
 <template>
+  <!-- 键盘用户按第一下 Tab 就能跳过整个报头，直接落到正文。 -->
   <a class="skip-link" href="#main">跳到主要内容</a>
 
+  <!-- 报头 + 正文 + 页脚，三段都套 shell 收在同一个版心里。 -->
   <header class="masthead shell">
     <router-link class="brand" to="/" aria-label="Anxin 首页">Anxin</router-link>
     <nav class="nav" aria-label="主导航">
+      <!-- nav-here 是比路由名，不是比路径前缀：列表页和详情页同属「文章」这一栏。 -->
       <router-link to="/" :class="{ 'nav-here': $route.name === 'articles' || $route.name === 'article' }">文章</router-link>
       <a :href="config.qaUrl" target="_blank" rel="noopener noreferrer">QA-Agent<span class="sr-only">（新窗口）</span></a>
       <router-link

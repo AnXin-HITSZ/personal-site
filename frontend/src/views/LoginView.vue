@@ -19,7 +19,13 @@ const failure = ref(null);
 const busy = ref(false);
 const resendState = ref('');
 
+/* 429 之后能做的只有等：服务端按邮箱计数，越点窗口越长，所以限速期间把整张表单
+   都停掉，只留「重置口令」那条路——它不经过口令校验，不受这次计数拖累。 */
 const throttled = computed(() => failure.value?.code === codes.tooManyRequests);
+
+/* 服务端有意不说是邮箱还是口令不对（说了就能拿来枚举注册过的邮箱），前端也照这个
+   口径：只把「口令不对」挂在口令框下面，邮箱框留白——写在邮箱框上等于替服务端
+   指认邮箱错了。 */
 const passwordError = computed(() =>
   failure.value?.code === codes.invalidCredentials ? '口令不对' : fieldError('password'));
 const emailError = computed(() => (failure.value?.code === codes.invalidCredentials ? '' : fieldError('email')));
@@ -28,6 +34,8 @@ function fieldError(name) {
   return failure.value?.field === name ? failure.value.message : '';
 }
 
+/* 每个错误码一句人话。长话走横幅，字段级的话留给框下面的小字；invalidArgument
+   没有横幅，因为那时候该说的已经挂在具体那个框上了，再说一遍是重复。 */
 const banner = computed(() => {
   const cause = failure.value;
   if (!cause) return null;
@@ -67,6 +75,8 @@ async function resend() {
   }
 }
 
+/* 登录成功后回到当初想去的地方：路由守卫把人送来时会把原地址放进 ?next=，
+   safeNext 只放行站内路径，别的一律回首页（理由在 redirect.js）。 */
 async function submit() {
   busy.value = true;
   failure.value = null;

@@ -18,6 +18,7 @@ const choices = [
   { value: 'published', label: '已发布' },
 ];
 
+/* 这一项没有「填错」这回事，提示一直显示，所以它无条件挂在 aria-describedby 上。 */
 const describedBy = computed(() => `${props.id}-hint`);
 </script>
 
@@ -27,6 +28,8 @@ const describedBy = computed(() => `${props.id}-hint`);
     <div class="status-row">
       <div class="segmented" role="radiogroup" :aria-labelledby="`${id}-label`" :aria-describedby="describedBy">
         <template v-for="choice in choices" :key="choice.value">
+          <!-- 圆圈藏在视觉之外、label 显示出来：看上去是分段控件，语义上仍是 radio，
+               方向键、读屏和浏览器自带的行为一样都不少。 -->
           <input
             :id="`${id}-${choice.value}`" class="sr-only" type="radio" :name="id"
             :value="choice.value" :checked="modelValue === choice.value" :disabled="disabled"

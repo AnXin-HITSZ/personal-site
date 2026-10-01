@@ -11,6 +11,8 @@ import NoticeBanner from '../components/NoticeBanner.vue';
 
 const route = useRoute();
 
+/* 四态：form 正常填表，done 改完，invalid 是链接不认（过期或已用），missing 是
+   地址里没带令牌。invalid 与 done 各有一屏，因为两件事要分开说——口令到底改没改。 */
 const state = ref('form');
 const password = ref('');
 const confirm = ref('');
@@ -59,6 +61,7 @@ async function submit() {
   }
 }
 
+/* 令牌在地址里，缺席就当场算「没从邮件来」，不用等服务端回话。 */
 onMounted(() => {
   setMetadata({ title: '设置新口令 · Anxin', path: route.fullPath });
   if (!token.value) state.value = 'missing';

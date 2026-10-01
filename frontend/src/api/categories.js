@@ -35,6 +35,8 @@ export function categoryNameProblem(name) {
   return '';
 }
 
+/* 也导出给视图：输入框旁边的实时计数要和上面那条上限用同一把尺子——按字符数，
+   一个汉字算一个，不是按字节。 */
 const runes = value => [...value].length;
 
 function isRef(item) {
@@ -47,6 +49,7 @@ function isAdminRef(item) {
     Number.isSafeInteger(item.draftCount) && item.draftCount >= 0;
 }
 
+/* 契约检查跟 articles.js 那一套是一个口径：对不上就当场抛，不让半截数据流进视图。 */
 function validateList(data, each) {
   if (!Array.isArray(data?.items) || !data.items.every(each)) throw new Error(CONTRACT_ERROR);
   return data;

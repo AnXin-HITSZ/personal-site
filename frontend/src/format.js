@@ -1,7 +1,10 @@
+/* 时区写死 Asia/Shanghai：库里存的是 UTC，而这一站只有一种「哪一天」——作者所在的那一天。
+   跟着读者机器的时区走的话，同一篇在不同地方会显示成不同的日期。 */
 const date = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Shanghai',
 });
 
+// 斜杠换成点：两条斜杠在版面上太吵，点安静，也不至于被看成路径。
 export const formatDate = value => date.format(new Date(value)).replaceAll('/', '.');
 
 const dateTime = new Intl.DateTimeFormat('zh-CN', {

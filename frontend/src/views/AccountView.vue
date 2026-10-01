@@ -20,6 +20,8 @@ const changed = ref('');
 const failing = ref(null);
 const busy = ref(false);
 
+/* 设备列表自己一块三态：loading / ready / failed。读不出来只让这一块说一句，
+   不连累上面改口令那张表单——两件事本来就没有依赖。 */
 const devices = ref([]);
 const devicesState = ref('loading');
 const revoking = ref('');
@@ -27,6 +29,8 @@ const revokeError = ref('');
 
 const account = computed(() => session.account);
 
+/* 本地查出来的和服务端点名的叠在同一个框上：本地先量（空着、新旧相同这些），
+   服务端回话时再叠它那一条。 */
 const currentError = computed(() => problem.value.current || serverFieldError('currentPassword'));
 const passwordError = computed(() => problem.value.password || serverFieldError('password'));
 
@@ -183,6 +187,8 @@ onMounted(() => {
       <div class="device-main">
         <p class="device-ua">{{ device.userAgent }}</p>
         <p class="device-meta">{{ formatDate(device.expiresAt) }} 过期</p>
+        <!-- 本机那一行不给「登出」：本机要登出就走上面那个「退出登录」，那一下
+             还会把本地的会话状态一并清掉。 -->
         <div v-if="!device.current" class="device-actions">
           <button class="pager-btn" type="button" :disabled="revoking === device.id" @click="revoke(device.id)">
             {{ revoking === device.id ? '正在登出…' : '在这台设备上登出' }}

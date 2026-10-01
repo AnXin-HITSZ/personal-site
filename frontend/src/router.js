@@ -13,10 +13,14 @@ import AdminArticleEditView from './views/AdminArticleEditView.vue';
 import AdminCategoryListView from './views/AdminCategoryListView.vue';
 import NotFoundView from './views/NotFoundView.vue';
 
+/* 地址是真实的路径（createWebHistory），不是 #/ 那一种：文章要能被搜索引擎收录、被别处
+   直接粘链接。页面路由本身 Go 看不到——nginx 用 try_files 兜到 index.html，由前端接管。 */
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'articles', component: ArticleListView },
+    // slug 段可选，也不参与查询：老地址、手抄漏一段的地址都落得到同一篇上，
+    // 拿到数据之后再让详情页把地址栏换成规范写法。
     { path: '/articles/:id/:slug?', name: 'article', component: ArticleDetailView },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/register', name: 'register', component: RegisterView },
@@ -51,6 +55,7 @@ export const router = createRouter({
     },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
+  /* 后退/前进回到浏览器记着的那个位置，其余情况一律回页首——换一页却停在半截最让人迷路。 */
   scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 },
 });
 

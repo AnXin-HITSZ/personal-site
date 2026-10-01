@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { defaultMetadata, setMetadata } from '../metadata.js';
 import ArticleList from '../components/ArticleList.vue';
 
+/* 左栏那个大字年份。取的是打开页面那一刻的年份，不写死——跨年那天它自己会变。 */
 const year = new Date().getFullYear();
 
 onMounted(() => setMetadata({ ...defaultMetadata, path: '/' }));
@@ -23,6 +24,8 @@ onMounted(() => setMetadata({ ...defaultMetadata, path: '/' }));
     <div class="project-body">
       <h2 class="project-name">QA-Agent</h2>
       <p class="project-line">从一个问题开始，探索另一种寻找答案的方式。</p>
+      <!-- 站外链接：noopener 让新窗口拿不到本页的 window 句柄，noreferrer 顺手把
+           来源也隐掉。读屏用户听不见「会开新窗口」这件事，所以要写出来。 -->
       <a class="project-link" :href="config.qaUrl" target="_blank" rel="noopener noreferrer">打开 QA-Agent<span class="sr-only">（新窗口）</span></a>
     </div>
   </aside>

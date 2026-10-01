@@ -5,6 +5,9 @@ const categoryNames = { backend: '后端开发', frontend: '前端实践', ai: '
    跟着文章一起回来的（服务端每次现取），所以这里也照那个形状拼。 */
 export const mockCategories = Object.entries(categoryNames).map(([id, name]) => ({ id, name }));
 
+/* 九篇演示文章排成一个数组、一篇一行，最后统一映射成接口那个形状——写成九个
+   对象的话，每篇的正文会把这份清单撑得读不出结构。id 用的也是线上同款的 8 位
+   随机码，mock 模式下地址栏里那一段和线上长得一样。 */
 export const articles = [
   ['9k2m4p7r', 'go-api-first-step', '从一个接口开始，搭建自己的 Go 服务', '把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。', 'backend', ['Go', 'HTTP'], '2026-09-21T08:00:00Z', 8, `## 先定约定，再写实现
 

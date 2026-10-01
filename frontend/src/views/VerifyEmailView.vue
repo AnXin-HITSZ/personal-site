@@ -10,6 +10,9 @@ import NoticeBanner from '../components/NoticeBanner.vue';
 
 const route = useRoute();
 
+/* 五态各有一屏：pending 正在核，done 成了，invalid 是链接本身不认（过期或已用），
+   broken 是没核成（断网、服务端出错），missing 是地址里压根没带令牌。
+   分开是因为出路不同——只有 invalid 值得当场给「重发」，断网时重发也是白发。 */
 const state = ref('pending');
 const failure = ref(null);
 const email = ref('');
@@ -47,6 +50,7 @@ async function resend() {
   }
 }
 
+/* 令牌就在地址里，所以一进页面直接核，不用等人点按钮。 */
 onMounted(() => {
   setMetadata({ title: '验证邮箱 · Anxin', path: route.fullPath });
   if (token.value) verify(token.value);

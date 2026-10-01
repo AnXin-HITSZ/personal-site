@@ -1,4 +1,6 @@
 <script setup>
+/* 一篇文章的正文页。四种状态占的是同一块版面：正在读、读失败、这篇不存在、读到了。
+   每一种都得有出口——地址错了的人也要走得回列表，而不是停在一句「不存在」上。 */
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
@@ -88,6 +90,8 @@ onUnmounted(() => controller?.abort());
     <template v-else-if="error">
       <section class="piece row ruled">
         <div class="main notice">
+          <!-- tabindex="-1" 是留给脚本聚焦的：换一篇文章、或者重试之后把焦点送到标题上，
+               读屏才会念出新的一段（见上面那个 watch）。 -->
           <h3 ref="heading" tabindex="-1">暂时无法读取这篇文章</h3>
           <p>{{ error }}</p>
           <button class="pager-btn" @click="retry">重新加载</button>
@@ -121,6 +125,8 @@ onUnmounted(() => controller?.abort());
         </header>
 
         <div class="piece-body row">
+          <!-- v-html 在这里是安全的：上面那个 MarkdownIt 用的是默认的 html: false，
+               正文里手写的标签会被转义成文字，能成为标签的只有 Markdown 语法自己生成的。 -->
           <div class="main prose" v-html="body"></div>
         </div>
 

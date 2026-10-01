@@ -26,6 +26,7 @@ const router = useRouter();
 const isNew = computed(() => route.name === 'admin-article-new');
 /* 分类那一格留空等着读回来的第一个——它就是默认分类。 */
 const form = reactive({ slug: '', title: '', summary: '', body: '', category: '', tags: [], status: 'draft' });
+/* 本地查出来的问题按字段放这儿；显示时和服务端点名的那一句叠起来（见 fieldError）。 */
 const local = reactive({ slug: '', title: '', summary: '', body: '' });
 /* record 是库里那一篇，form 是手上这一稿。注文栏只放前者，输入框只放后者。 */
 const record = ref(null);
@@ -131,6 +132,8 @@ function authRedirect(cause) {
   return false;
 }
 
+/* 一份数据同时落三处：输入框（form）、基线（baseline）、注文栏的 record。三处必须
+   一起换——落下任何一处，要么立刻显示成「有改动没保存」，要么注文栏里说着另一篇。 */
 function apply(detail) {
   Object.assign(form, snapshot(detail));
   baseline.value = snapshot(detail);
@@ -189,6 +192,8 @@ async function loadCategories() {
   }
 }
 
+/* 这一页的标题就是文章标题，得等它读回来才知道，所以已有那一篇的 metadata 在
+   load 里设；新写的一篇没有标题可等，在这儿设。 */
 onMounted(() => {
   if (isNew.value) setMetadata({ title: '写新的一篇 · 写作 · Anxin', path: route.fullPath });
   load();
@@ -435,6 +440,8 @@ async function pickImage(event) {
     </div>
   </section>
 
+  <!-- data-dirty / data-leaving 是给 CSS 的：底栏显示哪一句话全由这两个属性挑，
+       脚本只管把「有没有改动」和「是不是正要走」这两个事实挂上去。 -->
   <div v-if="state === 'ready'" class="save row ruled" :data-dirty="String(dirty)" :data-leaving="String(blocked)">
     <div class="facts">
       <p v-if="stored" class="save-state-clean">改动都保存了</p>

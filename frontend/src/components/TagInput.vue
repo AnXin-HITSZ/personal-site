@@ -5,6 +5,7 @@ const props = defineProps({
   id: { type: String, required: true },
   label: { type: String, required: true },
   modelValue: { type: Array, default: () => [] },
+  // 这两个上限跟服务端的一致：本地先量是为了当场给话，说了算的仍然是服务端。
   max: { type: Number, default: 10 },
   maxLength: { type: Number, default: 32 },
   error: { type: String, default: '' },
@@ -37,6 +38,7 @@ function add(raw) {
   const next = [...props.modelValue];
   for (const part of parts) {
     if (next.length >= props.max) break;
+    // 按字符数截（不是 .length）：一个汉字算一个，和服务端数 rune 是同一口径。
     const value = [...part].slice(0, props.maxLength).join('');
     /* 和服务端一样按大小写不敏感去重：Go 和 go 并排显示看不出区别，放进去再被
        服务端悄悄吃掉一个，比当场说一句「已经加过了」更糟。 */

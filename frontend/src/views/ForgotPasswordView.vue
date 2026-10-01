@@ -76,7 +76,9 @@ onMounted(() => setMetadata({ title: '重置口令 · Anxin', path: route.fullPa
     </div>
     <div class="piece-main">
       <h1 class="form-title">去邮箱看看</h1>
+      <!-- 「如果有账号」和注册那屏是同一个口径：这个邮箱在不在库里，服务端不回答。 -->
       <p class="form-lede">如果 {{ email }} 有账号，重置口令的链接已经发出，30 分钟内有效。</p>
+      <!-- 这里没有「重发」：再要一条和第一次申请是同一个动作，回上一屏重填即可。 -->
       <div class="form-actions">
         <router-link class="pager-btn" to="/login">回登录</router-link>
       </div>

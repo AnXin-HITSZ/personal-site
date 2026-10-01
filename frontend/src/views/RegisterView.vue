@@ -21,6 +21,8 @@ const resendState = ref('');
 const throttled = computed(() => failure.value?.code === codes.tooManyRequests);
 const localProblem = ref({ password: '', confirm: '' });
 
+/* 本地查出来的话和服务端回的话叠在同一个框上：服务端点名说了哪个字段就听它的，
+   它没说就显示本地那条——本地拦下来的，服务端一般不会再报同一句。 */
 const emailError = computed(() => (failure.value?.field === 'email' ? failure.value.message : ''));
 const passwordError = computed(() => {
   const fromServer = failure.value?.code === codes.invalidArgument && failure.value.field === 'password';
@@ -48,6 +50,8 @@ function localCheck() {
   return Boolean(localProblem.value.password || localProblem.value.confirm);
 }
 
+/* 注册成功后不跳去别的页，就地换成「去邮箱看看」那一屏：它要留着刚填的邮箱
+   给「再要一封」，跳走了这两样就都没了。 */
 async function submit() {
   failure.value = null;
   if (localCheck()) return;
@@ -123,6 +127,8 @@ onMounted(() => setMetadata({ title: '注册 · Anxin', path: route.fullPath }))
     </div>
     <div class="piece-main">
       <h1 class="form-title">去邮箱看看</h1>
+      <!-- 「如果可以注册」不是含糊：服务端不回答这个邮箱是否已注册（说了就能拿来
+           枚举用户），这句话也就不能说得更满。 -->
       <p class="form-lede">如果 {{ email }} 可以注册，验证信已经发出。点开里面的链接，注册就算完成。</p>
 
       <NoticeBanner tone="done" :live="false">

@@ -1,6 +1,8 @@
 import { config } from '../config.js';
 import { CONTRACT_ERROR, request } from './client.js';
 
+/* 会话对象是登录、恢复、刷新三处共用的地基——它形状不对，后面每一页都会拿着
+   坏数据往下跑，所以在这一层一次查清。 */
 function validateSession(data) {
   const account = data?.account;
   const shaped = account && typeof account.id === 'string' && typeof account.email === 'string' &&
@@ -10,6 +12,7 @@ function validateSession(data) {
   return data;
 }
 
+/* 查完形状只把那串设备递出去：外壳在这里看过一遍就够了，视图不必再看。 */
 function validateDevices(data) {
   const shaped = Array.isArray(data?.sessions) && data.sessions.every(session =>
     session && typeof session.id === 'string' && typeof session.userAgent === 'string' &&

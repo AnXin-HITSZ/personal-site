@@ -9,6 +9,8 @@ function requireHttp() {
   if (config.dataSource !== 'http') throw new Error('写作功能没有 mock 数据源，请设置 VITE_DATA_SOURCE=http');
 }
 
+/* 状态这两个词在列表、筛选、表单三处都要写给人看，只有这一份字，免得同一个站上
+   「已发布」和「发布」打架。 */
 export const statusText = Object.freeze({ draft: '草稿', published: '已发布' });
 
 /* 分类的选项不在这儿：分类是一份随写作变的数据，不是一张写死的表，所以它由
@@ -47,6 +49,8 @@ export function articleProblems(input) {
   };
 }
 
+/* 只发服务端认得的字段。slug/title/summary 顺手去掉首尾空白（服务端也要归一化，
+   这里做掉省一次往返）；body 原样送——正文里的空行是排版，不是多余的空格。 */
 function payload(input) {
   return {
     slug: String(input.slug ?? '').trim(),
@@ -99,6 +103,8 @@ function validateDetail(data, id) {
   return hasRunes ? data : { ...data, bodyRunes: null };
 }
 
+/* 回来的三样缺一不可：url 要写进正文，key 是它在 OSS 里的名字，字节数和类型
+   虽然不显示，缺了就说明契约动过了。 */
 function validateUpload(data) {
   if (!data || typeof data.url !== 'string' || typeof data.key !== 'string' ||
     !Number.isSafeInteger(data.bytes) || data.bytes <= 0 || typeof data.contentType !== 'string') {

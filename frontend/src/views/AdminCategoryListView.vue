@@ -145,6 +145,8 @@ async function create() {
   }
 }
 
+/* 三张就地展开的表单（新建、改名、删除）一次只开一张：点开一张就把别的收起来，
+   否则同一行上会叠着两个动作，点哪一个都像在猜。 */
 function startCreate() {
   creating.value = true;
   draftName.value = '';

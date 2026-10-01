@@ -61,6 +61,8 @@ function authRedirect(cause) {
   return false;
 }
 
+/* 同一时刻只留最后一次请求：翻页、筛选点得快时，先发的那次即使晚回来也会被丢掉
+   （它带着的是上一组条件的数据）。下面每处 await 之后的 aborted 检查就是为这个。 */
 async function load() {
   controller?.abort();
   const current = new AbortController();
@@ -88,6 +90,7 @@ async function load() {
   }
 }
 
+/* 换筛选、换搜索词都回第一页：不停在第 5 页，因为新条件下未必有第 5 页。 */
 function filterBy(status) {
   query.status = status;
   query.page = 1;
