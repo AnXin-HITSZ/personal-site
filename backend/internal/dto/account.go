@@ -16,6 +16,7 @@ type AccountView struct {
 	CreatedAt     time.Time `json:"createdAt"`
 }
 
+// 登录成功后回给前端的东西：谁登的，以及这次会话什么时候失效。
 type SessionView struct {
 	Account   AccountView `json:"account"`
 	ExpiresAt time.Time   `json:"expiresAt"`
@@ -38,6 +39,7 @@ func NewSessionView(m model.User, expiresAt time.Time) SessionView {
 	}
 }
 
+// 一句话的回复：「验证邮件已发出」这类，没有别的数据要带。
 type MessageView struct {
 	Message string `json:"message"`
 }
@@ -68,6 +70,7 @@ func NewDeviceView(m model.Session, current bool) DeviceView {
 	}
 }
 
+// 包一层而不是直接回一个数组：顶层是数组的响应，以后想加个字段就得改形状。
 type DeviceListView struct {
 	Sessions []DeviceView `json:"sessions"`
 }

@@ -13,6 +13,8 @@ import (
 	"anxin-hitsz.com/backend/internal/service"
 )
 
+// 公开的读接口：一页文章、一篇详情。它们和后台那一族（admin_articles.go）分成两个文件，
+// 是因为口径不同——从这里出去的必然已经发布，草稿碰都不该碰到。
 type ArticlesList struct {
 	service *service.Article
 }
@@ -36,6 +38,7 @@ func (h *ArticlesList) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// 按 id 取一篇已发布的。地址里那段 slug 不参与查询——改 slug 不作废任何链接，靠的就是这里。
 type ArticleGet struct {
 	service *service.Article
 }
@@ -62,6 +65,8 @@ func (h *ArticleGet) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, detail)
 }
 
+// 查询串的落点。binding 只管页和页大小；关键词与分类得先看内容（长度、字符集）再决定
+// 收不收，那是下面的 parseArticleListQuery 在做的事。
 type articleListParams struct {
 	Page     int    `form:"page" binding:"min=1,max=1000000"`
 	PageSize int    `form:"pageSize" binding:"min=1,max=50"`
@@ -69,11 +74,13 @@ type articleListParams struct {
 	Category string `form:"category"`
 }
 
+// 400 响应里那个 field 的来源：前端拿它对到出问题的那一格上。
 type queryError struct {
 	Field   string
 	Message string
 }
 
+// 默认第一页、每页六篇：不带参数的请求也要有个说得通的结果，而不是一句 400。
 func parseArticleListQuery(c *gin.Context) (dto.ArticleListQuery, *queryError) {
 	params := articleListParams{Page: 1, PageSize: 6}
 	if err := c.ShouldBindQuery(&params); err != nil {

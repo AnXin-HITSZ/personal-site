@@ -13,6 +13,8 @@ import (
 
 const sessionContextKey = "axh.session"
 
+// cookie 的三样属性各有来源：名字由 service 定（写和读必须是同一个），Secure 按环境，
+// MaxAge 跟着会话 TTL——两边的到期时刻不能出现两个来源。
 type SessionCookie struct {
 	Name   string
 	Secure bool
@@ -41,6 +43,7 @@ func (c SessionCookie) Clear(ctx *gin.Context) {
 	ctx.SetCookie(c.Name, "", -1, "/", "", c.Secure, true)
 }
 
+// 没有这个 cookie 就给空串：认证那边本来就拿空令牌当「没登录」处理。
 func (c SessionCookie) Read(ctx *gin.Context) string {
 	token, err := ctx.Cookie(c.Name)
 	if err != nil {
@@ -75,6 +78,7 @@ func RequireAuth(cookies SessionCookie, sessions *service.Session) gin.HandlerFu
 	}
 }
 
+// 要挂在 RequireAuth 后面：它读的是上一步放进 context 的那个人。
 func RequireRole(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		account, ok := CurrentAccount(c)
@@ -90,6 +94,7 @@ func RequireRole(role string) gin.HandlerFunc {
 	}
 }
 
+// 取当前请求的人。只有过了 RequireAuth 的请求才拿得到，所以后台那几组路由自己不必再判一遍。
 func CurrentAccount(c *gin.Context) (*service.Authenticated, bool) {
 	value, ok := c.Get(sessionContextKey)
 	if !ok {

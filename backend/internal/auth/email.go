@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// 与 users.email 的列宽一致：再长库也存不下，不如在入口就说清楚。
 const MaxEmailBytes = 255
 
 var ErrEmailInvalid = errors.New("邮箱格式不合法")
