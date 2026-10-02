@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { load, session, signedIn } from './session.js';
 import ArticleListView from './views/ArticleListView.vue';
 import ArticleDetailView from './views/ArticleDetailView.vue';
+import ProjectQaAgentView from './views/ProjectQaAgentView.vue';
 import LoginView from './views/LoginView.vue';
 import RegisterView from './views/RegisterView.vue';
 import VerifyEmailView from './views/VerifyEmailView.vue';
@@ -22,6 +23,9 @@ export const router = createRouter({
     // slug 段可选，也不参与查询：老地址、手抄漏一段的地址都落得到同一篇上，
     // 拿到数据之后再让详情页把地址栏换成规范写法。
     { path: '/articles/:id/:slug?', name: 'article', component: ArticleDetailView },
+    /* 项目详情页。报头那条「QA-Agent」仍旧直接去应用，这一页是站内的另一处：
+       首页那一栏点「了解项目」落到这儿。正文由主人自己写（见 ProjectQaAgentView）。 */
+    { path: '/projects/qa-agent', name: 'project-qa-agent', component: ProjectQaAgentView },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },

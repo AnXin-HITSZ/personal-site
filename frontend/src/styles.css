@@ -310,6 +310,8 @@ html { scroll-padding-top: var(--masthead-h); }
   text-wrap: pretty;
 }
 .piece-tags { margin-top: .9rem; color: var(--muted); font-size: var(--facts-size); }
+/* 项目页标题下那枚「在线体验」：它占的是文章页「简介」那一行的位置，间距也取同一个数。 */
+.piece-act { margin-top: 1.25rem; }
 
 .piece-body { margin-top: 3rem; }
 .piece-foot { margin-top: 3.5rem; }

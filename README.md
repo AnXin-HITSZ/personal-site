@@ -72,7 +72,7 @@ bash dev.sh --only-frontend
 ## 当前交付
 
 - Vue 单文件组件：首页、文章列表、文章条目、文章详情、404 页。
-- vue-router 承载真实路由：`/`、`/articles/:id/:slug?`，其余路径落到 404，刷新任意路径都由网关回退到 `index.html`。文章带 id，slug 只给人看、可随时改，因此旧 slug 的链接不会失效：进页面后按 id 取数，再 `replace` 成规范地址。
+- vue-router 承载真实路由：`/`、`/articles/:id/:slug?`、`/projects/qa-agent`，其余路径落到 404，刷新任意路径都由网关回退到 `index.html`。文章带 id，slug 只给人看、可随时改，因此旧 slug 的链接不会失效：进页面后按 id 取数，再 `replace` 成规范地址。
 - 关键词搜索、分类筛选、分页、加载中、空列表、错误重试、移动端布局与键盘焦点。
 - 正文以 Markdown 原文存库，详情页在前端用 markdown-it 渲染。markdown-it 默认 `html: false`，正文里的 HTML 转义后原样显示。
 - 路由切换回填 `<title>`、`meta description` 与 `link[rel="canonical"]`。
