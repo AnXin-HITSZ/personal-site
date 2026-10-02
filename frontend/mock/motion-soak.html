@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>控件怎么动 · 乙 色在变 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：控件动起来该长什么样。三条路里选定的乙案——「色在变」。
+
+   甲 线在动   悬停与选中全由一条线交代，面一律不动。见 motion-stroke.html。
+   乙 色在变   （这份）不长一个面：悬停的变色全接上 0.18s 的过渡，按下沉 1px。
+               上一版的「墨上来」（灌墨）按批注撤掉了，改前那版整份另存。
+   丙 字在动   框不动、字动：悬停把字从纸面提起来、字距松开，按下落回去。
+               见 motion-type.html。
+
+   ＊结论：选定「乙 色在变」，照此移植进 styles.css / App.vue / router.js（2026-10-02）。
+     甲（motion-stroke）与丙（motion-type）已按选择删除。
+
+   三条共用的底线，这一份也照办：
+     · 按下时整体沉 1px（0.09s）——按下去要有感觉，这条三条都要；
+     · 只动会自己走完的属性（颜色 / transform / opacity / clip-path），
+       宽、高、字号、圆角、位置一个都不改；颜色只走今天已有的终点，不添新色；
+     · 全部动效在 prefers-reduced-motion: reduce 下停掉；
+     · 焦点圈（2px 印色）照旧，不因动画延后或消失。
+
+   样式直接引 ../src/styles.css，一个字都不抄——这里只写新增的规则和演示的脚手架。
+   （文件名还叫 motion-soak；只剩这一份，什么时候想改名说一声。） */
+
+/* —— 稿样脚手架（三条稿样共用，不属产品）—— */
+figure { margin: 0; }
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant > h3 { margin-top: 3rem; font-size: 1.0625rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+.variant ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant ul li + li { margin-top: .4rem; }
+.variant ul b { color: var(--ink); font-weight: 600; }
+.variant code { font-family: var(--stack-mono); font-size: .8125rem; }
+.demo { margin-top: 2rem; }
+.demo-row { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; }
+.demo figcaption, .frozen figcaption { margin-top: .75rem; color: var(--muted); font-size: var(--facts-size); max-width: var(--measure); }
+.slow-toggle { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-size: var(--facts-size); }
+.rig-hint { color: var(--muted); font-size: var(--facts-size); }
+
+/* 翻页演示的框。 */
+.rig { --page-out: .15s; --page-in: .26s; margin-top: 2rem; }
+/* 慢放开关：--speed 只写在 body 上，让所有框都继承它；框自己不声明这个值，
+   否则会把自己的 1 钉死，盖过 body 的 4。calc 里那个 1 是没勾时兜底用的。 */
+body.slow { --speed: 4; }
+.rig-frame { border: 1px solid var(--rule); border-radius: 2px; overflow: hidden; }
+.rig .masthead { padding: 1.5rem var(--pad) 0; }
+.rig-stage { position: relative; padding: 1.5rem 0 2.5rem; min-height: 21rem; }
+.rig-stage .statement { margin-top: 1.5rem; }
+.rig-stage .entry { padding-top: 1.25rem; }
+.rig-stage .entry + .entry { margin-top: 1rem; padding-top: 1rem; }
+.rig-stage .piece-head, .rig-stage .piece-body { margin-top: 0; }
+.rig-stage .rule-tight { padding-top: 1.25rem; }
+
+/* —— 一、控件：颜色走过去 ——
+   今天全站的悬停变色几乎全是瞬时的（.pager-btn、.btn-danger、.filter …在
+   styles.css 里根本没有 transition；只有写作后台那两颗分页按钮有）。这一路
+   不动任何终点——界还是界、墨还是墨、印还是印——只给变色接上 0.18s：
+   跳变改成走过去。面上不长任何东西；按下的沉 1px 是唯一的新动作。 */
+.pager-btn { transition: border-color .18s ease, color .18s ease, transform .09s ease; }
+.pager-btn:active:enabled { transform: translateY(1px); }
+
+/* 写作后台那两颗分页按钮今天就有 ±0.2rem 的让位（transform .18s + 变色过渡）；
+   .pager-btn 这条新 transition 会盖掉它们，所以把让位连同按下一起重说一遍——
+   按下时横竖两个位移要同时在，只沉不退就丢了方向。 */
+.pager-prev, .pager-next { transition: transform .18s ease, border-color .18s ease, color .18s ease; }
+.pager-prev:active:enabled { transform: translateX(-.2rem) translateY(1px); transition-duration: .09s; }
+.pager-next:active:enabled { transform: translateX(.2rem) translateY(1px); transition-duration: .09s; }
+
+/* 删除那颗悬停满印色的面是今天的终点；终点不动，改成从 0.18s 里淡进来
+   （background-color 一条过渡，不再有图层和 background-size 那些事）。 */
+.btn-danger { transition: background-color .18s ease, color .18s ease, transform .09s ease; }
+.btn-danger:active:enabled { transform: translateY(1px); }
+
+/* 主操作：满印色的面，悬停由印色渐染到墨色（原来也是瞬变），按下沉 1px。 */
+.primary { transition: background-color .18s ease, border-color .18s ease, transform .09s ease; }
+.primary:active:enabled { transform: translateY(1px); }
+
+/* 筛选行：悬停那个词从界色走到墨色，点中那一下走到印色 + 印色线——都在原地。 */
+.filter { transition: color .18s ease, border-bottom-color .18s ease; }
+
+/* 搜索那颗字：悬停从印色走到墨色（它静止时就是印色，是这一行里最亮的）。 */
+.search button { transition: color .18s ease; }
+
+/* 安静的动作、安静链接、报头、分段的标签：一样只接时间，不加东西。
+   全站凡是变色，都从同一段 0.18s 里走过去。 */
+.act, .act-danger { transition: color .18s ease, border-bottom-color .18s ease; }
+.link-quiet { transition: color .18s ease; }   /* 下划线是 currentColor，跟着一起走 */
+.nav a { transition: color .18s ease; }
+.segmented label { transition: color .18s ease; }
+
+/* —— 三、下拉：下半折的纸翻开 ——
+   弹层贴着按钮下沿（定过，不再动），从下沿往下把整张翻开（clip-path，0.18s）——
+   这一段不动：它翻的是「纸」，不是「墨」，本来就不在灌墨之列。
+   悬停那一行：淡底不再从左边扫过来，在原地淡入——base 那条 option:hover 是
+   瞬时的，这里给它接上 0.16s。 */
+@supports (appearance: base-select) {
+  .select select::picker(select) {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path .18s ease, display .18s allow-discrete, overlay .18s allow-discrete;
+  }
+  .select select:open::picker(select) { clip-path: inset(0); }
+  @starting-style {
+    .select select:open::picker(select) { clip-path: inset(0 0 100% 0); }
+  }
+  .select option { transition: background-color .16s ease, color .16s ease; }
+}
+
+/* —— 二、翻页：落纸 ——
+   进：从下方 8px 升上来，0.26s，曲线先快后收（cubic-bezier(.2,.7,.2,1)），
+   落下来那一下是缓的；出：往上 6px 离开，0.15s。报头在 <main> 外面，
+   不在这层里，「翻页时一个字都不挪」照旧成立。 */
+.rig .page-leave-active { transition: opacity calc(var(--page-out) * var(--speed, 1)) ease-in, transform calc(var(--page-out) * var(--speed, 1)) ease-in; }
+.rig .page-leave-to { opacity: 0; transform: translateY(-6px); }
+.rig .page-enter-active { transition: opacity calc(var(--page-in) * var(--speed, 1)) cubic-bezier(.2, .7, .2, 1), transform calc(var(--page-in) * var(--speed, 1)) cubic-bezier(.2, .7, .2, 1); }
+.rig .page-enter-from { opacity: 0; transform: translateY(8px); }
+
+/* —— 定格帧：把过渡路上的几帧直接摆出来（中帧的色是估的，看个意思）—— */
+.frozen { display: flex; flex-wrap: wrap; gap: 2.5rem; }
+/* 描边那颗：界色→印色走到一半（#995751 = --control 与 --seal 之间偏印那头）。 */
+.fx-2 { border-color: #995751; color: #64211c; }
+.fx-3 { border-color: var(--seal); color: var(--seal); }
+.fx-4 { border-color: var(--seal); color: var(--seal); transform: translateY(1px); }
+/* 删除那颗：透明→满印走到一半（底色 = 55% 印色落在纸上；字 = 印色往纸色走一半）。 */
+.fd-2 { background-color: #c9857e; color: #d19a94; }
+.fd-3 { background-color: var(--seal); color: var(--paper); }
+.fd-4 { background-color: var(--seal); color: var(--paper); transform: translateY(1px); }
+
+/* 少动的人拿到的是同一次变化，只是不过渡。 */
+@media (prefers-reduced-motion: reduce) {
+  .pager-btn, .pager-prev, .pager-next, .btn-danger, .primary, .filter, .search button,
+  .act, .act-danger, .link-quiet, .nav a, .segmented label, .select option,
+  .rig .page-leave-active, .rig .page-enter-active { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a class="nav-here" href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+    <a href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+按钮太素、翻页太硬、下拉太干——这一份稿样回答这三件事，给的是「色在变」。
+悬停不是「一下跳过去」，是描边、字、面都平滑地换色；按下不是「什么都没有」，是整个人沉 1px。
+终点一个都不改，走的这 0.18 秒才是新的——上一版「墨上来」的灌墨按批注撤掉了，改前那版整份另存。
+另两条路（甲 线在动、丙 字在动）已按选择删掉；这份留着当记录，真实站上的样子
+以 styles.css 和 App.vue 里的落地为准。
+</p>
+
+<figure class="demo" style="max-width: var(--measure)">
+  <div class="demo-row">
+    <button class="pager-btn" type="button">查看全部文章</button>
+    <button class="primary" type="button">保存</button>
+    <button class="btn-danger" type="button">删除这一篇</button>
+    <button class="act" type="button">编辑</button>
+    <button class="link-quiet" type="button">放弃改动</button>
+    <label class="slow-toggle"><input type="checkbox" data-slow> 慢放 ×4（三条稿样通用）</label>
+  </div>
+  <figcaption>现在（三条路的共同起点）：描边按钮悬停只是描边和字变印色，按下什么都没有。上面这一排也是活的，直接摸。</figcaption>
+</figure>
+
+<section class="variant">
+  <h2>乙 色在变（色）</h2>
+  <p class="why">这一路只动一样东西：颜色。今天全站的悬停变色几乎全是瞬时的——styles.css 里 .pager-btn、.btn-danger、.filter 这些根本没有 transition，只有写作后台那两颗分页按钮有。乙把跳变改成走过去：界色走到墨色、墨色走到印色、印色走到纸色，走的全是今天就在的颜色，终点一个都不改。面上不长东西、线不画、字不抬——三条路里最安静的一条。</p>
+
+  <h3>一、控件：颜色走过去</h3>
+  <p class="why">你圈出来的那颗「查看全部文章」现在是这样：悬停时描边和字转印色——但今天这一步是瞬时的，这一版给它接上 0.18s，颜色走过去；按下整颗沉 1px。按钮高度还是 2.5rem，面上不长任何东西。写作后台那两颗分页按钮今天已经会这样了（±0.2rem 的让位），乙只是把这条规矩铺到全站每个会变色的控件上。</p>
+
+  <figure class="demo" style="max-width: var(--measure)">
+    <div class="entry row ruled" style="padding-top:0">
+      <div class="main notice">
+        <h3>还没有找到这样的文章</h3>
+        <p>试试其他关键词，或回到全部文章。</p>
+        <button class="pager-btn" type="button">查看全部文章</button>
+      </div>
+    </div>
+    <figcaption>空状态那一屏，照 ArticleList.vue 的结构摆的。悬停那颗按钮——颜色走过去；再按住不放——沉 1px。</figcaption>
+  </figure>
+
+  <figure class="frozen" style="margin-top:2.5rem">
+    <figure>
+      <button class="pager-btn" type="button">查看全部文章</button>
+      <figcaption>静止（＝现在）</figcaption>
+    </figure>
+    <figure>
+      <span class="pager-btn fx-2">查看全部文章</span>
+      <figcaption>色走到一半（估的）</figcaption>
+    </figure>
+    <figure>
+      <span class="pager-btn fx-3">查看全部文章</span>
+      <figcaption>悬停终态（＝今天的终点，只是走 0.18s）</figcaption>
+    </figure>
+    <figure>
+      <span class="pager-btn fx-4">查看全部文章</span>
+      <figcaption>按下（沉 1px）</figcaption>
+    </figure>
+  </figure>
+
+  <figure class="demo">
+    <div class="demo-row">
+      <button class="primary" type="button">保存</button>
+      <button class="btn-danger" type="button">删除这一篇</button>
+      <button class="act" type="button">编辑</button>
+      <button class="act-danger" type="button">删除</button>
+      <button class="link-quiet" type="button">放弃改动</button>
+    </div>
+    <figcaption>编辑台保存条上那一排。删除那颗悬停会变成满印色的面——那是今天的终点，乙让它在 0.18s 里淡进来；主操作本来就是满的面，悬停渐染到墨色、按下沉 1px。「编辑」「删除」「放弃改动」这类安静的动作只在自己的字和线上换色——三条路都不往这类地方加面。</figcaption>
+  </figure>
+
+  <figure class="frozen" style="margin-top:2.5rem">
+    <figure>
+      <button class="btn-danger" type="button">删除这一篇</button>
+      <figcaption>静止（＝现在）</figcaption>
+    </figure>
+    <figure>
+      <span class="btn-danger fd-2">删除这一篇</span>
+      <figcaption>面色淡到一半（估的）</figcaption>
+    </figure>
+    <figure>
+      <span class="btn-danger fd-3">删除这一篇</span>
+      <figcaption>悬停终态（＝今天刷一下到的那个满印）</figcaption>
+    </figure>
+    <figure>
+      <span class="btn-danger fd-4">删除这一篇</span>
+      <figcaption>按下（沉 1px）</figcaption>
+    </figure>
+  </figure>
+
+  <figure class="demo">
+    <nav class="pager row ruled" aria-label="文章分页">
+      <div class="pager-nav">
+        <button class="pager-btn" type="button" disabled>上一页</button>
+        <span class="pager-count">1 / 3</span>
+        <button class="pager-btn" type="button">下一页</button>
+      </div>
+    </nav>
+    <figcaption>分页那两颗和正文里所有描边按钮同一套：变色走过去、按下沉 1px。写作后台那两颗本来还有 ±0.2rem 的横向让位（现状），留着——横的是让位、竖的是按下，方向不冲突；稿样里给它们合成了一条规则，真码里别漏。</figcaption>
+  </figure>
+
+  <h3>二、翻页：落纸</h3>
+  <p class="why">进：新的一页从下方 8px 升上来（0.26s），曲线先快后收，落下来那一下是缓的——像一张纸落到桌面上；出：旧的一页往上 6px 离开（0.15s）。报头在 &lt;main&gt; 外面，不在这层里，一个字都不挪。</p>
+
+  <div class="rig" data-rig>
+    <div class="rig-frame">
+      <header class="masthead">
+        <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+        <nav class="nav" aria-label="主导航">
+          <a class="nav-here" href="#">文章</a>
+          <a href="#">QA-Agent</a>
+          <a href="#">写作</a>
+          <a href="#">登录</a>
+        </nav>
+      </header>
+      <div class="rig-stage">
+        <section class="rig-page" data-page="list">
+          <section class="statement row">
+            <p class="statement-fact">2026</p>
+            <div class="statement-body">
+              <h1>把思考写下来，<br>让想法发生。</h1>
+            </div>
+          </section>
+          <div class="entries">
+            <article class="entry row ruled">
+              <div class="facts facts-stamp">
+                <p class="key">后端开发</p>
+                <p><time class="date" datetime="2026-09-30">2026-09-30</time></p>
+                <p>8 分钟阅读</p>
+              </div>
+              <div class="main">
+                <h3 class="entry-title"><a href="#">第一篇的标题就写在这里</a></h3>
+                <p class="entry-summary">一句摘要，用来看整段字动起来的样子。</p>
+              </div>
+            </article>
+            <article class="entry row ruled">
+              <div class="facts facts-stamp">
+                <p class="key">前端实践</p>
+                <p><time class="date" datetime="2026-09-24">2026-09-24</time></p>
+                <p>5 分钟阅读</p>
+              </div>
+              <div class="main">
+                <h3 class="entry-title"><a href="#">第二篇的标题</a></h3>
+                <p class="entry-summary">另一句摘要。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section class="rig-page" data-page="piece" hidden>
+          <div class="piece-head row ruled rule-tight">
+            <div class="facts facts-stamp">
+              <p class="key">后端开发</p>
+              <p><time class="date" datetime="2026-09-30">2026-09-30</time></p>
+            </div>
+            <div class="main piece-main">
+              <h1 class="piece-title">第一篇的标题就写在这里</h1>
+              <p class="piece-summary">一句摘要。详情页是缩写的，只看换页那一下。</p>
+            </div>
+          </div>
+          <div class="piece-body row">
+            <div class="prose main">
+              <p>正文第一段。翻过来的时候这一整块会一起升上来。</p>
+              <p>正文第二段，短一点。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <figure>
+      <div class="demo-row" style="margin-top:1rem">
+        <button class="pager-btn" type="button" data-go="list">文章列表</button>
+        <button class="pager-btn" type="button" data-go="piece">一篇文章</button>
+        <span class="rig-hint">两下换着点，看中间那几帧。</span>
+      </div>
+      <figcaption>
+        演示用的是将来 Vue 里同一套类名（<code>.page-enter-from</code> 这一族），
+        由脚本手动挂——真代码里进出场和收尾都是 <code>&lt;transition name="page" mode="out-in"&gt;</code> 的事，没有这里这些 setTimeout。
+        用 <code>mode="out-in"</code> 是因为两层同时渐变的中间几帧，两页的字会叠出重影。
+      </figcaption>
+    </figure>
+  </div>
+
+  <ul>
+    <li><b>报头不在这层里</b>（App.vue 现状：报头在 &lt;main&gt; 外面），所以「翻页时一个字都不挪」这条硬前提原样成立。</li>
+    <li>现状每个视图的根是<b>多节点</b>（首页 = 题记 + 项目 + 列表三段），而 <code>&lt;transition&gt;</code> 要单元素，所以在 router-view 里包一层不带样式的 <code>div</code>，过渡挂在这一层上：<code>&lt;div class="page" :key="$route.fullPath"&gt;</code>。margin 折叠不受影响，视觉与今天逐像素一样。</li>
+    <li>那 8px 的升起发生在整段内容还在淡入的时候（0.15s 之前字很淡），所以看不到「跳」的感觉，只看到「落」。</li>
+    <li>换页回顶（router 的 scrollBehavior）和出场那 0.15s 的先后，要在真代码里核一遍——这类时序在稿样里看不出来。</li>
+    <li>少动的人：过渡在 <code>prefers-reduced-motion: reduce</code> 下整条停掉，和 .segmented 那条写在同一处。慢放 ×4 是稿样自己的开关，不进产品。</li>
+  </ul>
+
+  <h3>三、下拉与筛选行</h3>
+  <p class="why">弹层贴着按钮下沿（定过，不再动），从下沿往下把整张翻开——这一段不动：它翻的是纸，不是墨。悬停的那一行：淡底在原位淡入（0.16s），不再从左边扫过来。筛选行：不漫底——悬停那个词从界色走到墨色，点中那一下走到印色和印色线，都在原地。当前那一项不动。</p>
+
+  <div class="demo-row" style="margin-top:1.5rem; max-width:21rem">
+    <div class="field" style="flex:1 1 16rem">
+      <label class="field-label" for="b-select">分类</label>
+      <span class="select">
+        <select id="b-select">
+          <option>后端开发</option>
+          <option>前端实践</option>
+          <option>AI 探索</option>
+          <option>学习随笔</option>
+        </select>
+      </span>
+    </div>
+    <div class="field" style="flex:0 0 auto">
+      <span class="field-label" id="b-status-label">状态</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="b-status-label">
+        <input id="b-draft" class="sr-only" type="radio" name="b-status" value="draft" checked>
+        <label for="b-draft">草稿</label>
+        <input id="b-pub" class="sr-only" type="radio" name="b-status" value="published">
+        <label for="b-pub">已发布</label>
+      </div>
+    </div>
+  </div>
+  <p class="rig-hint" style="margin-top:.75rem">点开上面那个下拉看弹层翻开、行上淡底在原位淡入（要 Chrome）。分段那枚滑块不另改——它今天就会动；两个标签的变色也接上过渡，和全站同一条。</p>
+
+  <div class="row" style="margin-top:2.5rem">
+    <div class="archive-tools-main">
+      <div class="filters filters-live" role="group" aria-label="文章分类">
+        <button class="filter" type="button" aria-pressed="true">全部</button>
+        <button class="filter" type="button" aria-pressed="false">后端开发</button>
+        <button class="filter" type="button" aria-pressed="false">前端实践</button>
+        <button class="filter" type="button" aria-pressed="false">AI 探索</button>
+        <button class="filter" type="button" aria-pressed="false">学习随笔</button>
+      </div>
+      <form class="search" role="search" onsubmit="return false">
+        <input type="search" placeholder="搜索标题或摘要" aria-label="搜索文章标题与摘要">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+  <p class="rig-hint" style="margin-top:.75rem">筛选行：鼠标从「全部」扫到「学习随笔」，每个词的颜色从界色走到墨色；点一个，它走到印色（稿样里点击只挪一下 aria-pressed）。搜索那颗字（印色）悬停走到墨色。报头那三个字也在同一条里：悬停从界色走到墨色，位置一个字都不挪。</p>
+
+  <h3>四、代价与要改的文件</h3>
+  <ul>
+    <li>要改的：<code>styles.css</code> 里给十来处规则各加一条 <code>transition</code>——<code>.pager-btn</code>（<code>.pager-prev/.pager-next</code> 的让位要连同按下重说一遍，见上）、<code>.btn-danger</code> / <code>.primary</code>、<code>.filter</code> / <code>.search button</code>、<code>.act</code> / <code>.link-quiet</code> / <code>.nav a</code> / <code>.segmented label</code>，各配一条按下沉 1px（<b>没有一处新脚本，也没有一寸 background-size——这条路从上到下都是 CSS</b>）；<code>@supports (appearance: base-select)</code> 里给弹层留原来的两行 <code>clip-path</code>、给 option 换成一条颜色过渡。App.vue 包一层 <code>&lt;transition name="page" mode="out-in"&gt;</code>，约 6 行。</li>
+    <li>一个新颜色都没加、一个新面都没长：走的全是今天就在的颜色（界、墨、印、纸、<code>--fill</code> 的淡灰）——新出现的只有时间。</li>
+    <li>「印色在这一站始终是墨、不是面」这条边一步没动：删除那颗悬停的满印色是现状的终点，乙只是把它从「刷一下」改成「淡进来」；全站唯一一块常驻的满印色面仍然是「保存」。</li>
+    <li>这一路性格安静：不漫墨、不画线、不抬字，只给变色加时间——上一版「墨上来」的整套灌墨（background-size 那些）按批注撤掉了，改前那版整份另存，随时退回。筛选行、报头那几条各是独立的一行规则，嫌哪里动就删哪里。</li>
+    <li>下拉那两行只在支持 <code>appearance: base-select</code> 的 Chrome 里看得见；别的浏览器弹层照常开关（变色过渡不受影响）——动画是加法，不是功能。</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+/* 慢放开关：三条稿样通用，勾上把时长乘 4。 */
+const slowBoxes = document.querySelectorAll('[data-slow]');
+slowBoxes.forEach((box) => {
+  box.addEventListener('change', () => {
+    document.body.classList.toggle('slow', box.checked);
+    slowBoxes.forEach((other) => { other.checked = box.checked; });
+  });
+});
+
+/* 稿样没有取数逻辑：点分类只是挪一下 aria-pressed，看得见状态怎么走。 */
+document.querySelectorAll('.filters-live').forEach((row) => {
+  row.querySelectorAll('.filter').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      row.querySelectorAll('.filter').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  });
+});
+
+/* 翻页演示。真实站上是把 <router-view> 包在 <transition name="page" mode="out-in"> 里，
+   进出场类名由 Vue 挂、收尾也由它做（过渡结束事件）；这里手动挂同一套类名、
+   用同样两个时长收尾——看到的动静就是将来 CSS 里那几条规则的样子。
+   时长只有一处：框上的 --page-out / --page-in。 */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const secs = (value) => value.trim().endsWith('ms') ? parseFloat(value) / 1000 : parseFloat(value);
+
+document.querySelectorAll('[data-rig]').forEach((rig) => {
+  const stage = rig.querySelector('.rig-stage');
+  const style = getComputedStyle(rig);
+  const speed = () => Number(style.getPropertyValue('--speed')) || 1;
+  const ms = (name) => reduceMotion.matches ? 0 : secs(style.getPropertyValue(name)) * 1000 * speed();
+  let busy = false;
+
+  function go(name) {
+    const cur = stage.querySelector('.rig-page:not([hidden])');
+    const next = stage.querySelector(`.rig-page[data-page="${name}"]`);
+    if (!cur || cur === next || busy) return;
+    busy = true;
+    cur.classList.add('page-leave-active', 'page-leave-to');
+    setTimeout(() => {
+      cur.hidden = true;
+      cur.classList.remove('page-leave-active', 'page-leave-to');
+      next.hidden = false;
+      next.classList.add('page-enter-from');
+      void next.offsetHeight;            // 先把起点这一帧落下来，再放开过渡
+      next.classList.add('page-enter-active');
+      next.classList.remove('page-enter-from');
+      setTimeout(() => {
+        next.classList.remove('page-enter-active');
+        busy = false;
+      }, ms('--page-in'));
+    }, ms('--page-out'));
+  }
+
+  rig.querySelectorAll('[data-go]').forEach((btn) => {
+    btn.addEventListener('click', () => go(btn.dataset.go));
+  });
+});
+</script>
+</body>
+</html>

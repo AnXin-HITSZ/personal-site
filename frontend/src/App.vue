@@ -1,12 +1,27 @@
 <script setup>
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { config } from './config.js';
 import { session, signedIn } from './session.js';
+
+const route = useRoute();
 
 const year = new Date().getFullYear();
 
 /* 「写作」只在作者看得见的地方出现——对别人它连一个字都不该有。 */
 const isAuthor = computed(() => session.account?.role === 'admin');
+
+/* 翻页那一层按这个键认人：键变了才播进出场，键不变就只是同一页换了地址。
+   文章页只认 id——详情页取到数据后会把地址栏补成规范 slug（router.replace），
+   那不是换页，键里带着 slug 就会白播一次过渡。
+   写作台新建与编辑共用一个键——新建保存成功后地址从 /new 换成 /:id，
+   那一趟连「已保存」那条提示和手上这一稿都该留在原处。
+   查询串不进键：它换的是一页里的筛选，不是页。 */
+const pageKey = computed(() => {
+  if (route.name === 'article') return `article/${route.params.id}`;
+  if (route.name === 'admin-article' || route.name === 'admin-article-new') return 'admin-editor';
+  return route.path;
+});
 </script>
 
 <template>
@@ -30,7 +45,15 @@ const isAuthor = computed(() => session.account?.role === 'admin');
   </header>
 
   <main id="main" class="shell">
-    <router-view />
+    <!-- 翻页的进出场（见 styles.css「翻页：落纸」）挂在这一层上。router-view 的
+         视图是多节点根（首页 = 题记 + 项目 + 列表三段），<transition> 只认单元素，
+         所以包一层不画东西的 div；mode="out-in" 是因为两页同时渐变的中间几帧，
+         两页的字会叠出重影。 -->
+    <transition name="page" mode="out-in">
+      <div class="page" :key="pageKey">
+        <router-view />
+      </div>
+    </transition>
   </main>
 
   <footer class="footer row shell ruled">

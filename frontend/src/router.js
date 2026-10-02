@@ -16,6 +16,12 @@ import NotFoundView from './views/NotFoundView.vue';
 
 /* 地址是真实的路径（createWebHistory），不是 #/ 那一种：文章要能被搜索引擎收录、被别处
    直接粘链接。页面路由本身 Go 看不到——nginx 用 try_files 兜到 index.html，由前端接管。 */
+
+/* 旧页淡出用多久，回页首就压后多久（styles.css「翻页：落纸」里那个 .15s）。
+   matchMedia 每次读 .matches 拿的都是当下的设置，改系统开关不用刷新。 */
+const pageLeaveMs = 150;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -59,8 +65,14 @@ export const router = createRouter({
     },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
-  /* 后退/前进回到浏览器记着的那个位置，其余情况一律回页首——换一页却停在半截最让人迷路。 */
-  scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 },
+  /* 后退/前进回到浏览器记着的那个位置，其余情况一律回页首——换一页却停在半截最让人迷路。
+     回页首压后到旧页淡完之后：翻页那 0.15s 里旧页还看得见（styles.css「翻页：落纸」），
+     立刻跳的话它会在原地「唰」地滚回顶上再消失。这两个数是同一个数，改要一起改。
+     少动的人那里没有过渡，也就不等。 */
+  scrollBehavior: (to, from, savedPosition) =>
+    new Promise(resolve => {
+      setTimeout(() => resolve(savedPosition ?? { top: 0 }), reduceMotion.matches ? 0 : pageLeaveMs);
+    }),
 });
 
 /* 一次都没问过就问一次；问不到（网络不好）时当作没登录放行不了，但也不能

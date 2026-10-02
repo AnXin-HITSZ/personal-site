@@ -173,7 +173,7 @@ html { scrollbar-gutter: stable; }
 html { scroll-padding-top: var(--masthead-h); }
 .brand { font-family: var(--stack-display); font-size: 1.3rem; letter-spacing: -.01em; }
 .nav { display: flex; gap: 1.75rem; font-size: .875rem; }
-.nav a { position: relative; padding: .5rem 0; color: var(--muted); }
+.nav a { position: relative; padding: .5rem 0; color: var(--muted); transition: color .18s ease; }
 .nav a:hover { color: var(--ink); }
 /* 详情页也属于「文章」这一栏，但它不是 / 的激活路由，所以另给一个类。 */
 .nav a[aria-current], .nav a.nav-here { color: var(--ink); }
@@ -220,6 +220,7 @@ html { scroll-padding-top: var(--masthead-h); }
   font-size: calc(var(--body-size) - 1px);
   border-bottom: 1px solid currentColor;
   padding-bottom: .15rem;
+  transition: color .18s ease;
 }
 .project-link:hover { color: var(--ink); }
 
@@ -243,6 +244,7 @@ html { scroll-padding-top: var(--masthead-h); }
   min-height: 2.5rem;
   padding: 0 .7rem;
   border-bottom: 2px solid transparent;
+  transition: color .18s ease, border-bottom-color .18s ease;
 }
 .filter:first-child { padding-left: 0; }
 .filter:hover:not([aria-pressed="true"]) { color: var(--ink); }
@@ -261,7 +263,7 @@ html { scroll-padding-top: var(--masthead-h); }
 .search:focus-within { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
 .search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: .7rem .85rem; font-size: .9375rem; }
 .search input::placeholder { color: var(--muted); }
-.search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); }
+.search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); transition: color .18s ease; }
 .search button:hover { color: var(--ink); }
 
 /* 头条与其余条目共用一套 DOM，只靠 :first-child 分两档：
@@ -288,6 +290,7 @@ html { scroll-padding-top: var(--masthead-h); }
 }
 .entry:first-child .entry-tags { margin-top: .9rem; }
 
+.entry-title a { transition: color .18s ease; }
 .entry-title a:hover { color: var(--seal); }
 
 /* ---------- 文章详情 ---------- */
@@ -315,7 +318,7 @@ html { scroll-padding-top: var(--masthead-h); }
 
 .piece-body { margin-top: 3rem; }
 .piece-foot { margin-top: 3.5rem; }
-.piece-back { color: var(--muted); font-size: var(--facts-size); border-bottom: 1px solid var(--rule); padding-bottom: .15rem; }
+.piece-back { color: var(--muted); font-size: var(--facts-size); border-bottom: 1px solid var(--rule); padding-bottom: .15rem; transition: color .18s ease, border-bottom-color .18s ease; }
 .piece-back:hover { color: var(--seal); border-bottom-color: currentColor; }
 
 .sk-piece-title { width: 76%; height: 1.75rem; }
@@ -340,7 +343,7 @@ html { scroll-padding-top: var(--masthead-h); }
 .prose ul, .prose ol { padding-left: 1.5rem; }
 .prose li + li { margin-top: .4rem; }
 .prose blockquote { border-left: 2px solid var(--seal); padding-left: 1.25rem; color: var(--muted); }
-.prose a { color: var(--seal); border-bottom: 1px solid currentColor; }
+.prose a { color: var(--seal); border-bottom: 1px solid currentColor; transition: color .18s ease; }
 .prose a:hover { color: var(--ink); }
 .prose hr { border: 0; height: 1px; background: var(--rule); margin-top: 3rem; }
 .prose code {
@@ -380,6 +383,8 @@ html { scroll-padding-top: var(--masthead-h); }
 .pager-prev, .pager-next { transition: transform .18s ease, border-color .18s, color .18s; }
 .pager-prev:hover:enabled { transform: translateX(-.2rem); }
 .pager-next:hover:enabled { transform: translateX(.2rem); }
+/* 悬停与选中的变色都接上 0.18s：终点一个不改，把跳变换成走过去（稿样 motion-soak
+   的乙案，全站同一条）。 */
 .pager-btn {
   display: inline-flex;
   align-items: center;
@@ -389,8 +394,17 @@ html { scroll-padding-top: var(--masthead-h); }
   padding: 0 1rem;
   min-height: 2.5rem;
   font-size: .875rem;
+  /* 写 :not(:disabled) 不写 :enabled：这颗也用在 <a>（返回文章列表）和 <label>
+     （插入图片）上，那两类元素永远不匹配 :enabled，按下去就没有那一下沉。 */
+  transition: border-color .18s ease, color .18s ease, transform .09s ease;
 }
 .pager-btn:hover:enabled { border-color: var(--seal); color: var(--seal); }
+.pager-btn:active:not(:disabled) { transform: translateY(1px); }
+/* 同权重、在后面者赢：上面 .pager-btn 那条 transition 会盖掉这两颗今天的让位，
+   所以在这里连让位带按下重说一遍——按下时横竖两个位移要同时在，只沉不退就丢了方向。 */
+.pager-prev, .pager-next { transition: transform .18s ease, border-color .18s ease, color .18s ease; }
+.pager-prev:active:not(:disabled) { transform: translateX(-.2rem) translateY(1px); transition-duration: .09s; }
+.pager-next:active:not(:disabled) { transform: translateX(.2rem) translateY(1px); transition-duration: .09s; }
 .pager-count { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
 
 /* ---------- 页脚 ---------- */
@@ -399,7 +413,7 @@ html { scroll-padding-top: var(--masthead-h); }
 .footer-made { color: var(--muted); font-size: var(--facts-size); }
 .footer-main { grid-column: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 1.5rem; }
 .footer-main p { color: var(--muted); font-size: var(--facts-size); }
-.footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); }
+.footer-main a { color: var(--muted); border-bottom: 1px solid var(--rule); font-size: var(--facts-size); transition: color .18s ease, border-bottom-color .18s ease; }
 .footer-main a:hover { color: var(--seal); border-bottom-color: currentColor; }
 
 /* ---------- 账号页 ---------- */
@@ -429,7 +443,7 @@ html { scroll-padding-top: var(--masthead-h); }
 
 .form-actions { margin-top: 1.75rem; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.5rem; }
 .form-alt { margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); max-width: 21rem; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; color: var(--muted); font-size: var(--facts-size); }
-.form-alt a, .link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; }
+.form-alt a, .link-quiet { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; transition: color .18s ease; }
 .form-alt a:hover, .link-quiet:hover { color: var(--ink); }
 .link-quiet { font-size: var(--facts-size); }
 /* <button> 长的安静链接要先拆掉浏览器那套按钮壳子（灰底、立体边、左右内边距），
@@ -437,9 +451,10 @@ html { scroll-padding-top: var(--masthead-h); }
 button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background: none; padding: 0 0 .1rem; }
 
 /* 一页只有一个主操作，所以它是全站唯一用满印色的面。 */
-.primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; }
+.primary { display: inline-flex; align-items: center; justify-content: center; background: var(--seal); color: var(--paper); border: 1px solid var(--seal); border-radius: 2px; min-height: 2.5rem; padding: 0 1.4rem; font-size: .9375rem; transition: background-color .18s ease, border-color .18s ease, transform .09s ease; }
 .primary:hover:enabled { background: var(--ink); border-color: var(--ink); }
 a.primary:hover { background: var(--ink); border-color: var(--ink); }
+.primary:active:not(:disabled) { transform: translateY(1px); }
 
 /* 账号页的提示条。文章列表里那两处 .notice 也表达同一件事，但它们没有左线，
    所以这里另起一个类，不去动已经定稿的版面。
@@ -497,6 +512,7 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   border-bottom: 1px solid var(--rule);
   padding: 0 0 .1rem;
   color: var(--muted);
+  transition: color .18s ease, border-bottom-color .18s ease;
 }
 .act:hover { color: var(--ink); border-bottom-color: currentColor; }
 .act-danger:hover { color: var(--seal); border-bottom-color: currentColor; }
@@ -520,8 +536,10 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   min-height: 2.5rem;
   padding: 0 1.4rem;
   font-size: .9375rem;
+  transition: background-color .18s ease, color .18s ease, transform .09s ease;
 }
 .btn-danger:hover:enabled { background: var(--seal); color: var(--paper); }
+.btn-danger:active:not(:disabled) { transform: translateY(1px); }
 
 /* ---------- 写作：分类 ---------- */
 
@@ -619,6 +637,10 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
      跳，所以钉成一律从按钮下沿展开、左沿对齐、宽度随按钮。 */
   .select select::picker(select) {
     appearance: base-select;
+    /* 翻开：从下沿往下把整张翻出来。display 与 overlay 那两条 allow-discrete
+       是让收合时它留在顶层、把这一下走完再消失。 */
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path .18s ease, display .18s allow-discrete, overlay .18s allow-discrete;
     position: fixed;
     /* 上沿压住按钮下沿那 1px 的描边，两层线并成一条：弹层看着是从这一格里翻出来的，
        不是浮在旁边的一张纸。中间留缝（原来是 + .35rem＝5.6px）读起来像没对齐——小到
@@ -642,6 +664,10 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
        在这里，我没能测出它生效。留着，但别指望它兜住这种情况。 */
     position-try-fallbacks: --select-above;
   }
+  .select select:open::picker(select) { clip-path: inset(0); }
+  @starting-style {
+    .select select:open::picker(select) { clip-path: inset(0 0 100% 0); }
+  }
   @position-try --select-above {
     top: auto;
     /* 翻上去时贴的是按钮的上沿。这一条只放定位属性——@position-try 里除定位之外的
@@ -649,7 +675,7 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
        万一真翻上去，圆角仍是上面那条的 0 0 2px 2px，方向正相反。差 2px。 */
     bottom: calc(anchor(top) - 1px);
   }
-  .select option { padding: .55rem .7rem; border-radius: 2px; }
+  .select option { padding: .55rem .7rem; border-radius: 2px; transition: background-color .16s ease, color .16s ease; }
   .select option:hover { background: var(--fill); }
   /* 选中的那个用印色，和列表页筛选器同一套记号；系统那个对勾收掉，免得两个记号打架。 */
   .select option:checked { color: var(--seal); }
@@ -693,6 +719,7 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   font-size: .9375rem;
   color: var(--muted);
   cursor: pointer;
+  transition: color .18s ease;
 }
 .segmented label:hover { color: var(--ink); }
 /* 选中那条用印色，和列表页筛选器、下拉弹层同一套记号。印色在这儿始终是墨、不是面
@@ -700,8 +727,6 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 .segmented input:checked + label { color: var(--seal); }
 /* 焦点交给外框整圈交代，和 .search、标签框同一套。 */
 .segmented:has(input:focus-visible) { border-color: var(--seal); outline: 2px solid var(--seal); outline-offset: 2px; }
-/* 少动的人拿到的是同一次位置变化，只是不过渡。 */
-@media (prefers-reduced-motion: reduce) { .segmented::before { transition: none; } }
 
 .status-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .status-row .field-hint { margin-top: 0; }
@@ -731,7 +756,7 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   font-size: .8125rem;
   line-height: 1.5;
 }
-.tag button { background: none; border: 0; padding: 0 .1rem; color: var(--muted); font-size: .875rem; line-height: 1; }
+.tag button { background: none; border: 0; padding: 0 .1rem; color: var(--muted); font-size: .875rem; line-height: 1; transition: color .18s ease; }
 .tag button:hover { color: var(--seal); }
 .tags input { flex: 1 1 9rem; min-width: 9rem; border: 0; background: none; outline: none; padding: .3rem .2rem; font-size: .9375rem; }
 .tags input::placeholder { color: var(--muted); }
@@ -835,6 +860,18 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 .save[data-leaving="true"] .act-away { display: none; }
 .save[data-dirty="true"][data-leaving="true"] .act-abandon { display: inline-flex; }
 
+/* ---------- 翻页：落纸 ---------- */
+
+/* 换页时整页进出场，挂的是 App.vue 里包着 <router-view> 的那一层。
+   进：新页从下方 8px 升上来，0.26s，曲线先快后收，落地那一下是缓的；
+   出：旧页往上 6px 离开，0.15s。报头在 <main> 外面、不在这层里，
+   「翻页时一个字都不挪」照旧。出场这 0.15s 和 router.js 里回页首推迟的
+   那个数是同一个数，改要一起改。 */
+.page-leave-active { transition: opacity .15s ease-in, transform .15s ease-in; }
+.page-leave-to { opacity: 0; transform: translateY(-6px); }
+.page-enter-active { transition: opacity .26s cubic-bezier(.2, .7, .2, 1), transform .26s cubic-bezier(.2, .7, .2, 1); }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+
 /* ---------- 窄屏：注文栏立起来，变成标题上方的一行批注 ---------- */
 
 @media (max-width: 56rem) {
@@ -910,4 +947,16 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 
   .footer { margin-top: 3rem; }
   .footer-made { margin-bottom: .75rem; }
+}
+
+/* ---------- 少动的人 ---------- */
+
+/* 同一次变化，只是不过渡。整段必须留在文件最后：这里列的选择子和上面各处的
+   同权重，靠源码顺序取胜，搬回中间就会被后面新加的规则盖掉。 */
+@media (prefers-reduced-motion: reduce) {
+  .segmented::before,
+  .pager-btn, .pager-prev, .pager-next, .btn-danger, .primary, .filter, .search button,
+  .act, .act-danger, .link-quiet, .nav a, .segmented label, .select option,
+  .entry-title a, .piece-back, .prose a, .project-link, .footer-main a, .form-alt a, .tag button,
+  .page-leave-active, .page-enter-active { transition: none; }
 }
