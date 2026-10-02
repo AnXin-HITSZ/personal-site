@@ -151,7 +151,7 @@ func validInput() ArticleInput {
 		Title:    "把博客搭起来",
 		Summary:  "从零开始的第一步。",
 		Body:     strings.Repeat("正", 400),
-		Category: "backend",
+		Category: "b7k2m9pq",
 		Tags:     []string{"go", "gin"},
 		Status:   model.ArticleStatusDraft,
 	}

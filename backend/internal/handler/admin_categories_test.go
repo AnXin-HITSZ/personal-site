@@ -150,10 +150,10 @@ func TestCategoryRoutesRejectNonAdmin(t *testing.T) {
 	}
 }
 
-// 分类 id 没有固定长度，所以这一层只挡形状：大写、带横线、超过 16 位都当作
-// 「没有这个分类」，不是「你格式写错了」。
+// 分类 id 是定长的 8 位随机码，所以这一层只挡形状：旧的短代号、大写、带横线、
+// 太长太短都当作「没有这个分类」，不是「你格式写错了」。
 func TestAdminCategoryMalformedIDIsNotFound(t *testing.T) {
-	for _, id := range []string{"Backend", "backend-1", "0123456789abcdefg", "%E5%90%8E%E7%AB%AF"} {
+	for _, id := range []string{"backend", "Backend1", "backend-1", "0123456789abcdefg", "%E5%90%8E%E7%AB%AF"} {
 		t.Run(id, func(t *testing.T) {
 			f := newCategoryFixture(model.RoleAdmin)
 
@@ -201,14 +201,14 @@ func TestAdminCategoryCreateReturns201(t *testing.T) {
 
 func TestAdminCategoryRenameReturns200(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
-	f.svc.category = dto.AdminCategory{ID: "backend", Name: "服务端", ArticleCount: 4, DraftCount: 1}
+	f.svc.category = dto.AdminCategory{ID: "abcd1234", Name: "服务端", ArticleCount: 4, DraftCount: 1}
 
-	rec := f.request(http.MethodPatch, "/api/v1/admin/categories/backend", `{"name":"服务端"}`)
+	rec := f.request(http.MethodPatch, "/api/v1/admin/categories/abcd1234", `{"name":"服务端"}`)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("应 200，实际 %d：%s", rec.Code, rec.Body.String())
 	}
-	if f.svc.gotID != "backend" || f.svc.gotName != "服务端" {
+	if f.svc.gotID != "abcd1234" || f.svc.gotName != "服务端" {
 		t.Errorf("应把 id 和名字都传下去，实际 %q / %q", f.svc.gotID, f.svc.gotName)
 	}
 	// 改名之后前端要就地更新那一行，所以回的是整个分类，不只是名字。
@@ -222,7 +222,7 @@ func TestAdminCategoryRenameReturns200(t *testing.T) {
 func TestAdminCategoryReorderReturns204(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
 
-	rec := f.request(http.MethodPut, "/api/v1/admin/categories/order", `{"ids":["ai","backend"]}`)
+	rec := f.request(http.MethodPut, "/api/v1/admin/categories/order", `{"ids":["efgh5678","abcd1234"]}`)
 
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("应 204，实际 %d：%s", rec.Code, rec.Body.String())
@@ -230,7 +230,7 @@ func TestAdminCategoryReorderReturns204(t *testing.T) {
 	if rec.Body.Len() != 0 {
 		t.Errorf("204 不该有响应体，实际 %q", rec.Body.String())
 	}
-	if strings.Join(f.svc.gotIDs, ",") != "ai,backend" {
+	if strings.Join(f.svc.gotIDs, ",") != "efgh5678,abcd1234" {
 		t.Errorf("整份顺序应原样传下去，实际 %v", f.svc.gotIDs)
 	}
 }
@@ -238,12 +238,12 @@ func TestAdminCategoryReorderReturns204(t *testing.T) {
 func TestAdminCategoryDeleteReturns204(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
 
-	rec := f.request(http.MethodDelete, "/api/v1/admin/categories/backend", "")
+	rec := f.request(http.MethodDelete, "/api/v1/admin/categories/abcd1234", "")
 
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("应 204，实际 %d：%s", rec.Code, rec.Body.String())
 	}
-	if f.svc.gotID != "backend" || f.svc.gotMoveTo != "" {
+	if f.svc.gotID != "abcd1234" || f.svc.gotMoveTo != "" {
 		t.Errorf("没给去处时应传空串，实际 %q / %q", f.svc.gotID, f.svc.gotMoveTo)
 	}
 }
@@ -252,12 +252,12 @@ func TestAdminCategoryDeleteTrimsMoveTo(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
 
 	// 空串和「只有空格」在 service 那边是同一件事，所以在门口就统一掉。
-	rec := f.request(http.MethodDelete, "/api/v1/admin/categories/backend?moveTo=%20notes%20", "")
+	rec := f.request(http.MethodDelete, "/api/v1/admin/categories/abcd1234?moveTo=%20efgh5678%20", "")
 
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("应 204，实际 %d：%s", rec.Code, rec.Body.String())
 	}
-	if f.svc.gotMoveTo != "notes" {
+	if f.svc.gotMoveTo != "efgh5678" {
 		t.Errorf("去处应去掉首尾空格，实际 %q", f.svc.gotMoveTo)
 	}
 }
@@ -319,7 +319,7 @@ func TestAdminCategoryErrorMapping(t *testing.T) {
 
 func TestPublicCategoriesAreReadableWithoutASession(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
-	f.svc.published = dto.CategoryList{Items: []dto.CategoryRef{{ID: "backend", Name: "后端开发"}}}
+	f.svc.published = dto.CategoryList{Items: []dto.CategoryRef{{ID: "abcd1234", Name: "后端开发"}}}
 
 	rec := f.anonymous(http.MethodGet, "/api/v1/categories")
 

@@ -30,7 +30,7 @@ function summary(overrides = {}) {
     slug: 'go-api-first-step',
     title: '从零写一个 Go API',
     summary: '把路由、中间件和错误处理串成一条线。',
-    category: 'backend',
+    category: 'abcd1234',
     tags: ['go', 'api'],
     status: 'published',
     publishedAt: '2026-09-20T02:00:00Z',
@@ -87,14 +87,14 @@ test('the list request omits the filters that mean "everything"', async () => {
 });
 
 test('draft and category filters are carried, and a keyword is encoded', async () => {
-  const query = { page: 2, pageSize: 10, status: 'draft', category: 'notes', q: '读书 笔记' };
+  const query = { page: 2, pageSize: 10, status: 'draft', category: 'efgh5678', q: '读书 笔记' };
   const { seen, fetchImpl } = capture({ items: [], pagination: { page: 2, pageSize: 10, total: 10, totalPages: 1 } });
   await listAdminArticles(query, { fetchImpl });
 
   // URLSearchParams 把空格写成 +；Gin 读回来是同一个空格。
   assert.equal(
     seen.url,
-    `/api/v1/admin/articles?page=2&pageSize=10&status=draft&category=notes&q=${encodeURIComponent('读书 笔记').replace('%20', '+')}`,
+    `/api/v1/admin/articles?page=2&pageSize=10&status=draft&category=efgh5678&q=${encodeURIComponent('读书 笔记').replace('%20', '+')}`,
   );
 });
 
@@ -123,6 +123,7 @@ test('a row whose shape drifted is rejected rather than rendered', async () => {
     summary({ publishedAt: null }),                       // 已发布却没有发布时刻
     summary({ status: 'draft' }),                         // 草稿却带着发布时刻
     summary({ category: 'Backend' }),                     // 分类 id 只有小写
+    summary({ category: 'backend' }),                     // 旧的内置短代号不再是合法形状
     summary({ category: 'backend!' }),
     summary({ tags: 'go' }),                              // 标签必须是数组
     summary({ readingMinutes: 0 }),                       // 时长下限是 1
@@ -183,7 +184,7 @@ test('bodyRunes is tolerated while absent and checked once it appears', async ()
 test('create posts the whole draft and trims what the server will trim', async () => {
   const input = {
     slug: '  go-api  ', title: '  标题  ', summary: '  摘要  ', body: '正文',
-    category: 'backend', tags: ['go'], status: 'draft',
+    category: 'abcd1234', tags: ['go'], status: 'draft',
   };
   const { seen, fetchImpl } = capture(detail({ status: 'draft', publishedAt: null, slug: 'go-api' }));
   await createArticle(input, { fetchImpl });
@@ -194,13 +195,13 @@ test('create posts the whole draft and trims what the server will trim', async (
   assert.equal(seen.options.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(seen.options.body), {
     slug: 'go-api', title: '标题', summary: '摘要', body: '正文',
-    category: 'backend', tags: ['go'], status: 'draft',
+    category: 'abcd1234', tags: ['go'], status: 'draft',
   });
 });
 
 test('update targets the id and a missing article comes back as an error', async () => {
   const { seen, fetchImpl } = capture(detail());
-  await updateArticle('abcd2345', { slug: 'go-api', title: 't', summary: 's', body: 'b', category: 'ai', tags: [], status: 'published' }, { fetchImpl });
+  await updateArticle('abcd2345', { slug: 'go-api', title: 't', summary: 's', body: 'b', category: 'efgh5678', tags: [], status: 'published' }, { fetchImpl });
   assert.equal(seen.url, '/api/v1/admin/articles/abcd2345');
   assert.equal(seen.options.method, 'PUT');
 

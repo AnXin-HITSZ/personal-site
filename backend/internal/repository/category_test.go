@@ -14,6 +14,15 @@ import (
 
 var testCategoryNow = time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
 
+// 分类 id 一律是建分类时现取的 8 位随机码，夹具也照那个形状写（article_test.go
+// 里的分类夹具一并引用这里）。
+const (
+	backendCat  = "b7k2m9pq"
+	frontendCat = "f8n3s5t7"
+	aiCat       = "a9w2y4z6"
+	notesCat    = "n6h4j2m8"
+)
+
 type categoryFixture struct {
 	repo *Category
 	rec  *recorder
@@ -63,11 +72,11 @@ func TestDeleteAndMoveLeavesArticleTimestampsAlone(t *testing.T) {
 	f := newCategoryFixture(t)
 	f.rec.setDeleteRowCount(1)
 
-	if err := f.repo.DeleteAndMove(context.Background(), "backend", "notes", testCategoryNow); err != nil {
+	if err := f.repo.DeleteAndMove(context.Background(), backendCat, notesCat, testCategoryNow); err != nil {
 		t.Fatalf("删除失败：%v", err)
 	}
 
-	move := f.rec.expect(t, "UPDATE `articles`", "'notes'", "'backend'")
+	move := f.rec.expect(t, "UPDATE `articles`", "'"+notesCat+"'", "'"+backendCat+"'")
 	if strings.Contains(move, "updated_at") {
 		t.Errorf("挪分类不该动文章的 updated_at：\n%s", move)
 	}
@@ -84,7 +93,7 @@ func TestDeleteAndMoveReportsMissingCategory(t *testing.T) {
 	// 删分类那一步一行都没删到：它已经不在了。
 	f.rec.setDeleteRowCount(0)
 
-	if err := f.repo.DeleteAndMove(context.Background(), "backend", "notes", testCategoryNow); !errors.Is(err, ErrNotFound) {
+	if err := f.repo.DeleteAndMove(context.Background(), backendCat, notesCat, testCategoryNow); !errors.Is(err, ErrNotFound) {
 		t.Errorf("应为 %v，实际 %v", ErrNotFound, err)
 	}
 }
@@ -96,16 +105,16 @@ func TestReorderRefusesAnIncompleteSet(t *testing.T) {
 		name string
 		ids  []string
 	}{
-		{name: "少了一个", ids: []string{"backend", "frontend", "ai"}},
-		{name: "多了一个", ids: []string{"backend", "frontend", "ai", "notes", "abcd1234"}},
-		{name: "换了一个", ids: []string{"backend", "frontend", "ai", "abcd1234"}},
+		{name: "少了一个", ids: []string{backendCat, frontendCat, aiCat}},
+		{name: "多了一个", ids: []string{backendCat, frontendCat, aiCat, notesCat, "abcd1234"}},
+		{name: "换了一个", ids: []string{backendCat, frontendCat, aiCat, "abcd1234"}},
 		{name: "一个都没有", ids: nil},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			f := newCategoryFixture(t)
-			f.rec.setPlucked([]string{"backend", "frontend", "ai", "notes"})
+			f.rec.setPlucked([]string{backendCat, frontendCat, aiCat, notesCat})
 
 			if err := f.repo.Reorder(context.Background(), tc.ids, testCategoryNow); !errors.Is(err, ErrOrderMismatch) {
 				t.Fatalf("应为 %v，实际 %v", ErrOrderMismatch, err)
@@ -117,13 +126,13 @@ func TestReorderRefusesAnIncompleteSet(t *testing.T) {
 
 func TestReorderWritesEveryPosition(t *testing.T) {
 	f := newCategoryFixture(t)
-	f.rec.setPlucked([]string{"backend", "frontend", "ai"})
+	f.rec.setPlucked([]string{backendCat, frontendCat, aiCat})
 
-	if err := f.repo.Reorder(context.Background(), []string{"ai", "backend", "frontend"}, testCategoryNow); err != nil {
+	if err := f.repo.Reorder(context.Background(), []string{aiCat, backendCat, frontendCat}, testCategoryNow); err != nil {
 		t.Fatalf("排序失败：%v", err)
 	}
 
-	for id, position := range map[string]string{"ai": "0", "backend": "1", "frontend": "2"} {
+	for id, position := range map[string]string{aiCat: "0", backendCat: "1", frontendCat: "2"} {
 		statement := f.rec.expect(t, "UPDATE `categories`", "'"+id+"'")
 		if !strings.Contains(statement, "`sort_order`="+position) {
 			t.Errorf("%s 应写成位置 %s：\n%s", id, position, statement)
@@ -181,11 +190,11 @@ func TestListWithUsageReadsCountsAndOrderInOnePass(t *testing.T) {
 func TestRenameTouchesOnlyTheName(t *testing.T) {
 	f := newCategoryFixture(t)
 
-	if err := f.repo.Rename(context.Background(), "backend", "服务端", testCategoryNow); err != nil {
+	if err := f.repo.Rename(context.Background(), backendCat, "服务端", testCategoryNow); err != nil {
 		t.Fatalf("改名失败：%v", err)
 	}
 
-	statement := f.rec.expect(t, "UPDATE `categories`", "'backend'")
+	statement := f.rec.expect(t, "UPDATE `categories`", "'"+backendCat+"'")
 	if !strings.Contains(statement, "`name`='服务端'") {
 		t.Errorf("应把名字写进去：\n%s", statement)
 	}

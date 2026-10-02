@@ -109,8 +109,8 @@ func (h *AdminCategories) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// 和文章那边一样：形状不对的 id 当作不存在。分类 id 没有固定长度——内置那四个
-// 是短代号，新生成的是 8 位随机码。
+// 和文章那边一样：形状不对的 id 当作不存在。分类 id 和文章 id 同款，都是 8 位
+// 随机码——内置短代号清掉之后没有例外了。
 func categoryID(c *gin.Context) (string, bool) {
 	id := c.Param("id")
 	if !service.IsCategoryID(id) {

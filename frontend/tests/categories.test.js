@@ -5,7 +5,7 @@ import {
   isCategoryID, isCategoryRef, listAdminCategories, listCategories, renameCategory, reorderCategories,
 } from '../src/api/categories.js';
 import { ARTICLE_ID_PATTERN } from '../src/api/articles.js';
-import { articles as mockArticles, mockCategories } from '../src/mocks/articles.js';
+import { articles as mockArticles, mockCategories, mockCategoryIDs } from '../src/mocks/articles.js';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status });
@@ -24,31 +24,30 @@ function capture(result, status = 200) {
 
 /* 一行形状正确的分类，各条测试在它上面改一处再断言被拒。 */
 function row(overrides = {}) {
-  return { id: 'backend', name: '后端开发', articleCount: 4, draftCount: 1, ...overrides };
+  return { id: mockCategoryIDs.backend, name: '后端开发', articleCount: 4, draftCount: 1, ...overrides };
 }
 
 const listBody = items => ({ items });
 
-test('every article id is also a legal category id, and not the other way round', () => {
-  /* 两边用的是同一个字母表，只是分类 id 没有固定的长度：内置那四个是短代号，
-     新加的和文章一样是 8 位随机码。所以约束的方向只有一个——文章 id 全都落得进
-     分类 id 那一套里，反过来不成立。 */
+test('category ids are shaped exactly like article ids', () => {
+  /* 两边形状现在完全一样：都是建的时候现取的 8 位随机码，同一支生成器产出的。
+     这里钉住「文章 id 也过得了分类那一条」——两份正则在各自模块里，别哪天只改了
+     一份。内置短代号（backend、ai 这种）清掉之后不再有例外。 */
   for (const article of mockArticles) {
     assert.match(article.id, ARTICLE_ID_PATTERN);
     assert.ok(isCategoryID(article.id), article.id);
   }
-  assert.equal(ARTICLE_ID_PATTERN.test('backend'), false);
-  assert.ok(isCategoryID('backend'));
+  for (const id of Object.values(mockCategoryIDs)) assert.ok(isCategoryID(id), id);
 
-  for (const good of ['a', 'backend', 'zzzz9999', '0'.repeat(16)]) assert.ok(isCategoryID(good), good);
-  for (const bad of ['', 'Backend', 'backend-1', 'x'.repeat(17), '分类', 7, null]) assert.equal(isCategoryID(bad), false, String(bad));
+  for (const good of ['zzzz9999', 'abcd1234', '0'.repeat(8)]) assert.ok(isCategoryID(good), good);
+  for (const bad of ['', 'ai', 'backend', 'Backend', 'backend-1', 'x'.repeat(7), 'x'.repeat(9), 'x'.repeat(17), '分类', 7, null]) assert.equal(isCategoryID(bad), false, String(bad));
 
-  /* all 是个合法的形状，所以「像不像一个分类 id」答不了「这一段是不是分类」。地址参数
-     因此单独有一条规则：all 和不筛是一回事，两者都是允许的取值。 */
-  assert.equal(isCategoryID(ALL), true);
+  /* all 是「不筛」的记号，不是分类——现在连形状也过不了 id 那一关，但地址参数这条
+     规则仍旧单独写：筛不筛和「id 像不像」本来就是两件事。 */
+  assert.equal(isCategoryID(ALL), false);
   assert.equal(isCategoryRef(ALL), true);
   assert.equal(isCategoryRef('zzzz9999'), true);
-  assert.equal(isCategoryRef('Backend'), false);
+  assert.equal(isCategoryRef('backend'), false);
 });
 
 test('a name is only required to be non-empty and short enough', () => {
@@ -67,12 +66,12 @@ test('a name is only required to be non-empty and short enough', () => {
 test('the reader list reads the published categories and shapes the mock the same way', async () => {
   const mocked = await listCategories({ source: 'mock' });
   assert.deepEqual(mocked.items, mockCategories);
-  assert.deepEqual(mocked.items.map(item => item.id), ['backend', 'frontend', 'ai', 'notes']);
+  assert.deepEqual(mocked.items.map(item => item.id), Object.values(mockCategoryIDs));
   // 拿到的必须是副本：调用方改了它，下一次读出来的不该跟着变。
   mocked.items[0].name = '改了';
   assert.equal((await listCategories({ source: 'mock' })).items[0].name, '后端开发');
 
-  const { seen, fetchImpl } = capture(listBody([{ id: 'backend', name: '后端开发' }]));
+  const { seen, fetchImpl } = capture(listBody([{ id: mockCategoryIDs.backend, name: '后端开发' }]));
   const result = await listCategories({ source: 'http', fetchImpl });
   assert.equal(seen.url, '/api/v1/categories');
   assert.equal(seen.options.headers['X-Requested-With'], undefined, '读者那一行没有登录态，不该带写请求的头');
@@ -80,7 +79,7 @@ test('the reader list reads the published categories and shapes the mock the sam
 });
 
 test('a reader row without a usable name is rejected', async () => {
-  for (const broken of [{ id: 'backend' }, { name: '后端开发' }, { id: 'Backend', name: 'x' }, { id: 'backend', name: '' }, null]) {
+  for (const broken of [{ id: mockCategoryIDs.backend }, { name: '后端开发' }, { id: 'Backend', name: 'x' }, { id: mockCategoryIDs.backend, name: '' }, null]) {
     await assert.rejects(
       listCategories({ source: 'http', fetchImpl: async () => json(listBody([broken])) }),
       /数据格式/,
@@ -122,32 +121,33 @@ test('creating and renaming post the name and read the row back', async () => {
   assert.equal(made.id, 'zzzz9999');
 
   const renamed = capture(row({ name: '服务端' }));
-  const after = await renameCategory('backend', '服务端', { fetchImpl: renamed.fetchImpl });
-  assert.equal(renamed.seen.url, '/api/v1/admin/categories/backend');
+  const after = await renameCategory(mockCategoryIDs.backend, '服务端', { fetchImpl: renamed.fetchImpl });
+  assert.equal(renamed.seen.url, `/api/v1/admin/categories/${mockCategoryIDs.backend}`);
   assert.equal(renamed.seen.options.method, 'PATCH');
   assert.equal(after.name, '服务端');
 });
 
 test('the order is submitted whole, and only the ids go up', async () => {
   const { seen, fetchImpl } = capture(null, 204);
-  await reorderCategories(['frontend', 'backend', 'notes'], { fetchImpl });
+  const ids = [mockCategoryIDs.frontend, mockCategoryIDs.backend, mockCategoryIDs.notes];
+  await reorderCategories(ids, { fetchImpl });
 
   assert.equal(seen.url, '/api/v1/admin/categories/order');
   assert.equal(seen.options.method, 'PUT');
-  assert.deepEqual(JSON.parse(seen.options.body), { ids: ['frontend', 'backend', 'notes'] });
+  assert.deepEqual(JSON.parse(seen.options.body), { ids });
 });
 
 test('the destination rides in the query, and an empty one is left out', async () => {
   const moved = capture(null, 204);
-  await deleteCategory('backend', 'frontend', { fetchImpl: moved.fetchImpl });
-  assert.equal(moved.seen.url, '/api/v1/admin/categories/backend?moveTo=frontend');
+  await deleteCategory(mockCategoryIDs.backend, mockCategoryIDs.frontend, { fetchImpl: moved.fetchImpl });
+  assert.equal(moved.seen.url, `/api/v1/admin/categories/${mockCategoryIDs.backend}?moveTo=${mockCategoryIDs.frontend}`);
   assert.equal(moved.seen.options.method, 'DELETE');
 
   /* 空分类不问去处。带一个空的 moveTo 上去，服务端读到的仍是空串，但地址里多一段
      没有意义的参数，看起来像「有人选了一个空分类」。 */
   const empty = capture(null, 204);
-  await deleteCategory('读书笔记', '', { fetchImpl: empty.fetchImpl });
-  assert.equal(empty.seen.url, '/api/v1/admin/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0');
+  await deleteCategory(mockCategoryIDs.notes, '', { fetchImpl: empty.fetchImpl });
+  assert.equal(empty.seen.url, `/api/v1/admin/categories/${mockCategoryIDs.notes}`);
 });
 
 test('the reader list is the only one with a mock source', async () => {

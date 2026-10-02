@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getArticle, listArticles, mockDetail, mockList, normalizeQuery } from '../src/api/articles.js';
-import { articles } from '../src/mocks/articles.js';
+import { articles, mockCategoryIDs } from '../src/mocks/articles.js';
 
 /* 8 位 base32 的 id 直接写进断言没法读，所以按 slug 取。格式本身另有一条测试钉着，
    取出来的值不会悄悄变成不合法的东西。 */
@@ -25,16 +25,16 @@ test('default list and pagination retain filtered totals', () => {
 });
 
 test('keyword matching trims whitespace, ignores case, and combines with category', () => {
-  assert.deepEqual(mockList({ category: 'backend' }).items.map(a => a.id), ['go-api-first-step', 'pagination-basics', 'go-errors'].map(idOf));
-  assert.deepEqual(mockList({ q: ' GO ', category: 'backend' }).items.map(a => a.id), [idOf('go-api-first-step')]);
-  assert.equal(mockList({ q: 'GO', category: 'frontend' }).pagination.total, 0);
+  assert.deepEqual(mockList({ category: mockCategoryIDs.backend }).items.map(a => a.id), ['go-api-first-step', 'pagination-basics', 'go-errors'].map(idOf));
+  assert.deepEqual(mockList({ q: ' GO ', category: mockCategoryIDs.backend }).items.map(a => a.id), [idOf('go-api-first-step')]);
+  assert.equal(mockList({ q: 'GO', category: mockCategoryIDs.frontend }).pagination.total, 0);
   assert.equal(mockList({ q: 'JavaScript' }).pagination.total, 0); // tags are not searchable
   assert.equal(mockList({ q: '   ' }).pagination.total, 9);
   assert.deepEqual(mockList({ q: 'not-found' }), { items: [], pagination: { page: 1, pageSize: 6, total: 0, totalPages: 0 } });
 });
 
 test('invalid client parameters fail before making a request', () => {
-  for (const query of [{ page: 0 }, { page: 1.5 }, { page: 1000001 }, { pageSize: 0 }, { pageSize: 51 }, { category: 'Backend' }, { category: 'backend!' }, { category: '' }, { category: 'x'.repeat(17) }, { q: '字'.repeat(101) }]) {
+  for (const query of [{ page: 0 }, { page: 1.5 }, { page: 1000001 }, { pageSize: 0 }, { pageSize: 51 }, { category: 'Backend' }, { category: 'backend!' }, { category: '' }, { category: 'backend' }, { category: 'x'.repeat(17) }, { q: '字'.repeat(101) }]) {
     assert.throws(() => normalizeQuery(query));
   }
   assert.equal([...normalizeQuery({ q: '😀'.repeat(100) }).q].length, 100);
@@ -44,9 +44,9 @@ test('invalid client parameters fail before making a request', () => {
 });
 
 test('HTTP adapter serializes contract parameters and validates the result', async () => {
-  const query = { page: 1, pageSize: 6, q: ' Go ', category: 'backend' };
+  const query = { page: 1, pageSize: 6, q: ' Go ', category: mockCategoryIDs.backend };
   const result = await listArticles(query, { source: 'http', fetchImpl: async (url, options) => {
-    assert.equal(url, '/api/v1/articles?page=1&pageSize=6&q=Go&category=backend');
+    assert.equal(url, `/api/v1/articles?page=1&pageSize=6&q=Go&category=${mockCategoryIDs.backend}`);
     assert.equal(options.headers.Accept, 'application/json');
     assert.ok(options.signal instanceof AbortSignal);
     return new Response(JSON.stringify(mockList(query)), { status: 200 });

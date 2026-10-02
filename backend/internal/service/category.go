@@ -37,8 +37,9 @@ const (
 
 // 分类 id 出现在两个地方：数据库里，和筛选地址的 ?category= 那一段。形状只用管到
 // 「像个 id」——某一段是不是真的存在，由查库的结果说话（筛选时是空列表，写入时是
-// 外键）。8 位随机码和内置那四个短代号都要放行，所以长度是 1 到 16，不是 8。
-var categoryIDPattern = regexp.MustCompile(`^[0-9a-z]{1,16}$`)
+// 外键）。内置那四个短代号清掉之后，id 一律是 Create 现取的 8 位随机码（和文章 id
+// 同款），所以长度就是 8，不必再放宽。
+var categoryIDPattern = regexp.MustCompile(`^[0-9a-z]{8}$`)
 
 func IsCategoryID(id string) bool {
 	return categoryIDPattern.MatchString(id)

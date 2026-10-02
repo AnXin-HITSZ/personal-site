@@ -154,7 +154,7 @@ func errorCodeOf(t *testing.T, rec *httptest.ResponseRecorder) string {
 	return body.Error.Code
 }
 
-const validArticleBody = `{"slug":"building-my-blog","title":"标题","summary":"摘要","body":"正文","category":"backend","tags":["go"],"status":"draft"}`
+const validArticleBody = `{"slug":"building-my-blog","title":"标题","summary":"摘要","body":"正文","category":"abcd1234","tags":["go"],"status":"draft"}`
 
 func TestAdminRoutesRejectNonAdmin(t *testing.T) {
 	f := newAdminFixture(model.RoleMember)
@@ -220,7 +220,7 @@ func TestAdminCreateReturns201(t *testing.T) {
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("应 201，实际 %d：%s", rec.Code, rec.Body.String())
 	}
-	if f.svc.gotInput.Slug != "building-my-blog" || f.svc.gotInput.Category != "backend" {
+	if f.svc.gotInput.Slug != "building-my-blog" || f.svc.gotInput.Category != "abcd1234" {
 		t.Errorf("请求体没有完整落到 service：%+v", f.svc.gotInput)
 	}
 	if len(f.svc.gotInput.Tags) != 1 || f.svc.gotInput.Tags[0] != "go" {
@@ -331,14 +331,15 @@ func TestAdminListQueryParsing(t *testing.T) {
 		},
 		{
 			name:  "按草稿筛",
-			query: "?status=draft&category=ai&page=2&pageSize=5&q=%20go%20",
-			want:  dto.AdminArticleListQuery{Page: 2, PageSize: 5, Status: "draft", Category: "ai", Keyword: "go"},
+			query: "?status=draft&category=abcd1234&page=2&pageSize=5&q=%20go%20",
+			want:  dto.AdminArticleListQuery{Page: 2, PageSize: 5, Status: "draft", Category: "abcd1234", Keyword: "go"},
 		},
 		{name: "状态未知", query: "?status=archived", wantCode: http.StatusBadRequest, wantField: "status"},
 		// 分类是一张表，这一层只认形状：写得不像 id 的挡掉，库里恰好没有的那一个
 		// 筛出来就是空的，不在这一层报错。
 		{name: "分类形状不对", query: "?category=Life", wantCode: http.StatusBadRequest, wantField: "category"},
-		{name: "库里没有的分类", query: "?category=life", want: dto.AdminArticleListQuery{Page: 1, PageSize: 20, Category: "life"}},
+		{name: "旧的短代号不再是合法形状", query: "?category=backend", wantCode: http.StatusBadRequest, wantField: "category"},
+		{name: "库里没有的分类", query: "?category=zzzz9999", want: dto.AdminArticleListQuery{Page: 1, PageSize: 20, Category: "zzzz9999"}},
 		{name: "页码为零", query: "?page=0", wantCode: http.StatusBadRequest},
 		{name: "每页太多", query: "?pageSize=101", wantCode: http.StatusBadRequest},
 	}

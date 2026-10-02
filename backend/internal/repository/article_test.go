@@ -35,7 +35,7 @@ func TestUpdateSerializesTagsAsJSON(t *testing.T) {
 		Title:          "标题",
 		Summary:        "摘要",
 		Body:           "正文",
-		Category:       "backend",
+		Category:       backendCat,
 		Tags:           []string{"go", "gin"},
 		Status:         "draft",
 		ReadingMinutes: 3,
@@ -160,8 +160,8 @@ func TestListAdminFilters(t *testing.T) {
 		},
 		{
 			name:   "按分类",
-			filter: AdminArticleFilter{Category: "ai"},
-			want:   []string{"category = 'ai'"},
+			filter: AdminArticleFilter{Category: aiCat},
+			want:   []string{"category = '" + aiCat + "'"},
 		},
 		{
 			name:   "关键词同时匹配标题和摘要",
@@ -230,13 +230,13 @@ func TestListAdminReadsInOneRepeatableReadTransaction(t *testing.T) {
 func TestListPublishedBringsCategoryNames(t *testing.T) {
 	f := newArticleFixture(t)
 	f.rec.setArticles([]model.Article{
-		{ID: "a7k2m9pq", Category: "backend"},
-		{ID: "b8l3n0qr", Category: "notes"},
+		{ID: "a7k2m9pq", Category: backendCat},
+		{ID: "b8l3n0qr", Category: notesCat},
 		{ID: "c9m4p1rs", Category: "gone"},
 	})
 	f.rec.setCategories([]model.Category{
-		{ID: "backend", Name: "后端开发"},
-		{ID: "notes", Name: "学习随笔"},
+		{ID: backendCat, Name: "后端开发"},
+		{ID: notesCat, Name: "学习随笔"},
 	})
 
 	articles, _, err := f.repo.ListPublished(context.Background(), "", "", 20, 0)
@@ -264,7 +264,7 @@ func TestListPublishedBringsCategoryNames(t *testing.T) {
 
 func TestListPublishedSkipsTheLookupWhenThereIsNothingToName(t *testing.T) {
 	f := newArticleFixture(t)
-	f.rec.setCategories([]model.Category{{ID: "backend", Name: "后端开发"}})
+	f.rec.setCategories([]model.Category{{ID: backendCat, Name: "后端开发"}})
 
 	if _, _, err := f.repo.ListPublished(context.Background(), "", "", 20, 0); err != nil {
 		t.Fatalf("查询失败：%v", err)
@@ -277,8 +277,8 @@ func TestListPublishedSkipsTheLookupWhenThereIsNothingToName(t *testing.T) {
 func TestGetPublishedByIDBringsTheCategoryName(t *testing.T) {
 	f := newArticleFixture(t)
 	// 详情那一条是 SELECT *，它只带得回文章自己的列，名字得再问一次分类表。
-	f.rec.setArticles([]model.Article{{ID: "a7k2m9pq", Category: "backend"}})
-	f.rec.setCategories([]model.Category{{ID: "backend", Name: "后端开发"}})
+	f.rec.setArticles([]model.Article{{ID: "a7k2m9pq", Category: backendCat}})
+	f.rec.setCategories([]model.Category{{ID: backendCat, Name: "后端开发"}})
 
 	article, err := f.repo.GetPublishedByID(context.Background(), "a7k2m9pq")
 	if err != nil {

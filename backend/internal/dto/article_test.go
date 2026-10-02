@@ -16,7 +16,7 @@ func TestArticleDetailMarshalsFlat(t *testing.T) {
 		Title:          "标题",
 		Summary:        "摘要",
 		Body:           "# 正文",
-		Category:       "notes",
+		Category:       "zzzz9999",
 		Status:         "published",
 		PublishedAt:    &publishedAt,
 		ReadingMinutes: 3,
@@ -54,13 +54,13 @@ func TestCategoryAndItsNameAreTwoFields(t *testing.T) {
 	publishedAt := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	summary, ok := NewArticleSummary(model.Article{
 		ID: "a1", Status: "published", PublishedAt: &publishedAt, ReadingMinutes: 3,
-		Category: "backend", CategoryName: "后端开发",
+		Category: "abcd1234", CategoryName: "后端开发",
 	})
 	if !ok {
 		t.Fatal("已发布且有发布时间，应能转换")
 	}
 
-	if summary.Category != "backend" || summary.CategoryName != "后端开发" {
+	if summary.Category != "abcd1234" || summary.CategoryName != "后端开发" {
 		t.Errorf("两个字段应各是各的，实际 category=%q categoryName=%q", summary.Category, summary.CategoryName)
 	}
 }

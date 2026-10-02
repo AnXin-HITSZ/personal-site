@@ -14,6 +14,15 @@ import (
 
 var testCategoryNow = time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
 
+// 分类 id 一律是建分类时现取的 8 位随机码，种子行也照那个形状写；好几处断言都要
+// 引用它们，写成一串常量免得看花眼。
+const (
+	backendCat  = "b7k2m9pq"
+	frontendCat = "f8n3s5t7"
+	aiCat       = "a9w2y4z6"
+	notesCat    = "n6h4j2m8"
+)
+
 type fakeCategoryStore struct {
 	rows []repository.CategoryRow
 
@@ -88,10 +97,10 @@ func newCategoryService(store *fakeCategoryStore) *Category {
 
 func seededCategories() []repository.CategoryRow {
 	return []repository.CategoryRow{
-		{ID: "backend", Name: "后端开发", Total: 4, Drafts: 1},
-		{ID: "frontend", Name: "前端实践", Total: 2, Drafts: 0},
-		{ID: "ai", Name: "AI 探索", Total: 2, Drafts: 1},
-		{ID: "notes", Name: "学习随笔", Total: 1, Drafts: 1},
+		{ID: backendCat, Name: "后端开发", Total: 4, Drafts: 1},
+		{ID: frontendCat, Name: "前端实践", Total: 2, Drafts: 0},
+		{ID: aiCat, Name: "AI 探索", Total: 2, Drafts: 1},
+		{ID: notesCat, Name: "学习随笔", Total: 1, Drafts: 1},
 		{ID: "abcd1234", Name: "读书笔记", Total: 0, Drafts: 0},
 	}
 }
@@ -110,7 +119,7 @@ func TestListPublishedHidesCategoriesWithoutPublishedArticles(t *testing.T) {
 	for _, item := range list.Items {
 		ids = append(ids, item.ID)
 	}
-	want := []string{"backend", "frontend", "ai"}
+	want := []string{backendCat, frontendCat, aiCat}
 	if strings.Join(ids, ",") != strings.Join(want, ",") {
 		t.Errorf("应为 %v（顺序照 sort_order），实际 %v", want, ids)
 	}
@@ -118,8 +127,8 @@ func TestListPublishedHidesCategoriesWithoutPublishedArticles(t *testing.T) {
 
 func TestListPublishedRejectsDraftOnlyCategory(t *testing.T) {
 	service := newCategoryService(&fakeCategoryStore{rows: []repository.CategoryRow{
-		{ID: "backend", Name: "后端开发", Total: 3, Drafts: 3},
-		{ID: "notes", Name: "学习随笔", Total: 2, Drafts: 1},
+		{ID: backendCat, Name: "后端开发", Total: 3, Drafts: 3},
+		{ID: notesCat, Name: "学习随笔", Total: 2, Drafts: 1},
 	}})
 
 	list, err := service.ListPublished(context.Background())
@@ -127,8 +136,8 @@ func TestListPublishedRejectsDraftOnlyCategory(t *testing.T) {
 		t.Fatalf("查询失败：%v", err)
 	}
 
-	if len(list.Items) != 1 || list.Items[0].ID != "notes" {
-		t.Errorf("只有 notes 有一篇发出去的，实际 %+v", list.Items)
+	if len(list.Items) != 1 || list.Items[0].ID != notesCat {
+		t.Errorf("只有 %s 有一篇发出去的，实际 %+v", notesCat, list.Items)
 	}
 }
 
@@ -272,7 +281,7 @@ func TestRenameKeepsTheCounts(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	category, err := service.Rename(context.Background(), "backend", "  服务端  ")
+	category, err := service.Rename(context.Background(), backendCat, "  服务端  ")
 	if err != nil {
 		t.Fatalf("改名失败：%v", err)
 	}
@@ -284,7 +293,7 @@ func TestRenameKeepsTheCounts(t *testing.T) {
 	if category.ArticleCount != 4 || category.DraftCount != 1 {
 		t.Errorf("两个计数应原样带回来，实际 %+v", category)
 	}
-	if len(store.renamed) != 1 || store.renamed[0] != "backend=服务端" {
+	if len(store.renamed) != 1 || store.renamed[0] != backendCat+"=服务端" {
 		t.Errorf("应按修剪后的名字落库，实际 %v", store.renamed)
 	}
 }
@@ -305,7 +314,7 @@ func TestRenameRejectsBadNameBeforeLookingItUp(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	if _, err := service.Rename(context.Background(), "backend", "  "); !errors.Is(err, ErrCategoryNameRequired) {
+	if _, err := service.Rename(context.Background(), backendCat, "  "); !errors.Is(err, ErrCategoryNameRequired) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryNameRequired, err)
 	}
 }
@@ -314,7 +323,7 @@ func TestReorderRejectsMalformedIDsBeforeWriting(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	err := service.Reorder(context.Background(), []string{"backend", "Backend"})
+	err := service.Reorder(context.Background(), []string{"abcd1234", "ai"})
 	if !errors.Is(err, ErrCategoryOrderMismatch) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryOrderMismatch, err)
 	}
@@ -327,7 +336,7 @@ func TestReorderPassesTheWholeListThrough(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	ids := []string{"abcd1234", "backend", "frontend", "ai", "notes"}
+	ids := []string{"abcd1234", backendCat, frontendCat, aiCat, notesCat}
 	if err := service.Reorder(context.Background(), ids); err != nil {
 		t.Fatalf("排序失败：%v", err)
 	}
@@ -355,7 +364,7 @@ func TestDeleteRefusesCategoryInUseWithoutADestination(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	if err := service.Delete(context.Background(), "backend", ""); !errors.Is(err, ErrCategoryInUse) {
+	if err := service.Delete(context.Background(), backendCat, ""); !errors.Is(err, ErrCategoryInUse) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryInUse, err)
 	}
 	if len(store.deleted) != 0 || len(store.moved) != 0 {
@@ -365,10 +374,10 @@ func TestDeleteRefusesCategoryInUseWithoutADestination(t *testing.T) {
 
 // 有一篇草稿也算有文章：外键拦的是行，不是状态。
 func TestDeleteRefusesDraftOnlyCategoryWithoutADestination(t *testing.T) {
-	store := &fakeCategoryStore{rows: []repository.CategoryRow{{ID: "notes", Name: "学习随笔", Total: 1, Drafts: 1}}}
+	store := &fakeCategoryStore{rows: []repository.CategoryRow{{ID: notesCat, Name: "学习随笔", Total: 1, Drafts: 1}}}
 	service := newCategoryService(store)
 
-	if err := service.Delete(context.Background(), "notes", ""); !errors.Is(err, ErrCategoryInUse) {
+	if err := service.Delete(context.Background(), notesCat, ""); !errors.Is(err, ErrCategoryInUse) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryInUse, err)
 	}
 }
@@ -377,12 +386,12 @@ func TestDeleteMovesTheArticlesFirst(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	if err := service.Delete(context.Background(), "backend", "notes"); err != nil {
+	if err := service.Delete(context.Background(), backendCat, notesCat); err != nil {
 		t.Fatalf("挪走再删失败：%v", err)
 	}
 
-	if len(store.moved) != 1 || store.moved[0] != "backend→notes" {
-		t.Errorf("应交下去「backend 挪到 notes」，实际 %v", store.moved)
+	if len(store.moved) != 1 || store.moved[0] != backendCat+"→"+notesCat {
+		t.Errorf("应交下去「%s 挪到 %s」，实际 %v", backendCat, notesCat, store.moved)
 	}
 	// 两件事是一个事务里的一件事，不分成两次调用。
 	if len(store.deleted) != 0 {
@@ -394,7 +403,7 @@ func TestDeleteRefusesMovingToItself(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	if err := service.Delete(context.Background(), "backend", "backend"); !errors.Is(err, ErrCategoryMoveToSelf) {
+	if err := service.Delete(context.Background(), backendCat, backendCat); !errors.Is(err, ErrCategoryMoveToSelf) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryMoveToSelf, err)
 	}
 	if len(store.moved) != 0 {
@@ -406,7 +415,7 @@ func TestDeleteRejectsMalformedDestination(t *testing.T) {
 	store := &fakeCategoryStore{rows: seededCategories()}
 	service := newCategoryService(store)
 
-	if err := service.Delete(context.Background(), "backend", "读书笔记"); !errors.Is(err, ErrCategoryNotFound) {
+	if err := service.Delete(context.Background(), backendCat, "读书笔记"); !errors.Is(err, ErrCategoryNotFound) {
 		t.Errorf("应为 %v，实际 %v", ErrCategoryNotFound, err)
 	}
 	if len(store.moved) != 0 {
@@ -428,16 +437,19 @@ func TestIsCategoryID(t *testing.T) {
 		in   string
 		want bool
 	}{
-		// 内置那四个是短代号，新生成的是 8 位随机码，两种都要放行。
-		{in: "backend", want: true},
-		{in: "ai", want: true},
+		// 定长 8 位。内置短代号清掉之后，旧的 backend／ai 都不再放行。
 		{in: "abcd1234", want: true},
-		{in: "0123456789abcdef", want: true},
+		{in: "zzzz9999", want: true},
+		{in: "01234567", want: true},
 		{in: "", want: false},
+		{in: "ai", want: false},
+		{in: "backend", want: false},
 		{in: "Backend", want: false},
 		{in: "backend-1", want: false},
 		{in: "后端", want: false},
-		{in: "0123456789abcdefg", want: false},
+		{in: "abcd123", want: false},
+		{in: "abcd12345", want: false},
+		{in: "0123456789abcdef", want: false},
 	}
 
 	for _, tc := range cases {

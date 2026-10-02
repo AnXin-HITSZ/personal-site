@@ -4,9 +4,9 @@ import { mockCategories } from '../mocks/articles.js';
 
 /* 分类 id 出现在两个地方：库里的 categories.id，和筛选地址的 ?category= 那一段。
    形状只管到「像个 id」——某一段是不是真的存在，由服务端说了算（筛出来是空列表）。
-   内置那四个是短代号，新加的是 8 位随机码，所以长度是 1 到 16，不是 8。
-   要和服务端的 service.IsCategoryID 一起改。 */
-export const CATEGORY_ID_PATTERN = /^[0-9a-z]{1,16}$/;
+   内置那四个短代号清掉之后，id 一律是建分类时现取的 8 位随机码，和文章 id 同款，
+   所以长度是 8。要和服务端的 service.IsCategoryID 一起改。 */
+export const CATEGORY_ID_PATTERN = /^[0-9a-z]{8}$/;
 
 /* 「不筛」在地址里也是一个值，但它不是分类，所以不在任何一份列表里。 */
 export const ALL = 'all';
