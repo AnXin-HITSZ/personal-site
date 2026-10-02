@@ -23,7 +23,7 @@ onMounted(() => setMetadata({ ...defaultMetadata, path: '/' }));
     <p class="project-fact">项目</p>
     <div class="project-body">
       <h2 class="project-name">QA-Agent</h2>
-      <p class="project-line">从一个问题开始，探索另一种寻找答案的方式。</p>
+      <p class="project-line">融合 SOP 流程指引、知识库检索与图文理解的实验室智能问答助手。</p>
       <!-- 站外链接：noopener 让新窗口拿不到本页的 window 句柄，noreferrer 顺手把
            来源也隐掉。读屏用户听不见「会开新窗口」这件事，所以要写出来。 -->
       <a class="project-link" :href="config.qaUrl" target="_blank" rel="noopener noreferrer">打开 QA-Agent<span class="sr-only">（新窗口）</span></a>
