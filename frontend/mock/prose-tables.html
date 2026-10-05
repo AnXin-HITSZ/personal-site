@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正文表格怎么画 · 甲 书页表 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：正文里的 Markdown 表格该怎么画。三条路里选定的甲案——「书页表」。
+
+   甲 书页表   （这份，已落地）表头下一条墨线，行间灰线，末行不收口。像印出来的词条表。
+   乙 格子表   全表格细线，表头淡灰底——像稿纸的格子，最清楚也最响。已按选择删除。
+   丙 两线表   只有表头一条墨线，行间不画——最安静。已按选择删除。
+
+   ＊结论：选定「甲 书页表」，照此移植进 styles.css 的正文排版一节（2026-10-05）。
+     乙、丙已按选择删除。
+
+   当初的问题：.prose 里没有任何 table 规则，浏览器给什么就是什么——一条线都没有，
+   单元格吃正文的 1.85 行高，行列都散。
+
+   样式直接引 ../src/styles.css，一个字都不抄——甲案规则已在真码里，这一份不再写
+   任何表样式，看到的就是落地后的样子；这里只写演示的脚手架。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+.variant ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant ul li + li { margin-top: .4rem; }
+.variant ul b { color: var(--ink); font-weight: 600; }
+.variant code { font-family: var(--stack-mono); font-size: .8125rem; }
+.demo { margin-top: 2.5rem; }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a class="nav-here" href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+正文与编辑器校样里的 Markdown 表格原本没有一条自己的规则，散得不成表。定下来的画法：表头下一条墨线，
+行与行之间一条灰线，末行不收口——线只说两件事：上面是格子的名字、下面是下一行。表格撑满正文那一栏，
+字号 15px、行高 1.7、数字 tabular-nums；对齐由 <code>|---:|</code> 给，照常生效。
+编辑器预览与公开正文共用 .prose，两边同时生效。
+</p>
+
+<section class="variant">
+  <h2>甲 书页表（已落地）</h2>
+  <p class="why">下面两张表的样子全部来自 ../src/styles.css，这一份一条表规则都没写——这里看到的，就是落地后的样子。</p>
+  <section class="row ruled demo">
+    <div class="facts"><p>甲 书页表</p></div>
+    <div class="main">
+      <div class="prose">
+        <p>JWT 由三段 base64url 拼成，头部是一段 JSON，说明这个令牌自己怎么被验证。</p>
+        <table>
+          <thead><tr><th>字段</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>alg</code></td><td>签名或消息认证算法</td></tr>
+            <tr><td><code>typ</code></td><td>令牌类型，通常为 <code>JWT</code></td></tr>
+          </tbody>
+        </table>
+        <p>三列、带右对齐数字时同样成立（对齐是内联样式，比样式表里的左对齐优先）：</p>
+        <table>
+          <thead><tr><th>端点</th><th>方法</th><th style="text-align: right">上限</th></tr></thead>
+          <tbody>
+            <tr><td><code>/api/v1/articles</code></td><td>GET</td><td style="text-align: right">20 条</td></tr>
+            <tr><td><code>/api/v1/admin/articles</code></td><td>POST</td><td style="text-align: right">2 MiB</td></tr>
+            <tr><td><code>/api/v1/admin/uploads</code></td><td>POST</td><td style="text-align: right">4 MiB</td></tr>
+          </tbody>
+        </table>
+        <p>表到这里就完了，下面一段接着说话，好看出表格与前后文的距离。</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<section class="variant">
+  <h2>落地记录</h2>
+  <ul>
+    <li>改的只有一处：<b>styles.css 的正文排版一节</b>——<code>.prose table / th / td</code> 六条，外加窄屏（≤44rem）媒体查询里的横滚一条。</li>
+    <li>编辑器校样与公开正文共用 <code>.prose</code>（编辑器的预览面是 <code>&lt;div class="prose"&gt;</code>），改一处两边同时生效。</li>
+    <li>验证：1600 / 700 / 420 三档宽度下渲染正常，页面无横向溢出；窄屏下表示例因长 URL 可在斜杠处折行，收得下，真折不动时整张表自己滚。</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>

@@ -346,6 +346,20 @@ html { scroll-padding-top: var(--masthead-h); }
 .prose a { color: var(--seal); border-bottom: 1px solid currentColor; transition: color .18s ease; }
 .prose a:hover { color: var(--ink); }
 .prose hr { border: 0; height: 1px; background: var(--rule); margin-top: 3rem; }
+/* 表格按书页排：表头下一条墨线，行间灰线，末行不收口。
+   字号与行距比正文收紧一档——格子里的字是拿来查的，不跟正文的阅读节奏。 */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9375rem;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+}
+/* th 默认居中，跟内容一起左对齐；|---:| 的右对齐是内联样式，仍然在它之上。 */
+.prose th, .prose td { vertical-align: top; text-align: left; }
+.prose th { padding: 0 1.1rem .5rem 0; border-bottom: 1px solid var(--ink); font-weight: 600; }
+.prose td { padding: .55rem 1.1rem .55rem 0; border-bottom: 1px solid var(--rule); }
+.prose tbody tr:last-child td { border-bottom: 0; }
 .prose code {
   font-family: var(--stack-mono);
   font-size: .875em;
@@ -930,6 +944,8 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   .piece-foot { margin-top: 2.5rem; }
   .prose h2 { margin-top: 2.5rem; }
   .prose pre { margin-inline: calc(var(--pad) * -1); border-radius: 0; }
+  /* 表比一栏宽时整张自己横滚，页面不跟着宽。 */
+  .prose table { display: block; overflow-x: auto; }
 
   .filters { gap: .35rem; }
   .filter { padding: 0 .5rem; }
