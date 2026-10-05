@@ -39,12 +39,22 @@ export function categoryNameProblem(name) {
    一个汉字算一个，不是按字节。 */
 const runes = value => [...value].length;
 
-function isRef(item) {
+/* id 和名字是两条路共有的一段：一个分类无论在哪一行，都得有这两样。 */
+function isNamedRef(item) {
   return Boolean(item) && isCategoryID(item.id) && typeof item.name === 'string' && item.name !== '';
 }
 
+/* 读者那一行每一条都带着两个数：已发布几篇、最近一篇什么时候——分类页直接拿它们
+   摆「N 篇 · 最近某天」。形状对不上就当场抛（见 validateList）。 */
+function isRef(item) {
+  return isNamedRef(item) &&
+    Number.isSafeInteger(item.articleCount) && item.articleCount >= 0 &&
+    typeof item.latestPublishedAt === 'string' && Number.isFinite(Date.parse(item.latestPublishedAt));
+}
+
+/* 写作那两条路共用的形状：总数和草稿数缺一不可（见上面 AdminCategory 的注释）。 */
 function isAdminRef(item) {
-  return isRef(item) &&
+  return isNamedRef(item) &&
     Number.isSafeInteger(item.articleCount) && item.articleCount >= 0 &&
     Number.isSafeInteger(item.draftCount) && item.draftCount >= 0;
 }

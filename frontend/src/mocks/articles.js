@@ -18,10 +18,6 @@ const categoryNames = {
   [notes]: '学习随笔',
 };
 
-/* 读者那一行里的先后就照上面这个顺序。名字不住在文章上，是跟着文章一起回来的
-   （服务端每次现取），所以这里也照那个形状拼。 */
-export const mockCategories = Object.entries(categoryNames).map(([id, name]) => ({ id, name }));
-
 /* 九篇演示文章排成一个数组、一篇一行，最后统一映射成接口那个形状——写成九个
    对象的话，每篇的正文会把这份清单撑得读不出结构。id 用的也是线上同款的 8 位
    随机码，mock 模式下地址栏里那一段和线上长得一样。 */
@@ -128,3 +124,17 @@ func (h *Handler) List(c *gin.Context) {
 先写下来，再慢慢想。`],
 ].map(([id, slug, title, summary, category, tags, publishedAt, readingMinutes, body]) =>
   ({ id, slug, title, summary, category, categoryName: categoryNames[category], tags, publishedAt, readingMinutes, body }));
+
+/* 读者那一行：名字，加上分类页要的两个数——已发布几篇、最近一篇什么时候。两个数
+   照 articles 现算：手写的话两份清单迟早对不上（改一篇文章的日期，分类页上那个
+   「最近」还停在旧的那天）。所以这一份必须排在 articles 后面；先后照 categoryNames。 */
+export const mockCategories = Object.entries(categoryNames).map(([id, name]) => {
+  const published = articles.filter(article => article.category === id);
+  return {
+    id,
+    name,
+    articleCount: published.length,
+    // 格式一样的时间串按字典序排就是按时间排——和 mockList 里那条排序同一个道理。
+    latestPublishedAt: published.map(article => article.publishedAt).sort().at(-1),
+  };
+});

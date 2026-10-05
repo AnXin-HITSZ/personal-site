@@ -34,6 +34,7 @@ const pageKey = computed(() => {
     <nav class="nav" aria-label="主导航">
       <!-- nav-here 是比路由名，不是比路径前缀：列表页和详情页同属「文章」这一栏。 -->
       <router-link to="/" :class="{ 'nav-here': $route.name === 'articles' || $route.name === 'article' }">文章</router-link>
+      <router-link to="/categories" :class="{ 'nav-here': $route.name === 'categories' }">分类</router-link>
       <a :href="config.qaUrl" target="_blank" rel="noopener noreferrer">QA-Agent<span class="sr-only">（新窗口）</span></a>
       <router-link
         v-if="isAuthor" to="/admin/articles"

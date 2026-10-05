@@ -27,6 +27,11 @@ function row(overrides = {}) {
   return { id: mockCategoryIDs.backend, name: '后端开发', articleCount: 4, draftCount: 1, ...overrides };
 }
 
+/* 读者那一行的一条：id、名字，加上分类页直接要摆的两个数（已发布几篇、最近某天）。 */
+function ref(overrides = {}) {
+  return { id: mockCategoryIDs.backend, name: '后端开发', articleCount: 3, latestPublishedAt: '2026-09-21T08:00:00Z', ...overrides };
+}
+
 const listBody = items => ({ items });
 
 test('category ids are shaped exactly like article ids', () => {
@@ -67,19 +72,30 @@ test('the reader list reads the published categories and shapes the mock the sam
   const mocked = await listCategories({ source: 'mock' });
   assert.deepEqual(mocked.items, mockCategories);
   assert.deepEqual(mocked.items.map(item => item.id), Object.values(mockCategoryIDs));
+  /* 篇数和最近时间是照演示文章现算的，不是手写的：最近那一篇取的是分组里最新的
+     那一篇，不是随便一篇（后端开发三篇里最新的是 09-21 那篇）。 */
+  const backend = mocked.items.find(item => item.id === mockCategoryIDs.backend);
+  assert.equal(backend.articleCount, 3);
+  assert.equal(backend.latestPublishedAt, '2026-09-21T08:00:00Z');
   // 拿到的必须是副本：调用方改了它，下一次读出来的不该跟着变。
   mocked.items[0].name = '改了';
   assert.equal((await listCategories({ source: 'mock' })).items[0].name, '后端开发');
 
-  const { seen, fetchImpl } = capture(listBody([{ id: mockCategoryIDs.backend, name: '后端开发' }]));
+  const { seen, fetchImpl } = capture(listBody([ref()]));
   const result = await listCategories({ source: 'http', fetchImpl });
   assert.equal(seen.url, '/api/v1/categories');
   assert.equal(seen.options.headers['X-Requested-With'], undefined, '读者那一行没有登录态，不该带写请求的头');
   assert.equal(result.items[0].name, '后端开发');
+  assert.equal(result.items[0].articleCount, 3);
 });
 
-test('a reader row without a usable name is rejected', async () => {
-  for (const broken of [{ id: mockCategoryIDs.backend }, { name: '后端开发' }, { id: 'Backend', name: 'x' }, { id: mockCategoryIDs.backend, name: '' }, null]) {
+test('a reader row is rejected when any part of it is unusable', async () => {
+  for (const broken of [
+    ref({ id: undefined }), ref({ name: undefined }), ref({ id: 'Backend' }), ref({ name: '' }),
+    ref({ articleCount: undefined }), ref({ articleCount: -1 }), ref({ articleCount: 1.5 }),
+    ref({ latestPublishedAt: undefined }), ref({ latestPublishedAt: '哪天' }),
+    null,
+  ]) {
     await assert.rejects(
       listCategories({ source: 'http', fetchImpl: async () => json(listBody([broken])) }),
       /数据格式/,

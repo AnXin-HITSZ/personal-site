@@ -22,10 +22,15 @@ export class ArticleNotFoundError extends Error {
    两边要一起改。 */
 export const ARTICLE_ID_PATTERN = /^[0-9a-z]{8}$/;
 
+/* 页码和搜索词的上限。列表页的地址栏（list-query.js）和这里各量一遍：那边把坏值
+   退回默认值，这里对不上就抛——量的是同一个数，改要一起改。 */
+export const maxListPage = 1000000;
+export const maxSearchRunes = 100;
+
 /* 参数先在这里量一遍，不合约定就当场抛：省掉一次注定 400 的往返，也让越界在开发时就响，
    而不是等到线上出现一个空列表。这几个上限与服务端 handler 里的那几条是一致的。 */
 export function normalizeQuery({ page = 1, pageSize = 6, q = '', category = 'all' } = {}) {
-  if (!Number.isInteger(page) || page < 1 || page > 1000000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50 || typeof q !== 'string' || [...q.trim()].length > 100 || !isCategoryRef(category)) {
+  if (!Number.isInteger(page) || page < 1 || page > maxListPage || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50 || typeof q !== 'string' || [...q.trim()].length > maxSearchRunes || !isCategoryRef(category)) {
     throw new Error('查询参数不符合接口约定');
   }
   return { page, pageSize, q: q.trim(), category };

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分类页怎么排 · 甲 目录 · 最终稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：分类页怎么排。报头加「分类」，这一页列出各分类、各自的情况
+   （几篇、最近一篇什么时候），以及每一类下面的文章（从新到旧）。
+
+   ＊结论：选定「甲 目录」，已落地（2026-10-05）：规则进了 styles.css 的「分类页」
+     一节，页面是 CategoryListView.vue。乙案（行里加摘要）已按选择删除；分类多了
+     也不加索引表——一路排下去，只保留「类内篇数多了」这一档放大（2026-10-05 的
+     选择）。
+
+   甲 目录 的规则：
+     · 页头照文章列表页：左「N 个分类 · M 篇文章」，右标题「分类」；
+     · 每类一节：左注文栏放「N 篇」「最近 日期」——这一类的全部情况；
+     · 类名就是节头，行里不再重复写类名；日期 muted、tabular-nums；
+     · 类内文章从新到旧，与文章列表同一条排序（published_at 倒序）；
+     · 行间一条灰线，末行不收口——与正文表格同一种线语言；
+     · 标题墨色、悬停变印色，同条目标题；窄屏日期落到标题下一行（拖窄看）。
+
+   多了以后——类内篇数多了怎么收（这是唯一的一档放大）：
+     · 每类只列最近 6 篇（与文章列表每页同数），其后一行安静链接「全部 N 篇」，
+       去文章列表里筛好的那一类；6 篇以内没有这一行；
+     · 其余一切不变：仍是单栏、仍有注文栏、仍是同一条线。
+
+   样式直接引 ../src/styles.css，一个字都不抄——规则已在真码里，这一份不再写任何
+   分类页样式，看到的就是落地后的样子；这里只剩演示的脚手架。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 只吃案头说明的那几张清单（section 的直接子级）——写成 `.variant ul` 会连
+   样片里 .cat-list 一起套进来，量出来的缩进和行距就不是产品的了。 */
+.variant > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant ul li + li { margin-top: .4rem; }
+.variant ul b { color: var(--ink); font-weight: 600; }
+.variant code { font-family: var(--stack-mono); font-size: .8125rem; }
+/* 每一张样片都是一张完整的页面：让它和案头的说明留出距离。 */
+.variant .masthead { margin-top: 2rem; }
+
+/* —— 甲案规则（已落地，见 src/styles.css 的「分类页」一节；窄屏两条在 44rem 媒体块）—— */
+</style>
+</head>
+<body>
+
+<p class="intro">
+报头里加一项「分类」，落到这一页：页头一句「N 个分类 · M 篇文章」，然后每一类一节——
+注文栏放这一类的情况（几篇、最近一篇什么时候），类里的文章从新到旧。上一节是甲案现在的
+样子；下一节是它在篇数多起来以后的收法。分类再多也是同一条路排下去，不加索引表。
+每张样片只摆两节示意（分类与篇数都是示意数据），其余分类省略；拖窄窗口可以看窄屏的样子。
+</p>
+
+<!-- ═══════════════ 甲 目录（已落地） ═══════════════ -->
+
+<section class="variant">
+  <h2>甲 目录（已落地）</h2>
+  <p class="why">行只有两样东西：标题和日期，一头一尾。最短、最安静，像书的目录。下面这一整段的样子全部来自 ../src/styles.css——这里一条分类页规则都没写。4 个分类、最多一类 3 篇，每类全列。</p>
+
+  <header class="masthead shell">
+    <a class="brand" href="#">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#">文章</a>
+      <a class="nav-here" href="#">分类</a>
+      <a href="#">QA-Agent</a>
+      <a href="#">登录</a>
+    </nav>
+  </header>
+
+  <main class="shell cat-body">
+    <section class="archive">
+      <div class="archive-head row ruled">
+        <p class="archive-count">4 个分类 · 9 篇文章</p>
+        <div class="archive-main"><h2>分类</h2></div>
+      </div>
+    </section>
+
+    <section class="cat row ruled">
+      <div class="facts"><p>3 篇</p><p>最近 2026.09.21</p></div>
+      <div class="main">
+        <h3 class="cat-name">后端开发</h3>
+        <ul class="cat-list">
+          <li><a href="#">从一个接口开始，搭建自己的 Go 服务</a><time datetime="2026-09-21T08:00:00Z">2026.09.21</time></li>
+          <li><a href="#">文章列表里的分页，究竟约定了什么</a><time datetime="2026-09-06T08:00:00Z">2026.09.06</time></li>
+          <li><a href="#">把错误当作接口的一部分</a><time datetime="2026-08-23T08:00:00Z">2026.08.23</time></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cat row ruled">
+      <div class="facts"><p>2 篇</p><p>最近 2026.09.18</p></div>
+      <div class="main">
+        <h3 class="cat-name">AI 探索</h3>
+        <ul class="cat-list">
+          <li><a href="#">一个好问题，需要多少上下文？</a><time datetime="2026-09-18T08:00:00Z">2026.09.18</time></li>
+          <li><a href="#">先找到，再回答：检索过程的学习笔记</a><time datetime="2026-08-28T08:00:00Z">2026.08.28</time></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</section>
+
+<!-- ═══════════════ 多了以后 · 类内篇数 ═══════════════ -->
+
+<section class="variant">
+  <h2>多了以后 · 类内篇数（已落地）</h2>
+  <p class="why">一类的篇数多了，这页就当「第一节」：每类只摆最近 6 篇——和文章列表每页同数；读到底一行安静链接「全部 24 篇」，去文章列表里筛好的那一类（那里有翻页和搜索，是能翻到底的地方）。6 篇以内没有这一行，下面 AI 探索就是。</p>
+
+  <header class="masthead shell">
+    <a class="brand" href="#">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#">文章</a>
+      <a class="nav-here" href="#">分类</a>
+      <a href="#">QA-Agent</a>
+      <a href="#">登录</a>
+    </nav>
+  </header>
+
+  <main class="shell cat-body">
+    <section class="archive">
+      <div class="archive-head row ruled">
+        <p class="archive-count">4 个分类 · 44 篇文章</p>
+        <div class="archive-main"><h2>分类</h2></div>
+      </div>
+    </section>
+
+    <section class="cat row ruled">
+      <div class="facts"><p>24 篇</p><p>最近 2026.09.21</p></div>
+      <div class="main">
+        <h3 class="cat-name">后端开发</h3>
+        <ul class="cat-list">
+          <li><a href="#">从一个接口开始，搭建自己的 Go 服务</a><time datetime="2026-09-21T08:00:00Z">2026.09.21</time></li>
+          <li><a href="#">文章列表里的分页，究竟约定了什么</a><time datetime="2026-09-06T08:00:00Z">2026.09.06</time></li>
+          <li><a href="#">把错误当作接口的一部分</a><time datetime="2026-08-23T08:00:00Z">2026.08.23</time></li>
+          <li><a href="#">接口的版本放在哪里</a><time datetime="2026-08-09T08:00:00Z">2026.08.09</time></li>
+          <li><a href="#">日志写给谁看</a><time datetime="2026-07-26T08:00:00Z">2026.07.26</time></li>
+          <li><a href="#">一次慢查询的来路</a><time datetime="2026-07-12T08:00:00Z">2026.07.12</time></li>
+        </ul>
+        <p class="cat-all"><a class="link-quiet" href="#">全部 24 篇</a></p>
+      </div>
+    </section>
+
+    <section class="cat row ruled">
+      <div class="facts"><p>5 篇</p><p>最近 2026.09.18</p></div>
+      <div class="main">
+        <h3 class="cat-name">AI 探索</h3>
+        <ul class="cat-list">
+          <li><a href="#">一个好问题，需要多少上下文？</a><time datetime="2026-09-18T08:00:00Z">2026.09.18</time></li>
+          <li><a href="#">先找到，再回答：检索过程的学习笔记</a><time datetime="2026-08-28T08:00:00Z">2026.08.28</time></li>
+          <li><a href="#">把答案的出处摆出来</a><time datetime="2026-08-15T08:00:00Z">2026.08.15</time></li>
+          <li><a href="#">提示词不是配置</a><time datetime="2026-07-30T08:00:00Z">2026.07.30</time></li>
+          <li><a href="#">小模型也能读长文吗</a><time datetime="2026-07-08T08:00:00Z">2026.07.08</time></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</section>
+
+<!-- ═══════════════ 落地记录 ═══════════════ -->
+
+<section class="variant">
+  <h2>落地记录</h2>
+  <ul>
+    <li><b>数据补上了</b>：公开的 <code>/categories</code> 现在带着「几篇、最近一篇什么时候」——按分类聚合只数已发布的，和原来那条分类查询走同一个只读事务，前端仍旧一次请求。各分类那前 6 篇没有塞进这个接口：借现成的 <code>/articles?category=&lt;id&gt;&amp;pageSize=6</code>，N 个分类并 N 个请求——今天 4 个。</li>
+    <li><b>筛选搬进了 URL</b>：文章列表的筛选从页面内部状态（reactive）改成地址的一段（<code>/?category=&lt;id&gt;</code>）；「全部 N 篇」链接落在筛好的那一类。顺带筛选可分享、后退键可用、同页换筛选不回页首。</li>
+    <li><b>页</b>：router 加了 <code>/categories</code>（name: categories）与新视图一个；报头 nav 在「文章」右边加了「分类」，<code>nav-here</code> 照 <code>name === 'categories'</code> 判。</li>
+    <li><b>文章行不复用</b> <code>ArticleEntry</code>——那一行带整套注文栏（类名、时长），在分类页里全是重复。「全部 N 篇」用现成的 <code>.link-quiet</code>，没有新样式。</li>
+    <li><b>6 篇是常量</b>：<code>CategoryListView.vue</code> 里的 <code>previewSize = 6</code>——觉得早或晚改一个数；等真需要按屏高自适应再说。</li>
+    <li><b>一处取舍</b>：稿样脚手架里的 <code>.variant ul</code> 曾把 <code>.cat-list</code> 一起套上 1.1rem 缩进。产品的规则原文里没有缩进——落地取零缩进，列表贴着栏左沿，和类名与上面的线对齐；这一份的脚手架也跟着收窄成 <code>.variant &gt; ul</code>，下面量出来的就是产品。</li>
+    <li><b>验证</b>：无头实测 1600 / 560 两档截图 + 逐条断言——与稿样的计算样式逐条对；筛选写进地址、后退回上一次、翻页回标题（落点 89.6px）、<code>#articles</code> 锚点落点、地址坏值回退。曾把 <code>previewSize</code> 临时改成 2，实测「全部 N 篇」行与链接落点后再改回 6。</li>
+  </ul>
+</section>
+
+</body>
+</html>

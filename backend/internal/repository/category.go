@@ -21,13 +21,17 @@ var (
 	ErrOrderMismatch     = errors.New("提交的顺序和库里的分类对不上")
 )
 
-// 分类自己的字段，加上它下面有多少篇文章。两个数一起读，是因为列表要同时显示
-// 「4 篇」和「其中 1 篇草稿」——分两次读就会有那么一瞬间它们对不上。
+// 分类自己的字段，加上它下面有多少篇文章。三个数一起读，是因为列表要同时显示
+// 「4 篇」「其中 1 篇草稿」，读者那边还有「已发布几篇、最近什么时候」——分两次读
+// 就会有那么一瞬间它们对不上。
 type CategoryRow struct {
 	ID     string
 	Name   string
 	Total  int
 	Drafts int
+	// 已发布那一份：篇数，和这个分组里 published_at 的最大值。
+	Published         int
+	LatestPublishedAt *time.Time
 }
 
 type Category struct {
@@ -57,6 +61,13 @@ func (r *Category) ListWithUsage(ctx context.Context) ([]CategoryRow, error) {
 			Select("category, COUNT(*) AS n").Group("category").Find(&drafts).Error; err != nil {
 			return err
 		}
+		var published []categoryPublished
+		if err := tx.Model(&model.Article{}).
+			Where("status = ?", model.ArticleStatusPublished).
+			Select("category, COUNT(*) AS n, MAX(published_at) AS latest").
+			Group("category").Find(&published).Error; err != nil {
+			return err
+		}
 
 		byID := make(map[string]CategoryRow, len(categories))
 		for _, category := range categories {
@@ -72,6 +83,12 @@ func (r *Category) ListWithUsage(ctx context.Context) ([]CategoryRow, error) {
 			row.Drafts = count.N
 			byID[count.CategoryID] = row
 		}
+		for _, group := range published {
+			row := byID[group.CategoryID]
+			row.Published = group.N
+			row.LatestPublishedAt = group.Latest
+			byID[group.CategoryID] = row
+		}
 		for _, category := range categories {
 			rows = append(rows, byID[category.ID])
 		}
@@ -84,10 +101,19 @@ func (r *Category) ListWithUsage(ctx context.Context) ([]CategoryRow, error) {
 	return rows, nil
 }
 
-// categoryCount 是上面那两条分组统计的落点。列名用标签写死，不靠字段名去对。
+// categoryCount 是前两条分组统计（全部、草稿）的落点。列名用标签写死，不靠字段名去对。
 type categoryCount struct {
 	CategoryID string `gorm:"column:category"`
 	N          int    `gorm:"column:n"`
+}
+
+// 已发布那一份多一个数：分组里 published_at 的最大值。取「最大」而不是另查一次
+// 「最新的一篇」，是为了和篇数落在同一个快照里——两次查询之间若有新文章发出来，
+// 「3 篇」和那个日期就会互相错开。
+type categoryPublished struct {
+	CategoryID string     `gorm:"column:category"`
+	N          int        `gorm:"column:n"`
+	Latest     *time.Time `gorm:"column:latest"`
 }
 
 // 上限在事务里判，不在服务层判：两次并发的「加上」都先数到 19、再各插一行，

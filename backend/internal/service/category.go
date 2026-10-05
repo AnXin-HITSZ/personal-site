@@ -65,7 +65,8 @@ func NewCategory(repo CategoryStore) *Category {
 }
 
 // 读者那一行只列有已发布文章的分类：筛出来是空的按钮只是占位，和「列表空着的时候
-// 不出筛选器」同一条道理。所以零篇的分类在写作那一页看得见、在读者这边看不见。
+// 不出筛选器」同一条道理。所以一篇都没发出去过的分类在写作那一页看得见、在读者
+// 这边看不见。带上「已发布几篇」「最近什么时候」——分类页直接摆这两个数。
 func (s *Category) ListPublished(ctx context.Context) (dto.CategoryList, error) {
 	rows, err := s.repo.ListWithUsage(ctx)
 	if err != nil {
@@ -74,10 +75,15 @@ func (s *Category) ListPublished(ctx context.Context) (dto.CategoryList, error) 
 
 	items := make([]dto.CategoryRef, 0, len(rows))
 	for _, row := range rows {
-		if row.Total-row.Drafts == 0 {
+		if row.Published == 0 {
 			continue
 		}
-		items = append(items, dto.CategoryRef{ID: row.ID, Name: row.Name})
+		items = append(items, dto.CategoryRef{
+			ID:                row.ID,
+			Name:              row.Name,
+			ArticleCount:      row.Published,
+			LatestPublishedAt: row.LatestPublishedAt,
+		})
 	}
 
 	return dto.CategoryList{Items: items}, nil

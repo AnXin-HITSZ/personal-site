@@ -319,7 +319,10 @@ func TestAdminCategoryErrorMapping(t *testing.T) {
 
 func TestPublicCategoriesAreReadableWithoutASession(t *testing.T) {
 	f := newCategoryFixture(model.RoleAdmin)
-	f.svc.published = dto.CategoryList{Items: []dto.CategoryRef{{ID: "abcd1234", Name: "后端开发"}}}
+	latest := time.Date(2026, 9, 21, 8, 0, 0, 0, time.UTC)
+	f.svc.published = dto.CategoryList{Items: []dto.CategoryRef{{
+		ID: "abcd1234", Name: "后端开发", ArticleCount: 3, LatestPublishedAt: &latest,
+	}}}
 
 	rec := f.anonymous(http.MethodGet, "/api/v1/categories")
 
@@ -332,12 +335,14 @@ func TestPublicCategoriesAreReadableWithoutASession(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("响应不是 JSON：%s", rec.Body.String())
 	}
-	if len(body.Items) != 1 || body.Items[0].Name != "后端开发" {
-		t.Errorf("应回一个分类，实际 %+v", body.Items)
+	// 读者要的是「几篇、最近什么时候」——分类页直接摆这两个数。
+	if len(body.Items) != 1 || body.Items[0].Name != "后端开发" || body.Items[0].ArticleCount != 3 ||
+		body.Items[0].LatestPublishedAt == nil || !body.Items[0].LatestPublishedAt.Equal(latest) {
+		t.Errorf("应回一个带篇数和最近时间的分类，实际 %+v", body.Items)
 	}
-	// 读者不该看见草稿数——那不是他要知道的事。
-	if strings.Contains(rec.Body.String(), "articleCount") {
-		t.Errorf("公开列表不该带写作那边的计数：%s", rec.Body.String())
+	// 草稿数是他看不见的事，不该跟着公开列表出来。
+	if strings.Contains(rec.Body.String(), "draftCount") {
+		t.Errorf("公开列表不该带写作那边的草稿数：%s", rec.Body.String())
 	}
 }
 

@@ -182,9 +182,11 @@ func TestListWithUsageReadsCountsAndOrderInOnePass(t *testing.T) {
 	}
 
 	f.rec.expect(t, "SELECT * FROM `categories`", "ORDER BY sort_order asc", "id asc")
-	// 两个数一起读：分两次读，中间那一瞬间「4 篇」和「其中 1 篇草稿」会对不上。
+	// 三个数都在这一趟里读：分两次读，中间那一瞬间「4 篇」和「其中 1 篇草稿」会对不上。
 	f.rec.expect(t, "SELECT category, COUNT(*) AS n FROM `articles`", "GROUP BY `category`")
 	f.rec.expect(t, "SELECT category, COUNT(*) AS n FROM `articles`", "status")
+	// 读者那一份连「最近一篇」一起数：篇数和最近时间来自同一个分组、同一个快照。
+	f.rec.expect(t, "MAX(published_at) AS latest", "status", "GROUP BY `category`")
 }
 
 func TestRenameTouchesOnlyTheName(t *testing.T) {

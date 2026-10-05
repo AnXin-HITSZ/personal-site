@@ -293,6 +293,24 @@ html { scroll-padding-top: var(--masthead-h); }
 .entry-title a { transition: color .18s ease; }
 .entry-title a:hover { color: var(--seal); }
 
+/* ---------- 分类页 ---------- */
+
+/* 每一类一节：左注文栏摆这一类的全部情况（几篇、最近一篇什么时候），右栏是类名
+   和类内文章。行只有标题和日期，一头一尾，像书的目录；页头与文章列表同一套。 */
+.cat-body { padding-bottom: 1rem; }
+.cat { margin-top: 3.25rem; }
+.cat-name { font-family: var(--stack-display); font-weight: 400; font-size: 1.375rem; line-height: 1.35; letter-spacing: .01em; }
+/* ul 自带 40px 缩进和一截下边距。列表要贴着栏左沿，和类名与上面的线对齐；
+   「全部 N 篇」那条线也只按行距接住末行——两样都清掉。 */
+.cat-list { margin: 1rem 0 0; padding: 0; }
+.cat-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 1.75rem; align-items: baseline; padding: .7rem 0; }
+.cat-list li + li { border-top: 1px solid var(--rule); }
+.cat-list a { font-family: var(--stack-display); font-size: 1.125rem; line-height: 1.5; letter-spacing: .01em; text-wrap: pretty; transition: color .18s ease; }
+.cat-list a:hover { color: var(--seal); }
+.cat-list time { color: var(--muted); font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+/* 「全部 N 篇」不属于文章列表本身，所以不放进 ul；线接住最后一行，节奏与行间线一致。 */
+.cat-all { border-top: 1px solid var(--rule); padding: .7rem 0 0; }
+
 /* ---------- 文章详情 ---------- */
 
 .piece { margin-top: 5.5rem; }
@@ -929,6 +947,10 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   .save .facts { display: flex; }
   .entry:first-child .entry-title { font-size: 1.6rem; }
 
+  /* 分类页：标题和日期并排只剩一拃宽，日期落到标题下一行。 */
+  .cat-list li { grid-template-columns: minmax(0, 1fr); }
+  .cat-list time { margin-top: .3rem; }
+
   .form-title { font-size: 1.5rem; }
   .form { margin-top: 1.75rem; }
   .identity { margin-top: 1.75rem; }
@@ -973,6 +995,6 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   .segmented::before,
   .pager-btn, .pager-prev, .pager-next, .btn-danger, .primary, .filter, .search button,
   .act, .act-danger, .link-quiet, .nav a, .segmented label, .select option,
-  .entry-title a, .piece-back, .prose a, .project-link, .footer-main a, .form-alt a, .tag button,
+  .entry-title a, .cat-list a, .piece-back, .prose a, .project-link, .footer-main a, .form-alt a, .tag button,
   .page-leave-active, .page-enter-active { transition: none; }
 }

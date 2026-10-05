@@ -14,6 +14,14 @@ import (
 
 var testCategoryNow = time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
 
+// 各分类的「最近一篇」各是一个不同的日子：接线接反了（比如每条都拿到同一个值）
+// 能当场看见。
+var (
+	backendLatestAt  = time.Date(2026, 9, 21, 8, 0, 0, 0, time.UTC)
+	aiLatestAt       = time.Date(2026, 9, 18, 8, 0, 0, 0, time.UTC)
+	frontendLatestAt = time.Date(2026, 9, 14, 8, 0, 0, 0, time.UTC)
+)
+
 // 分类 id 一律是建分类时现取的 8 位随机码，种子行也照那个形状写；好几处断言都要
 // 引用它们，写成一串常量免得看花眼。
 const (
@@ -97,16 +105,17 @@ func newCategoryService(store *fakeCategoryStore) *Category {
 
 func seededCategories() []repository.CategoryRow {
 	return []repository.CategoryRow{
-		{ID: backendCat, Name: "后端开发", Total: 4, Drafts: 1},
-		{ID: frontendCat, Name: "前端实践", Total: 2, Drafts: 0},
-		{ID: aiCat, Name: "AI 探索", Total: 2, Drafts: 1},
-		{ID: notesCat, Name: "学习随笔", Total: 1, Drafts: 1},
-		{ID: "abcd1234", Name: "读书笔记", Total: 0, Drafts: 0},
+		{ID: backendCat, Name: "后端开发", Total: 4, Drafts: 1, Published: 3, LatestPublishedAt: &backendLatestAt},
+		{ID: frontendCat, Name: "前端实践", Total: 2, Drafts: 0, Published: 2, LatestPublishedAt: &frontendLatestAt},
+		{ID: aiCat, Name: "AI 探索", Total: 2, Drafts: 1, Published: 1, LatestPublishedAt: &aiLatestAt},
+		{ID: notesCat, Name: "学习随笔", Total: 1, Drafts: 1, Published: 0},
+		{ID: "abcd1234", Name: "读书笔记", Total: 0, Drafts: 0, Published: 0},
 	}
 }
 
 // 读者那一行只列有已发布文章的分类。零篇（读书笔记）和「全是草稿」（学习随笔）
-// 在读者那边是一回事：点进去什么都没有，那个按钮就只是占位。
+// 在读者那边是一回事：点进去什么都没有，那个按钮就只是占位。篇数与最近时间也
+// 都只数已发布的——后端开发 4 篇里 1 篇是草稿，读者看到的是 3 篇。
 func TestListPublishedHidesCategoriesWithoutPublishedArticles(t *testing.T) {
 	service := newCategoryService(&fakeCategoryStore{rows: seededCategories()})
 
@@ -115,20 +124,33 @@ func TestListPublishedHidesCategoriesWithoutPublishedArticles(t *testing.T) {
 		t.Fatalf("查询失败：%v", err)
 	}
 
-	var ids []string
-	for _, item := range list.Items {
-		ids = append(ids, item.ID)
+	want := []struct {
+		id     string
+		name   string
+		count  int
+		latest time.Time
+	}{
+		{backendCat, "后端开发", 3, backendLatestAt},
+		{frontendCat, "前端实践", 2, frontendLatestAt},
+		{aiCat, "AI 探索", 1, aiLatestAt},
 	}
-	want := []string{backendCat, frontendCat, aiCat}
-	if strings.Join(ids, ",") != strings.Join(want, ",") {
-		t.Errorf("应为 %v（顺序照 sort_order），实际 %v", want, ids)
+	if len(list.Items) != len(want) {
+		t.Fatalf("应有 %d 个分类（顺序照 sort_order），实际 %+v", len(want), list.Items)
+	}
+	for i, w := range want {
+		item := list.Items[i]
+		if item.ID != w.id || item.Name != w.name || item.ArticleCount != w.count ||
+			item.LatestPublishedAt == nil || !item.LatestPublishedAt.Equal(w.latest) {
+			t.Errorf("第 %d 条应为 %s「%s、%d 篇、最近 %v」，实际 %+v", i+1, w.id, w.name, w.count, w.latest, item)
+		}
 	}
 }
 
 func TestListPublishedRejectsDraftOnlyCategory(t *testing.T) {
+	notesLatest := time.Date(2026, 9, 12, 8, 0, 0, 0, time.UTC)
 	service := newCategoryService(&fakeCategoryStore{rows: []repository.CategoryRow{
 		{ID: backendCat, Name: "后端开发", Total: 3, Drafts: 3},
-		{ID: notesCat, Name: "学习随笔", Total: 2, Drafts: 1},
+		{ID: notesCat, Name: "学习随笔", Total: 2, Drafts: 1, Published: 1, LatestPublishedAt: &notesLatest},
 	}})
 
 	list, err := service.ListPublished(context.Background())
@@ -137,7 +159,10 @@ func TestListPublishedRejectsDraftOnlyCategory(t *testing.T) {
 	}
 
 	if len(list.Items) != 1 || list.Items[0].ID != notesCat {
-		t.Errorf("只有 %s 有一篇发出去的，实际 %+v", notesCat, list.Items)
+		t.Fatalf("只有 %s 有一篇发出去的，实际 %+v", notesCat, list.Items)
+	}
+	if item := list.Items[0]; item.ArticleCount != 1 || item.LatestPublishedAt == nil || !item.LatestPublishedAt.Equal(notesLatest) {
+		t.Errorf("学习随笔应带上「1 篇、最近 %v」，实际 %+v", notesLatest, item)
 	}
 }
 

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { load, session, signedIn } from './session.js';
 import ArticleListView from './views/ArticleListView.vue';
 import ArticleDetailView from './views/ArticleDetailView.vue';
+import CategoryListView from './views/CategoryListView.vue';
 import ProjectQaAgentView from './views/ProjectQaAgentView.vue';
 import LoginView from './views/LoginView.vue';
 import RegisterView from './views/RegisterView.vue';
@@ -29,6 +30,9 @@ export const router = createRouter({
     // slug 段可选，也不参与查询：老地址、手抄漏一段的地址都落得到同一篇上，
     // 拿到数据之后再让详情页把地址栏换成规范写法。
     { path: '/articles/:id/:slug?', name: 'article', component: ArticleDetailView },
+    /* 「分类」页：每一类一段，摆类里最近几篇；篇数多的一类从这里接一行
+       「全部 N 篇」，去文章列表按类筛。 */
+    { path: '/categories', name: 'categories', component: CategoryListView },
     /* 项目详情页。报头那条「QA-Agent」仍旧直接去应用，这一页是站内的另一处：
        首页那一栏点「了解项目」落到这儿。正文由主人自己写（见 ProjectQaAgentView）。 */
     { path: '/projects/qa-agent', name: 'project-qa-agent', component: ProjectQaAgentView },
@@ -71,7 +75,18 @@ export const router = createRouter({
      少动的人那里没有过渡，也就不等。 */
   scrollBehavior: (to, from, savedPosition) =>
     new Promise(resolve => {
-      setTimeout(() => resolve(savedPosition ?? { top: 0 }), reduceMotion.matches ? 0 : pageLeaveMs);
+      setTimeout(() => {
+        if (savedPosition) return resolve(savedPosition);
+        /* 同一页只换了筛选（路径没变，比如文章列表换页、换关键词）：视口别动——
+           回页首是给「换了一页」的，筛一下还把读者按回标题上，他刚要看的条目就
+           找不着了。「文章」那一栏点回本站首页也走这一支，原地留下。 */
+        if (to.name === from.name && to.path === from.path) return resolve(false);
+        /* 带锚点的导航（眼下只有分类页那行「全部 N 篇」→ /?category=…#articles）：
+           滚动交给锚点所在的页面自己。这里等完翻页那 150ms 再找，新页多半还没挂上，
+           找到的会是一场空（见 ArticleList 的 onMounted），不如把这个责任写明白。 */
+        if (to.hash) return resolve(false);
+        resolve({ top: 0 });
+      }, reduceMotion.matches ? 0 : pageLeaveMs);
     }),
 });
 
