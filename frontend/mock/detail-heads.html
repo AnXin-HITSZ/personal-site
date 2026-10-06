@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>详情页的开头 · 甲 返回入注文 · 丙 安静链接 · 最终稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问两件事：详情页（文章、项目）左上角的「回去」放哪、长什么样；项目页那枚
+   「在线体验」怎么不再生硬。两张脸都在真实骨架上摆——文章页用那篇 JWT 的文章
+   （正文是节选示意，看头不看文），项目页用 QA-Agent。
+
+   ＊结论（2026-10-06）：两件都已选定并落地——
+
+   一、返回「甲 注文栏顶」（已落地）：并进左栏那叠戳记的头上，与页脚那枚同一支
+     .piece-back——全站本来就有一枚「返回文章列表」，这只是把它挪到开头。悬停
+     向左让 .2rem（「上一页」的老路：方向用动作说，全站没有一个箭头字形）。
+     窄屏（44rem 以下）注文栏立起来时它并进那一行，不另占一行。
+     页脚那一枚留着：读到底的人从那儿走，顶上这枚给刚进来就发现走错门的人。
+
+   二、「在线体验」用「丙 安静链接」（已落地）：与首页「了解项目」同一支
+     （.project-link：印色字、印色下划线，悬停变墨）——这一页只这一处动作，用
+     站的链接语言说就够了；原来那枚 .pager-btn（翻页、重试用的工具按钮，灰框
+     摆在标题底下）不是这一页的主操作。丙案以外的样片已按选择删除。
+
+   项目页的正文仍是一段示意文字——真正的正文以你自己写的为准（qa-agent.md
+   还是空的）。样式直接引 ../src/styles.css，一个字都不抄——看到的就是落地后
+   的样子；这里只剩演示的脚手架。规则处与验证记在文末「落地记录」。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 清单的选择器都收紧到 >：写成 `.variant ul`／`.variant code` 会套进样片里，
+   正文的 code、将来正文的列表都会被脚手架改掉，量出来的就不是产品的了。 */
+.variant > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant > ul li + li { margin-top: .4rem; }
+.variant > ul b { color: var(--ink); font-weight: 600; }
+.variant > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+/* 每一张样片都是一张完整的页面：让它和案头的说明留出距离。 */
+.variant .masthead { margin-top: 2rem; }
+
+/* —— 两案的规则（已落地，见 src/styles.css 的「详情页」一节；窄屏一条在 44rem 媒体块）—— */
+</style>
+</head>
+<body>
+
+<p class="intro">
+文章页和项目页的头部都是「左注文栏、右正文栏」；返回入口原来只在页脚，现在头上也有一条。
+下面两张样片是落地后的样子——文章页的返回（甲案）与项目页的「在线体验」（丙案），样式全部
+来自 ../src/styles.css。拖窄窗口可以看窄屏的样子——窄屏下注文栏会立起来，返回并进那一行。
+</p>
+
+<!-- ═══════════════ 返回 · 甲 注文栏顶（已落地） ═══════════════ -->
+
+<section class="variant">
+  <h2>返回 · 甲 注文栏顶（已落地）</h2>
+  <p class="why">返回并进左栏那叠戳记的头上，与页脚那枚同一支 .piece-back（灰字、灰线），悬停向左让 .2rem——「上一页」往哪走，它就往哪走。标题与戳记的节奏一个不改。悬停试一下这枚「返回文章列表」。</p>
+
+  <header class="masthead shell">
+    <a class="brand" href="#">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a class="nav-here" href="#">文章</a>
+      <a href="#">分类</a>
+      <a href="#">QA-Agent</a>
+      <a href="#">登录</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <article class="piece">
+      <header class="piece-head row ruled">
+        <div class="facts facts-stamp">
+          <p class="piece-return"><a class="piece-back" href="#">返回文章列表</a></p>
+          <p class="key">后端</p>
+          <p><time class="date" datetime="2026-10-05">2026.10.05</time></p>
+          <p>11 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h1 class="piece-title">从登录到鉴权：理解 JWT、访问令牌与刷新令牌</h1>
+          <p class="piece-summary">JWT 如何携带身份信息，又如何通过签名建立信任？本文从登录流程出发，介绍 JWT 的结构、HS256 与 RS256 的区别、后端验证流程，以及访问令牌、刷新令牌和服务端会话的协作方式，厘清签名、加密、认证与鉴权之间的边界。</p>
+          <p class="piece-tags">JWT / 鉴权与授权 / Token / Web 安全 / 后端开发</p>
+        </div>
+      </header>
+
+      <!-- 正文节选示意：这一节看的是头，不是文。 -->
+      <div class="piece-body row">
+        <div class="main prose">
+          <p>登录是一次交换：你交出一份凭据（邮箱和密码），服务端确认之后，给你一件能带在身上的东西。HTTP 天生不记事，每一次请求都是初见的陌生人——访问令牌就是那件随身带着的凭据。而在它之前，先要把「你是谁」写进一张纸条，再给这张纸条盖上章，这就是 JWT。</p>
+          <blockquote>
+            <p><strong>注意：</strong>签名不是加密。JWT 的负载只是 Base64URL 编码，复制出来谁都能读——签名保证的是「没被改过」，不是「没人看见」。密码、手机号这类不能公开的东西，不要放进令牌。</p>
+          </blockquote>
+          <h2>为什么需要 JWT？</h2>
+          <p>最朴素的办法是服务端会话：存一张表，每次请求拿着 cookie 来查。一台机器时它简单好用；机器多了，每台都要看得见那张表，于是引入共享存储——会话从「内存里的一小块」变成「另一个必须一直活着的组件」。JWT 换了个方向：状态还给客户端，服务端只验签名，不查表。</p>
+          <pre><code>POST /auth/login    邮箱 + 密码
+  → 200 { accessToken, refreshToken }
+后续请求            Authorization: Bearer &lt;accessToken&gt;
+  → 验签名 → 通过</code></pre>
+        </div>
+      </div>
+
+      <nav class="piece-foot row ruled" aria-label="返回">
+        <div class="main"><a class="piece-back" href="#">返回文章列表</a></div>
+      </nav>
+    </article>
+  </main>
+</section>
+
+<!-- ═══════════════ 按钮 · 丙 安静链接（已落地） ═══════════════ -->
+
+<section class="variant">
+  <h2>按钮 · 丙 安静链接（已落地）</h2>
+  <p class="why">项目页 QA-Agent：标题下那枚去应用的入口，与首页「了解项目」同一支（.project-link：印色字、印色下划线，悬停变墨）——这一页只这一处动作，用站的链接语言说就够了。读屏的「（新窗口）」提示照旧；悬停试一下，再拖窄看窄屏。</p>
+
+  <header class="masthead shell">
+    <a class="brand" href="#">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#">文章</a>
+      <a href="#">分类</a>
+      <a href="#">QA-Agent</a>
+      <a href="#">登录</a>
+    </nav>
+  </header>
+  <main class="shell">
+    <article class="piece">
+      <header class="piece-head row ruled">
+        <div class="facts">
+          <p class="piece-return"><a class="piece-back" href="#">返回首页</a></p>
+          <p class="key">项目</p>
+        </div>
+        <div class="main">
+          <h1 class="piece-title">QA-Agent</h1>
+          <p class="piece-act">
+            <a class="project-link" href="#" target="_blank" rel="noopener noreferrer">在线体验<span class="sr-only">（新窗口）</span></a>
+          </p>
+        </div>
+      </header>
+
+      <!-- 正文示意：项目页填满之后的样子（真正的正文以主人自己写的为准）。 -->
+      <div class="piece-body row">
+        <div class="main prose">
+          <p>QA-Agent 是实验室里的一位值班同事：流程怎么走、资料在哪一页、这张图里写的是什么——从前要挨个问人，现在先问它。</p>
+          <h2>它答什么</h2>
+          <p>实验室的问题大致三种来路，它各有一套去处：</p>
+          <ul>
+            <li><strong>流程</strong>——按 SOP 答。下一步做什么、材料交给谁，出处指回对应的流程文档；</li>
+            <li><strong>资料</strong>——先检索知识库，再回答。文档改过，答案跟着改，引到的段落摆出来；</li>
+            <li><strong>图</strong>——拍一张设备面板、试剂标签或报错截图，它先读出图里的字和结构，再接着答。</li>
+          </ul>
+          <h2>为什么先检索再回答</h2>
+          <p>实验室里，一句凭印象说出来的答案比「不知道」危险得多。所以检索排在生成前面：先去 SOP 和知识库里找到那几段原文，照着回答，并给出处。找不到就不答，不猜。</p>
+          <h2>现在到哪了</h2>
+          <p>内部试用中：入口是上面那枚「在线体验」，资料是实验室自己的。还在做的两件事：把不带出处的回答压到零；把图纸那一路的识别再抬一档。</p>
+        </div>
+      </div>
+
+      <nav class="piece-foot row ruled" aria-label="返回">
+        <div class="main"><a class="piece-back" href="#">返回首页</a></div>
+      </nav>
+    </article>
+  </main>
+</section>
+
+<!-- ═══════════════ 落地记录 ═══════════════ -->
+
+<section class="variant">
+  <h2>落地记录</h2>
+  <ul>
+    <li><b>规则落点</b>：styles.css「详情页」一节新增三条 <code>.piece-return</code>（下距 .85rem；链接 <code>display: inline-block</code>——inline 的元素 transform 不生效；悬停 <code>translateX(-.2rem)</code>），<code>.piece-back</code> 那条的 transition 里加了一项 <code>transform .18s ease</code>（「少动的人」那段本来就列着 <code>.piece-back</code>，少动的人自然跟着不过渡）；44rem 块里加一条 <code>.piece-return { margin-bottom: 0 }</code>——窄屏注文栏立起来并成一行，间隔由 gap 管。「在线体验」只用现成的 <code>.project-link</code>，新增一条 <code>.piece-act .project-link { margin-top: 0 }</code> 撤掉那一支自带的 1rem 上边距。</li>
+    <li><b>视图</b>：ArticleDetailView 的 facts-stamp 与 ProjectQaAgentView 的 facts 各加一条 <code>&lt;router-link class="piece-back"&gt;</code>（返回文章列表 / 返回首页）；项目页「在线体验」由 <code>.pager-btn</code> 换成 <code>.project-link</code>，target / rel / 「（新窗口）」读屏提示没动。</li>
+    <li><b>验证</b>：无头逐条对（稿样 vs 真码）16 项全过——返回排注文栏第一行（与栏顶的距离 0）、与戳记间隙 13.6px、标题仍与注文栏顶齐平（甲案的要点：头部节奏不改）、悬停左移 3.2px 变印色、窄屏并成一行且 margin 撤掉、页脚那枚仍是 inline 没被新规则碰上；丙的样式与悬停变墨、pager-btn 已不在项目页。另加 1600 / 560 两档截图对过；<code>npm run check</code>、84 项测试、<code>npm run build</code> 全绿。</li>
+    <li><b>示意正文没有跟着落地</b>：项目页那段填充文字只是给稿样看整页的样子；qa-agent.md 还是空的，正文等主人自己写。</li>
+  </ul>
+</section>
+
+</body>
+</html>

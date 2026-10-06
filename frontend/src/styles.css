@@ -333,11 +333,23 @@ html { scroll-padding-top: var(--masthead-h); }
 .piece-tags { margin-top: .9rem; color: var(--muted); font-size: var(--facts-size); }
 /* 项目页标题下那枚「在线体验」：它占的是文章页「简介」那一行的位置，间距也取同一个数。 */
 .piece-act { margin-top: 1.25rem; }
+/* 「在线体验」用站的链接语言说（.project-link，与首页「了解项目」同一支）——一页只
+   这一处动作，不必再长一个按钮的面。这一条只撤掉那一支自带的 1rem 上边距，落位
+   交给上面的 .piece-act。 */
+.piece-act .project-link { margin-top: 0; }
 
 .piece-body { margin-top: 3rem; }
 .piece-foot { margin-top: 3.5rem; }
-.piece-back { color: var(--muted); font-size: var(--facts-size); border-bottom: 1px solid var(--rule); padding-bottom: .15rem; transition: color .18s ease, border-bottom-color .18s ease; }
+.piece-back { color: var(--muted); font-size: var(--facts-size); border-bottom: 1px solid var(--rule); padding-bottom: .15rem; transition: color .18s ease, border-bottom-color .18s ease, transform .18s ease; }
 .piece-back:hover { color: var(--seal); border-bottom-color: currentColor; }
+/* 详情页注文栏头上那一条「回去」（文章页「返回文章列表」、项目页「返回首页」）：
+   与页脚那枚同一支 .piece-back，多出来的是落位和那一下让位——悬停向左挪 .2rem，
+   方向照「上一页」的老路（全站没有一个箭头字形）。 */
+.piece-return { margin-bottom: .85rem; }
+/* inline 的元素挪不动（transform 不生效），先让它成为一块能挪的。页脚那枚没有
+   transform，不受影响。 */
+.piece-return .piece-back { display: inline-block; }
+.piece-return .piece-back:hover { transform: translateX(-.2rem); }
 
 .sk-piece-title { width: 76%; height: 1.75rem; }
 
@@ -941,6 +953,8 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   .facts { display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin-bottom: .7rem; }
   /* 并成一行之后，间隔由上面的 gap 管；段距不撤掉会把这一行顶歪。 */
   .facts > p + p { margin-top: 0; }
+  /* 返回也并进这一行：它自己的下距同样得撤，否则把行顶歪。 */
+  .piece-return { margin-bottom: 0; }
   .mark { margin-bottom: 0; }
   /* 保存条那两行也并进这一行。它在外面的 display:grid 比上面这条 .facts 更具体，
      得在这里让回 flex，间距才跟着换到 gap 上。 */

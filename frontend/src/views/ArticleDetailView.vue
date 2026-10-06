@@ -113,6 +113,7 @@ onUnmounted(() => controller?.abort());
       <article class="piece">
         <header class="piece-head row ruled">
           <div class="facts facts-stamp">
+            <p class="piece-return"><router-link class="piece-back" to="/">返回文章列表</router-link></p>
             <p class="key">{{ article.categoryName }}</p>
             <p><time class="date" :datetime="article.publishedAt">{{ formatDate(article.publishedAt) }}</time></p>
             <p>{{ article.readingMinutes }} 分钟阅读</p>

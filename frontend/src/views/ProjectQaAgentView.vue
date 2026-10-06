@@ -1,7 +1,8 @@
 <script setup>
-/* QA-Agent 的项目详情页。正文还没写，这里先把骨架立住：标题、一条回到首页的路、
-   一枚去应用的按钮，加上正文那一栏的位置。空着就空着——不摆空框，也不写「内容
-   建设中」，那类字比一片空白更像这一页坏了。 */
+/* QA-Agent 的项目详情页。正文还没写，这里先把骨架立住：标题、两条回到首页的路
+   （注文栏头上的一条给刚进来发现走错门的，页脚那条给读到底的）、一枚去应用的
+   链接，加上正文那一栏的位置。空着就空着——不摆空框，也不写「内容建设中」，
+   那类字比一片空白更像这一页坏了。 */
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import MarkdownIt from 'markdown-it';
@@ -35,16 +36,18 @@ onMounted(() => {
   <article class="piece">
     <header class="piece-head row ruled">
       <div class="facts">
+        <p class="piece-return"><router-link class="piece-back" to="/">返回首页</router-link></p>
         <p class="key">项目</p>
       </div>
       <div class="main">
         <!-- tabindex="-1" 是留给脚本聚焦的，见上面那段 onMounted。 -->
         <h1 ref="heading" class="piece-title" tabindex="-1">QA-Agent</h1>
-        <!-- 去应用的那一枚，是全站唯一还带「（新窗口）」提示的站内按钮。站外链接：
-             noopener 让新窗口拿不到本页的 window 句柄，noreferrer 顺手把来源也隐掉；
-             读屏用户听不见「会开新窗口」，所以要写出来。 -->
+        <!-- 去应用的那一枚，用站的链接语言说（.project-link，与首页「了解项目」同一支）
+             ——这一页只这一处动作，不必再长一个按钮的面。站外链接：noopener 让新窗口
+             拿不到本页的 window 句柄，noreferrer 顺手把来源也隐掉；读屏用户听不见
+             「会开新窗口」，所以要写出来。 -->
         <p class="piece-act">
-          <a class="pager-btn" :href="config.qaUrl" target="_blank" rel="noopener noreferrer">在线体验<span class="sr-only">（新窗口）</span></a>
+          <a class="project-link" :href="config.qaUrl" target="_blank" rel="noopener noreferrer">在线体验<span class="sr-only">（新窗口）</span></a>
         </p>
       </div>
     </header>
