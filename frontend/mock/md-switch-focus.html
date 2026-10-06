@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「看原文 / 看预览」聚焦记号 · 修复（甲，已落地）· 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 编辑器「看原文 / 看预览」那一行的键盘聚焦记号。2026-10-06 现场核对（CDP 探针实测）：
+   那两根单选是 sr-only——键盘走上去它确实聚焦了（:focus-visible 命中），但盒子只有 1×1、
+   clip-path: inset(50%)，那一圈环被裁掉；这一行也没有 .segmented 那样的
+   :has(input:focus-visible) 兜底。Tab 过去屏幕上什么都不亮。
+
+   ＊结论（2026-10-06 选定）：甲——外扩 3px（这一行没有外框，是文字型控件，跟全站
+   链接/按钮同档）。规则已落 src/styles.css 的 .md-switch 那条旁边；乙（2px）与两枚
+   候选规则已删。原稿在 C:\Users\Lenovo\AppData\Local\Temp\detail-mock\
+   md-switch-focus-原稿-20261006.html。
+
+   下面「修复前」那一格是把已落地的规则捂住、照当时的样子重现（规则如今会让它亮起来，
+   不捂就不是当时了）；「甲」那格的静态环与真规则逐条相同，点一下「看预览」→ 方向键
+   （radio 组的键盘走法），画出来的环就是产品规则画的。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.fam { margin-top: 4rem; }
+.fam > h3 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.fam p.why { margin-top: .5rem; }
+.demo { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 26rem)); gap: 2.5rem 4rem; align-items: start; justify-content: start; }
+.cell > * + * { margin-top: 1.25rem; }
+.cap { margin: 0; color: var(--muted); font-size: .8125rem; }
+/* 这一行不吸顶（这一页没有可滚的正文）。 */
+.demo .md-head { position: static; }
+.fam > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.fam > ul li + li { margin-top: .4rem; }
+.fam > ul b { color: var(--ink); font-weight: 600; }
+.fam > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* 修复前那一格：把已落地的产品规则捂住，照当时的样子重现。 */
+.as-before .md-switch:has(input:focus-visible) { outline: none; }
+
+/* —— 把「聚焦那一瞬间」按真规则画出来（属性与产品规则逐条相同）—— */
+.ring-3 { outline: 2px solid var(--seal); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<p class="intro">
+编辑器里「看原文 / 看预览」那一行：修复前键盘 Tab 过去，今天屏幕上什么都不亮（下一格）。
+甲案已选定并落地——圆圈的焦点交给外框整圈交代，照的是「草稿 / 已发布」分段那套；
+点一下「看预览」再按方向键，看到的环就是产品规则画的。
+</p>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 修复前 ═══════════════ -->
+
+<section class="fam">
+  <h3>修复前（当时的样子，按当时重现）</h3>
+  <p class="why">焦点确实在圆圈上（<code>:focus-visible</code> 命中），但环画在一个 1×1 且被 clip 裁掉的盒子上——屏幕上什么都不亮。这一格把已落地的规则捂住，重现当时。</p>
+  <div class="demo">
+    <div class="cell as-before" data-cell="before">
+      <p class="cap">Tab 到「看预览」上：不亮</p>
+      <div class="md-head">
+        <span class="md-label">Markdown 原文</span>
+        <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+          <input id="b-src" class="sr-only" type="radio" name="b-mode" value="source" checked>
+          <input id="b-pre" class="sr-only" type="radio" name="b-mode" value="preview">
+          <label class="link-quiet" for="b-pre">看预览</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 甲（已落地） ═══════════════ -->
+
+<section class="fam">
+  <h3>甲 · 焦点交给整圈（已落地）</h3>
+  <p class="why">规则在 <code>src/styles.css</code> 的 <code>.md-switch</code> 旁边：<code>.md-switch:has(input:focus-visible)</code> 给整圈画环，外扩 3px。环围的是那枚字（「看预览」／「看原文」随面换），和分段那套是同一个来路。</p>
+  <div class="demo">
+    <div class="cell" data-cell="fix-3">
+      <p class="cap">已落地 · 点「看预览」→ 方向键，环就是真规则画的</p>
+      <div class="md-head">
+        <span class="md-label">Markdown 原文</span>
+        <div class="md-switch ring-3" role="radiogroup" aria-label="正文显示方式">
+          <input id="j-src" class="sr-only" type="radio" name="j-mode" value="source" checked>
+          <input id="j-pre" class="sr-only" type="radio" name="j-mode" value="preview">
+          <label class="link-quiet" for="j-pre">看预览</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 说明 ═══════════════ -->
+
+<section class="fam">
+  <h3>说明</h3>
+  <ul>
+    <li><b>事实来源</b>：2026-10-06 的 CDP 探针实测——圆圈聚焦、<code>:focus-visible</code> 命中、盒子 1×1、<code>clip-path: inset(50%)</code>、标签 / 整行 / 开关组都没有任何环。这是缺记号（键盘用户在这一行没有落点提示），比多记号（两层环）严重。</li>
+    <li><b>为什么是甲（外扩 3px）</b>：这一行没有外框、围的就是那一枚字，和全站链接/按钮同档；2px 那档是给「围住整块」的复合控件（分段、搜索框）用的。两案当时并排看过，乙的环贴着字。</li>
+    <li><b>落点</b>：<code>src/styles.css</code> 里 <code>.md-switch</code> 那条旁边一行，规则逐字就是候选规则。分段那套（<code>.segmented:has(input:focus-visible)</code>）是这个模式的先例，不是新发明。</li>
+    <li><b>要怎么验</b>：点一下「看预览」→ 按方向键（radio 组走法），或 Tab 进这一行；环与上面静态画的重合。修复前那一格按住当时的样子：聚焦了仍然不亮。</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>

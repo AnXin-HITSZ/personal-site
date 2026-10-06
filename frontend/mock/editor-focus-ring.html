@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正文框的聚焦框 · 甲 内收（已落地）· 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：光标在正文框里、页面停在长文中间时，聚焦的那一圈框会把底下的保存条
+   「框」进去——该怎么收场。
+
+   怎么来的：三处落地的东西撞在一起。
+   ① 正文框跟着内容长（乙 跟随，2026-10-06 落地）：这一篇的框 1,389px，比一屏（900）
+      高，框的两条侧边从屏顶拉到屏底，永远看不到头尾；
+   ② 聚焦记号是一圈画在框外面的线：`.md-source:focus` 把 1px 的边框换成印色，全站那条
+      `:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px }` 再在外面
+      套一圈 2px 印色、外扩 3px；
+   ③ 保存条是钉在底下的一条纸色横带，位置就在框的正下方。
+
+   量过的事实（1600×900，正文停在框顶 -250px）：正文框的盒子 305–1281，保存条的盒子
+   也正好 305–1281——同宽。保存条横带的高度上，x=306（框沿那 1px）命中的是保存条，
+   被盖住了；x=303（外圈那 2px 所在）命中的是页面——它露在外面。于是中段时两条红线从
+   屏顶拉到屏底、贴着保存条两旁继续走，像把保存条框在输入框里面。滚到最底下时框底收
+   口、保存条回到流里，这一眼就没了（图 2 的样子）。
+
+   ＊结论（2026-10-06）：甲 内收——已选定并落地。
+
+   落地记录：
+   · 规则落点：src/styles.css 的 `.md-source:focus-visible { outline-offset: -2px }`，
+     紧挨原有的 `.md-source:focus { border-color: var(--seal) }`；只此一行。
+   · 为什么是甲：记号仍长在控件自己身上（和全站每个输入框一样），横带处一点红不露。
+     乙 把记号挪到钉住的那一行——永远看得见，但记号不在控件身上、键盘 Tab 进来只剩变色；
+     丙 只治保存条那一处碰撞，横带以外两条侧线照旧。
+   · 量出来的数（1600×900，正文停在框顶 -250px）：正文框与保存条的盒子同为 305–1281；
+     内收 2px 后环带落在框沿里面（约 305–307），全在保存条盒子的范围里，横带处不再露红；
+     红线走到保存条上缘就止住。滚到最底下框底收口，和普通输入框一样。
+   · 与「跟随」「吸顶」怎么分工：跟随（2026-10-06 落地）把框拉得比一屏高，吸顶把那一行
+     钉住；这一处只把聚焦环内收，三处互不依赖。
+   · 验证：自检全部通过（框 / 保存条几何、内收规则、横带处盖没盖住、窄屏同规则）；
+     npm run check、84 项测试、npm run build 全绿。
+
+   样片里省掉了中间那张表单（状态、标题、摘要、标签——与这一处无关），只留下头部、正文
+   框和保存条。正文是示意文字，比真稿排长了一点，好让框高过一屏。「看原文 / 看预览」真能
+   点：页尾那一小段脚本照抄产品的行为，正式那套在 AdminArticleEditView.vue 里。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 清单的选择器都收紧到 >：写成 `.variant ul`／`.variant code` 会套进样片里，
+   正文的 code、将来正文的列表都会被脚手架改掉，量出来的就不是产品的了。 */
+.variant > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant > ul li + li { margin-top: .4rem; }
+.variant > ul b { color: var(--ink); font-weight: 600; }
+.variant > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+</style>
+</head>
+<body>
+
+<p class="intro">
+写作台的编辑页（省了中间那张表单）：头部、一整幅的正文（原文 / 预览两面切换），保存条钉在底下。
+这一页落在稿样上的就是甲 内收（<code>outline-offset: -2px</code>，已落地）。这样试：<b>点进正文框里</b>，
+滚到正文中段——看屏幕最底下、保存条两旁（红线到保存条上缘就止住，不再贴着它走）；再滚到最底下，
+看框底收口的样子；在框里滚滚轮，页面照滚（上一处落地的那条）。
+</p>
+
+<!-- 样片底下滚的是那枚真报头。 -->
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 甲 内收（已落地） ═══════════════ -->
+
+<section class="variant">
+  <h2>甲 内收（已落地）</h2>
+  <p class="why">聚焦外圈从框外挪到框内（<code>outline-offset: -2px</code>，一行）。框沿还是聚焦时变印色，那一圈记号还长在控件自己身上——和全站每一个输入框一样。保存条的盒子与框同宽，内收之后的红线全落在保存条盒子的范围里：横带处不再有红露头，红线走到保存条上缘就止住。滚到最底下时，框底那一圈线收在框沿里面（比原先紧一齿）。</p>
+
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>ft64bqcc</p>
+      <p>写于 <time class="date" datetime="2026-09-21">09.21</time><br>改于 <time class="date" datetime="2026-10-05">10.05</time></p>
+      <p>1,424 字 · 约 5 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">从登录到鉴权：理解 JWT、访问令牌与刷新令牌</h1>
+      <p class="piece-summary">公开地址 <code>/articles/ft64bqcc/jwt-auth-tokens</code></p>
+    </div>
+  </section>
+
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label">Markdown 原文</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input id="a-body-source" class="sr-only" type="radio" name="a-body-mode" value="source" checked>
+        <input id="a-body-preview" class="sr-only" type="radio" name="a-body-mode" value="preview">
+        <label class="link-quiet" for="a-body-preview">看预览</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" aria-label="Markdown 原文" spellcheck="false" aria-describedby="a-body-keys">## 为什么需要 JWT？
+
+登录是一次交换：你交出一份凭据（邮箱和密码），服务端确认之后，给你一件能带在身上的东西。HTTP 天生不记事，每一次请求都是初见的陌生人——访问令牌就是那件随身带着的凭据。而在它之前，先要把「你是谁」写进一张纸条，再给这张纸条盖上章，这就是 JWT。
+
+> **注意：**签名不是加密。JWT 的负载只是 Base64URL 编码，复制出来谁都能读——签名保证的是「没被改过」，不是「没人看见」。密码、手机号这类不能公开的东西，不要放进令牌。
+
+最朴素的办法是服务端会话：存一张表，每次请求拿着 cookie 来查。一台机器时它简单好用；机器多了，每台都要看得见那张表，于是引入共享存储。JWT 换了个方向：状态还给客户端，服务端只验签名，不查表。
+
+```text
+POST /auth/login    邮箱 + 密码
+  → 200 { accessToken, refreshToken }
+后续请求            Authorization: Bearer &lt;accessToken&gt;
+  → 验签名 → 通过
+```
+
+## 一张 JWT 长什么样
+
+三段：头部、负载、签名，用点连起来。头部说用了哪种签名算法，负载放你要携带的事实——谁、什么时候过期，签名是前两段加上一把只有服务端知道的钥匙算出来的。前两段谁都能读，唯独签名伪造不了：改一个字符，验签就过不去。
+
+## HS256 还是 RS256
+
+对称算法只有一把钥匙，签和验用同一把。单服务时它够用；一旦有别的服务也要验签，就得把这把钥匙复制出去——能签名的钥匙落到别人手里，等于谁都能冒充你。所以跨服务时换 RS256：私钥签、公钥验，公钥公开也无妨。
+
+## 访问令牌与刷新令牌
+
+访问令牌短命，几十分钟就过期，偷去也只能用一个窗口。过期之后不想让人重新输密码，于是有了刷新令牌：它活得久，只在换新访问令牌时用一次。两者的保管方式也不同——访问令牌可以放在内存里，刷新令牌要放在更稳、也更难被脚本读到的地方。
+
+## 该把什么放进负载
+
+放能公开、且每次都用得上的事实：用户是谁、什么时候签发、什么时候过期、给哪个服务用。这四样够验签的一方认出人来，不必回表。别放密码、手机号、身份证号——负载是明文；也别放会经常变的东西，比如角色和权限：令牌发出去就改不动，改权限只能等它过期。
+
+## 密钥放哪
+
+HS256 只有一把钥匙，签和验都用它。钥匙进代码仓库、进前端包、进日志，都等于把签发权交出去——它只该待在服务端的配置里。RS256 拆成两把之后，验签的一方拿到公钥就够了：公钥公开没有关系，它只能验，不能签。换钥匙的时候两把的节奏也不同：公钥随时可换，私钥得让旧的先过期。
+
+## 什么时候别用 JWT
+
+只有一个后端、登录状态也简单的时候，会话 cookie 更省事：撤销是一行删除，改权限立刻生效，签名和过期也不用自己管。JWT 换来的是「不用查表」，代价是「发出去就改不动」。等有了多个服务要各自验签，这笔账才划算。
+
+## 服务端还留着什么
+
+状态并没有完全消失，只是换了位置。要能「让他立刻下线」，服务端还是得记一笔：哪些刷新令牌有效、哪一批已经作废。把这笔账记小、记少，才是 JWT 真正省下来的东西。
+
+把这几件事分开看，边界就清楚了：签名负责完整，过期负责时间，刷新负责续命，服务端那本小账负责反悔。</textarea>
+      <p id="a-body-keys" class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="a-file">插入图片</label>
+        <input id="a-file" class="sr-only" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="preview" hidden>
+      <div class="prose">
+        <p>登录是一次交换：你交出一份凭据（邮箱和密码），服务端确认之后，给你一件能带在身上的东西。HTTP 天生不记事，每一次请求都是初见的陌生人——访问令牌就是那件随身带着的凭据。而在它之前，先要把「你是谁」写进一张纸条，再给这张纸条盖上章，这就是 JWT。</p>
+        <blockquote>
+          <p><strong>注意：</strong>签名不是加密。JWT 的负载只是 Base64URL 编码，复制出来谁都能读——签名保证的是「没被改过」，不是「没人看见」。密码、手机号这类不能公开的东西，不要放进令牌。</p>
+        </blockquote>
+        <h2>为什么需要 JWT？</h2>
+        <p>最朴素的办法是服务端会话：存一张表，每次请求拿着 cookie 来查。一台机器时它简单好用；机器多了，每台都要看得见那张表，于是引入共享存储——会话从「内存里的一小块」变成「另一个必须一直活着的组件」。JWT 换了个方向：状态还给客户端，服务端只验签名，不查表。</p>
+        <pre><code>POST /auth/login    邮箱 + 密码
+  → 200 { accessToken, refreshToken }
+后续请求            Authorization: Bearer &lt;accessToken&gt;
+  → 验签名 → 通过</code></pre>
+        <h2>一张 JWT 长什么样</h2>
+        <p>三段：头部、负载、签名，用点连起来。头部说用了哪种签名算法，负载放你要携带的事实——谁、什么时候过期，签名是前两段加上一把只有服务端知道的钥匙算出来的。前两段谁都能读，唯独签名伪造不了：改一个字符，验签就过不去。</p>
+        <h2>HS256 还是 RS256</h2>
+        <p>对称算法只有一把钥匙，签和验用同一把。单服务时它够用；一旦有别的服务也要验签，就得把这把钥匙复制出去——能签名的钥匙落到别人手里，等于谁都能冒充你。所以跨服务时换 RS256：私钥签、公钥验，公钥公开也无妨。</p>
+        <h2>访问令牌与刷新令牌</h2>
+        <p>访问令牌短命，几十分钟就过期，偷去也只能用一个窗口。过期之后不想让人重新输密码，于是有了刷新令牌：它活得久，只在换新访问令牌时用一次。两者的保管方式也不同——访问令牌可以放在内存里，刷新令牌要放在更稳、也更难被脚本读到的地方。</p>
+        <h2>该把什么放进负载</h2>
+        <p>放能公开、且每次都用得上的事实：用户是谁、什么时候签发、什么时候过期、给哪个服务用。这四样够验签的一方认出人来，不必回表。别放密码、手机号、身份证号——负载是明文；也别放会经常变的东西，比如角色和权限：令牌发出去就改不动，改权限只能等它过期。</p>
+        <h2>密钥放哪</h2>
+        <p>HS256 只有一把钥匙，签和验都用它。钥匙进代码仓库、进前端包、进日志，都等于把签发权交出去——它只该待在服务端的配置里。RS256 拆成两把之后，验签的一方拿到公钥就够了：公钥公开没有关系，它只能验，不能签。换钥匙的时候两把的节奏也不同：公钥随时可换，私钥得让旧的先过期。</p>
+        <h2>什么时候别用 JWT</h2>
+        <p>只有一个后端、登录状态也简单的时候，会话 cookie 更省事：撤销是一行删除，改权限立刻生效，签名和过期也不用自己管。JWT 换来的是「不用查表」，代价是「发出去就改不动」。等有了多个服务要各自验签，这笔账才划算。</p>
+        <h2>服务端还留着什么</h2>
+        <p>状态并没有完全消失，只是换了位置。要能「让他立刻下线」，服务端还是得记一笔：哪些刷新令牌有效、哪一批已经作废。把这笔账记小、记少，才是 JWT 真正省下来的东西。</p>
+        <p>把这几件事分开看，边界就清楚了：签名负责完整，过期负责时间，刷新负责续命，服务端那本小账负责反悔。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">改动都保存了</p>
+      <p class="save-note-clean">删掉就没有了。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button">保存</button>
+      <a class="link-quiet act-away" href="#">查看公开页<span class="sr-only">（新窗口）</span></a>
+      <button class="act-danger act-away" type="button">删除这一篇</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 说明 ═══════════════ -->
+
+<section class="variant">
+  <h2>说明</h2>
+  <ul>
+    <li><b>这一眼是怎么来的</b>：三处落地的东西撞在一起——① 正文框跟着内容长（乙 跟随）：这一篇的框 1,389px，比一屏（900）高，两条侧边从屏顶拉到屏底；② 聚焦记号是一圈画在框外面的线：<code>.md-source:focus</code> 把 1px 的边框换成印色，全站那条 <code>:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px }</code> 再在外面套一圈 2px 印色、外扩 3px；③ 保存条是钉在底下的纸色横带，位置就在框的正下方。</li>
+    <li><b>量过的事实</b>（1600×900，正文停在框顶 -250px）：正文框的盒子 305–1281，保存条的盒子也正好 305–1281——同宽。保存条横带的高度上，x=306（框沿那 1px）命中的是保存条、被盖住了；x=303（外圈那 2px 所在）命中的是页面——它露在外面。所以中段时两条红线从屏顶拉到屏底、贴着保存条两旁继续走。滚到最底下时框底收口、保存条回到流里，这一眼就不存在了。内收 2px 之后环带落在框沿里面（约 305–307），横带把它连着框沿一起盖住。</li>
+    <li><b>为什么是甲</b>：甲只给 <code>.md-source</code> 加一句 <code>outline-offset: -2px</code>——记号仍长在控件身上，横带处不露红；乙把记号挪到钉住的那一行（永远看得见，但记号不在控件身上、键盘 Tab 进来只剩变色）；丙给 <code>.save</code> 垫纸色伪元素（只治横带那一处，横带以外两条侧线照旧）。三案都只动聚焦这一处，正文那一面一个字不动。</li>
+    <li><b>要怎么验</b>：样片支持真点、真滚——点进框里，滚到中段（框顶滚出屏幕、框底还在屏幕外）看保存条两旁；再滚到最底下看收口的样子；键盘 Tab 进来也试一次（聚焦记号的可见性）。</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+/* 切面这一小段照抄产品的行为（两根 radio + v-show、字跟着换）——只为让样片能切着看
+   两面；正式那套在 AdminArticleEditView.vue 里，是 Vue 的事，不是要落地的代码。 */
+for (const md of document.querySelectorAll('.md')) {
+  const [toSource, toPreview] = md.querySelectorAll('.md-switch input');
+  const word = md.querySelector('.md-label');
+  const link = md.querySelector('.md-switch label');
+  for (const radio of [toSource, toPreview]) {
+    radio.addEventListener('change', () => {
+      const mode = radio.value;
+      word.textContent = mode === 'source' ? 'Markdown 原文' : '预览';
+      link.textContent = mode === 'source' ? '看预览' : '看原文';
+      link.setAttribute('for', mode === 'source' ? toPreview.id : toSource.id);
+      for (const pane of md.querySelectorAll('.md-pane')) {
+        pane.hidden = pane.dataset.pane !== mode;
+      }
+    });
+  }
+}
+</script>
+
+</body>
+</html>

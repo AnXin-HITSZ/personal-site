@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>聚焦长相一览 · 现状 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 全站「聚焦那一瞬间」的长相一览——现状这一份。每一种可点的东西摆一格，静态按真规则
+   画出聚焦那一瞬间，也都能真点、真 Tab 验。
+
+   ＊结论（2026-10-06 选定）：维持现状——甲（内收 2px）只留在正文框，不推广到全站。
+   当时对照的「一统」候选（环一律内收）已按约删去，原稿在
+   C:\Users\Lenovo\AppData\Local\Temp\detail-mock\focus-look-原稿-20261006.html。
+   否掉一统的理由留在下面「说明」一节；两层环与面切换不亮两处事实也都是那次的现场记录。
+
+   静态画的环不是另画的：.ring-3 / .ring-2 / .ring-in 用的属性与产品规则逐条相同（同色、
+   同宽、同偏移），所以 Tab / 点过去时真规则画的与它重合。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.fam { margin-top: 4rem; }
+.fam > h3 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.fam p.why { margin-top: .5rem; }
+/* 一格摆中间，两格并排；窄屏自己摞起来。 */
+.demo { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 26rem)); gap: 2.5rem 4rem; align-items: start; justify-content: start; }
+.cell > * + * { margin-top: 1.25rem; }
+.cap { margin: 0; color: var(--muted); font-size: .8125rem; }
+/* 附记那一格里要那一行的原样，但它不吸顶（这一页没有可滚的正文）。 */
+.demo .md-head { position: static; }
+/* 正文框的真身有 40rem 的地板；这一页只摆记号，给矮一点省地方——与聚焦记号无关。 */
+.demo .md-source { min-height: 8rem; }
+.fam > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.fam > ul li + li { margin-top: .4rem; }
+.fam > ul b { color: var(--ink); font-weight: 600; }
+.fam > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* —— 把「聚焦那一瞬间」按真规则画出来（属性与产品规则逐条相同）—— */
+.ring-3 { outline: 2px solid var(--seal); outline-offset: 3px; }
+.ring-2 { outline: 2px solid var(--seal); outline-offset: 2px; }
+.ring-in { outline: 2px solid var(--seal); outline-offset: -2px; }
+</style>
+</head>
+<body>
+
+<p class="intro">
+全站可点的东西都收在这一页上，每一种摆出它聚焦那一瞬间的样子。静态画的环就是用真规则画的，
+每一格也都能真点、真 Tab——键盘走一遍，和画出来的对一对。
+</p>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 链接与文字型按钮 ═══════════════ -->
+
+<section class="fam">
+  <h3>链接与文字型按钮（没有框、没有内边距）</h3>
+  <p class="why">外扩 3px：这些盒子就是字自己，环画在字外的空地上；这也是否掉「一统」的主因之一——内收的话环要压在字上。</p>
+  <div class="demo">
+    <div class="cell" data-cell="link-now">
+      <p class="cap">现状（外扩 3px）</p>
+      <p>发文前先看一眼<a class="ring-3" href="#">公开地址</a>长什么样。</p>
+      <p><a class="link-quiet ring-3" href="#">查看公开页</a></p>
+      <div class="filters" role="group" aria-label="文章分类">
+        <button class="filter ring-3" type="button" aria-pressed="true">后端</button>
+        <button class="filter" type="button">前端</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 有框的输入 ═══════════════ -->
+
+<section class="fam">
+  <h3>有框的输入（标题、摘要、下拉）</h3>
+  <p class="why">外扩 3px + 边框变印色：环在框外，和「边框变印色」各说各的，互不打架。</p>
+  <div class="demo">
+    <div class="cell" data-cell="input-now">
+      <p class="cap">现状（边框变印色 + 外圈 3px）</p>
+      <div class="field">
+        <label class="field-label" for="t-title">标题</label>
+        <input id="t-title" class="field-input input-title ring-3" type="text" value="从登录到鉴权：理解 JWT、访问令牌与刷新令牌">
+      </div>
+      <div class="field">
+        <label class="field-label" for="t-sum">摘要</label>
+        <textarea id="t-sum" class="field-area ring-3" rows="2">浏览器 → 自己的后端 → OSS；AK/SK 只留在服务器上。</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="t-cat">分类</label>
+        <span class="select"><select id="t-cat" class="ring-3"><option>后端</option></select></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 实心按钮 ═══════════════ -->
+
+<section class="fam">
+  <h3>实心按钮（「保存」）</h3>
+  <p class="why">外扩 3px：全站唯一一块满印色的面——环也是印色，只有画在框外（纸色上）才看得见；这是否掉「一统」的另一个主因。</p>
+  <div class="demo">
+    <div class="cell" data-cell="primary-now">
+      <p class="cap">现状（外扩 3px，画在纸色上）</p>
+      <p><button class="primary ring-3" type="button">保存</button></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 复合外框 · 搜索 ═══════════════ -->
+
+<section class="fam">
+  <h3>复合外框 · 搜索（文章列表页、写作台列表页）</h3>
+  <p class="why">焦点交给整圈外框交代（外扩 2px），里面的输入行自己不画。焦点 Tab 到「搜索」那颗按钮上时会有两层环（外框 + 按钮自己 3px）——鼠标点按钮时只有外框一层。</p>
+  <div class="demo">
+    <div class="cell" data-cell="search-in-now">
+      <p class="cap">现状 · 焦点在输入行</p>
+      <form class="search ring-2" role="search">
+        <label class="sr-only" for="s-now">搜索文章标题与摘要</label>
+        <input id="s-now" type="search" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+    <div class="cell" data-cell="search-btn-now">
+      <p class="cap">现状 · 焦点在「搜索」按钮（两层环）</p>
+      <form class="search ring-2" role="search">
+        <label class="sr-only" for="s-now2">搜索文章标题与摘要</label>
+        <input id="s-now2" type="search" placeholder="搜索标题或摘要" maxlength="100">
+        <button class="ring-3" type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 复合外框 · 标签框 ═══════════════ -->
+
+<section class="fam">
+  <h3>复合外框 · 标签框（编辑页、筛选）</h3>
+  <p class="why">和搜索同一套。Tab 走到某片标签的 × 上时同样两层环。</p>
+  <div class="demo">
+    <div class="cell" data-cell="tags-in-now">
+      <p class="cap">现状 · 焦点在输入行</p>
+      <div class="tags ring-2">
+        <span class="tag">jwt<button type="button" aria-label="移除标签 jwt">×</button></span>
+        <span class="tag">鉴权<button type="button" aria-label="移除标签 鉴权">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+    </div>
+    <div class="cell" data-cell="tags-x-now">
+      <p class="cap">现状 · 焦点在 × 上（两层环）</p>
+      <div class="tags ring-2">
+        <span class="tag">jwt<button class="ring-3" type="button" aria-label="移除标签 jwt">×</button></span>
+        <span class="tag">鉴权<button type="button" aria-label="移除标签 鉴权">×</button></span>
+        <input type="text" placeholder="键入后按 Enter" autocomplete="off">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 分段 · 状态 ═══════════════ -->
+
+<section class="fam">
+  <h3>分段 · 状态（草稿 / 已发布）</h3>
+  <p class="why">外扩 2px：整圈交代做得最干净的一处（圆圈是 sr-only，环只画在围住整块的外框上）。</p>
+  <div class="demo">
+    <div class="cell" data-cell="seg-now">
+      <p class="cap">现状（外框往外 2px）</p>
+      <div class="segmented ring-2" role="radiogroup" aria-label="状态">
+        <input id="t-draft" class="sr-only" type="radio" name="t-seg" value="draft" checked>
+        <label for="t-draft">草稿</label>
+        <input id="t-pub" class="sr-only" type="radio" name="t-seg" value="published">
+        <label for="t-pub">已发布</label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 正文框 ═══════════════ -->
+
+<section class="fam">
+  <h3>正文框（甲，2026-10-06 落地）</h3>
+  <p class="why">内收 2px：全站唯一一处。框能比一屏还高、框沿会被底下的保存条盖住，所以它的环必须在里面；别的控件四周有空地，环留在外面最亮。</p>
+  <div class="demo">
+    <div class="cell" data-cell="md-now">
+      <p class="cap">现状（内收 2px）</p>
+      <textarea class="md-source ring-in" aria-label="Markdown 原文" spellcheck="false">## 为什么需要 JWT？
+
+签名负责完整，过期负责时间，刷新负责续命——把这几件事分开看，边界就清楚了。</textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 附记 · 面切换 ═══════════════ -->
+
+<section class="fam">
+  <h3>附记 · 编辑器里「看原文 / 看预览」那一行（缺记号，待修）</h3>
+  <p class="why">查现场时核对过的一处事实：那两根单选是 sr-only——键盘走上去它确实聚焦了（<code>:focus-visible</code> 命中），但盒子只有 1×1、<code>clip-path: inset(50%)</code>，那一圈环被裁掉；这一行也没有 <code>.segmented</code> 那样的 <code>:has(input:focus-visible)</code> 兜底。Tab 过去屏幕上什么都不亮——这是缺记号，比多记号（上面的两层环）严重。修复案已另出稿样（<code>md-switch-focus.html</code>），待选定。</p>
+  <div class="demo">
+    <div class="cell" data-cell="switch-now">
+      <p class="cap">Tab 到「看预览」上：什么都不亮（今天的样子）</p>
+      <div class="md-head">
+        <span class="md-label">Markdown 原文</span>
+        <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+          <input id="x-src" class="sr-only" type="radio" name="x-mode" value="source" checked>
+          <input id="x-pre" class="sr-only" type="radio" name="x-mode" value="preview">
+          <label class="link-quiet" for="x-pre">看预览</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 说明 ═══════════════ -->
+
+<section class="fam">
+  <h3>说明</h3>
+  <ul>
+    <li><b>三档各有各的原因</b>：通用控件外扩 3px——四周空旷，环在外面最好认；搜索、标签框、分段外扩 2px——环围的是比控件大一圈的外框，少一齿才贴得住；正文框内收 2px（甲）——框沿会被保存条盖住，环只能在里面。三档是三次取舍的结果，不是三次随手。</li>
+    <li><b>当时否掉「一统」（环一律内收）的理由</b>：①「保存」那颗实心按钮——环和底同是印色，记号整个消失（自检探针确认环色 = 底色 = 印色）；②链接、安静链接、筛选按钮——没有内边距的盒子，环压在字上；③搜索、标签框、分段——环从「围着整件东西」退进框里，和外框那 1px 叠成 3px 的粗边；④有框的输入——能用，但「多一圈」变成「边框变粗」，弱了一层；⑤标签的 ×——比字还小的盒子，环贴到字上。</li>
+    <li><b>两层环（搜索按钮、标签 ×）</b>：只在键盘 Tab 到那颗小按钮上时出现——外框的 <code>:focus-within</code> 画一圈（2px），按钮自己又命中全站 <code>:focus-visible</code>（3px）。鼠标点按钮不出第二层（<code>:focus-visible</code> 不命中），只剩外框一圈。决定：保留——外面那圈交代「焦点在这一件东西里」，里面那圈交代具体在哪颗按钮上，不算噪音。里面的输入行和 sr-only 圆圈不会双环（前者 <code>outline: none</code>，后者被裁）。</li>
+    <li><b>要怎么验</b>：每一格都能真点、真 Tab；静态画的环与真聚焦用的是同一组属性（同色、同宽、同偏移），键盘走上去会重合。附记那一格也照实：Tab 到「看预览」上，屏幕上确实什么都不亮。</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+/* 搜索框在稿样里不让它真提交（提交会把这一页自己刷新掉）。 */
+for (const form of document.querySelectorAll('.search')) form.addEventListener('submit', e => e.preventDefault());
+</script>
+
+</body>
+</html>

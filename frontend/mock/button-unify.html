@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>按钮统一 · 三案 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：站里「按钮 / 动作」的长相太多，收成一套。
+
+   2026-10-06 清点（对照你贴的五款）：现在有这些族——
+   ① .primary 实心印色面：写新的一篇、保存、登录、注册、保存新口令、发送重置链接……
+   ② .pager-btn 描边盒：上一页/下一页、返回文章列表、重新加载、查看全部文章、
+      退出登录、移除设备、取消、插入图片、回登录、重新发送验证邮件
+   ③ .btn-danger 描边印色盒：就地展开的删除确认里的「确认删除」
+   ④ .act / .act-danger 灰字细线（13px）：行内工具——编辑 / 查看公开页 / 删除、
+      上移 / 下移 / 改名 / 删除
+   ⑤ .link-quiet 印字印线：页面级的安静出口——分类、查看公开页（编辑台）、放弃改动、
+      放弃这一篇、去建一个分类、重试、忘记口令、去登录、回文章列表、全部 N 篇
+   （导航当前是「墨字 + 印线」，筛选选中是「印字 + 印线」，也算线族的两调。）
+   控件容器不算按钮、这次不动：输入框、下拉、分段、搜索框、标签框、搜索钮、标签 ×。
+
+   方向：全站动作收成「一支笔」——字 + 一条细线；「面」只留给控件。
+   三案是同一支笔的逐级更安静，从热闹到安静：
+   甲（推荐）· 一支笔、两语气——两族盒子（②③）收进线族；灰 = 平常动作（悬停转墨，
+     删除悬停转印），印 = 页面级的安静出口（原样）+ 当前 / 选中（导航当前从墨字对到
+     印字）+ 确认删除；主操作仍是唯一一块实心面。
+   乙 · 一支笔、一语气——在甲上把印调的安静出口也归灰；印只留给主操作面、当前 / 选中、
+     确认删除、正文里的链接。
+   丙 · 全安静——在乙上把主操作的面也撤掉（保存 / 登录变印字印线）；全站不再有任何
+     按钮的「面」。
+
+   ＊结论（2026-10-06 选定）：丙——全安静。规则已落 src/styles.css（描边盒、印色盒、
+   满印色的面三族，加 nav 当前项与保存条里 act-danger 的字号；零模板改动）。落地后
+   的整站页面见 button-quiet-pages.html；四块板留此存照。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.fam { margin-top: 4rem; }
+.fam > h3 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.fam p.why { margin-top: .5rem; }
+/* auto-fit 数列数时，minmax 的 max 是定值就按 max 数（量出来的：minmax(19rem, 30rem)
+   在 976 宽里只排得下一列 30rem）。max 放开成 1fr（不定值）才按 min 数：17rem 起，
+   一屏三列。窄屏底下那一行兜住。 */
+.demo { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 2.5rem 4rem; align-items: start; justify-content: start; }
+@media (max-width: 40rem) { .demo { grid-template-columns: 1fr; } }
+.cell > * + * { margin-top: 1.25rem; }
+.cap { margin: 0; color: var(--muted); font-size: .8125rem; }
+.fam > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.fam > ul li + li { margin-top: .4rem; }
+.fam > ul b { color: var(--ink); font-weight: 600; }
+.fam > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* 格子里的排法照产品各处：一般一行 1.25rem（tools-acts / entry-acts 同档）、
+   保存条 1.5rem（save-actions）。 */
+.try-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.try-save { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.try-nav { display: flex; }
+/* 格子里的导航把 1.75rem 的间距收到 1rem——原样五颗（含 QA-Agent）在 282px 的
+   格里挤到逐字换行，看不出当前项的样子。 */
+.demo .nav { gap: 1rem; }
+
+/* —— 候选甲 / 乙 / 丙共用：灰字细线（替下 .pager-btn 那族盒子；行内工具沿用
+   产品的 .act 一族，不动）。与 .act 同一支笔，只是字号随页面级动作（14px）。 —— */
+.gb {
+  font-size: var(--facts-size);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 .1rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .18s ease, border-bottom-color .18s ease;
+}
+.gb:hover { color: var(--ink); border-bottom-color: currentColor; }
+/* 保存条里的「删除这一篇」：页面级动作，字号跟到 14px（原样是行内那档 13px）。 */
+.t14 { font-size: var(--facts-size); }
+/* 导航当前：从「墨字 + 印线」对到「印字 + 印线」，与筛选选中同一款。 */
+.nav a.nav-live { color: var(--seal); }
+</style>
+</head>
+<body>
+
+<p class="intro">
+站里的按钮现在有五族长相（你贴的那五款都在里面）。下面先摆现状，再摆三案——三案都把
+「盒子」收成「字 + 细线」，差别只在印色留多少：甲 保留页面级安静出口的印调（推荐），
+乙 把印调出口也归灰，丙 连主操作的面也撤掉。每格都能悬停着看。
+</p>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 现状 ═══════════════ -->
+
+<section class="fam" data-board="now">
+  <h3>现状 · 五族</h3>
+  <p class="why">你贴的五款：①「写新的一篇」= .primary ②「退出登录」= .pager-btn（描边盒）③ 导航当前「分类」= 墨字 + 印线 ④ 写作台工具行的「分类」= .link-quiet 印字印线 ⑤「编辑 / 查看公开页 / 删除」= .act 一族灰字细线。③④⑤ 已经是「字+线」，乱的是 ②③ 那两族盒子（还有一个少见的 .btn-danger 描边印色盒）。</p>
+  <div class="demo">
+    <div class="cell" data-cell="a">
+      <p class="cap">① 写作台 · 工具行</p>
+      <div class="try-row">
+        <a class="link-quiet" href="#">分类</a>
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+    <div class="cell" data-cell="b">
+      <p class="cap">② 列表条目 · 行内工具（13px）</p>
+      <p class="entry-acts">
+        <a class="act" href="#">编辑</a>
+        <a class="act" href="#">查看公开页</a>
+        <button class="act-danger" type="button">删除</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="c">
+      <p class="cap">③ 就地展开的删除确认</p>
+      <div class="confirm">
+        <p><strong>删除《从登录到鉴权：理解 JWT、访问令牌与刷新令牌》？</strong></p>
+        <p>这一篇已经发布，公开地址 <code>/articles/7k3m9q2f/golang-jwt</code> 会立刻失效。没有回收站，删掉就找不回来了。</p>
+        <div class="confirm-actions">
+          <button class="btn-danger" type="button">删除这一篇</button>
+          <button class="pager-btn" type="button">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="cell" data-cell="d">
+      <p class="cap">④ 编辑台 · 保存条</p>
+      <p class="try-save">
+        <button class="primary" type="button">保存</button>
+        <button class="link-quiet" type="button">放弃改动</button>
+        <a class="link-quiet" href="#">查看公开页</a>
+        <button class="act-danger" type="button">删除这一篇</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="e">
+      <p class="cap">⑤ 过道动作（返回、翻页、退出、插入图片…）</p>
+      <p class="try-row">
+        <a class="pager-btn" href="#">返回文章列表</a>
+        <button class="pager-btn" type="button">重新加载</button>
+        <button class="pager-btn" type="button" disabled>上一页</button>
+        <button class="pager-btn" type="button">下一页</button>
+        <button class="pager-btn" type="button">退出登录</button>
+        <label class="pager-btn upload-btn">插入图片</label>
+      </p>
+    </div>
+    <div class="cell" data-cell="f">
+      <p class="cap">⑥ 当前与选中（导航当前 vs 筛选选中）</p>
+      <div class="try-nav">
+        <nav class="nav" aria-label="导航样例">
+          <a href="#">文章</a>
+          <a class="nav-here" href="#">分类</a>
+          <a href="#">QA-Agent</a>
+          <a href="#">写作</a>
+          <a href="#">账号</a>
+        </nav>
+      </div>
+      <div class="filters" role="group" aria-label="文章分类">
+        <button class="filter" type="button" aria-pressed="false">全部</button>
+        <button class="filter" type="button" aria-pressed="true">后端</button>
+        <button class="filter" type="button" aria-pressed="false">前端</button>
+      </div>
+    </div>
+    <div class="cell" data-cell="g">
+      <p class="cap">⑦ 登录与页面级出口</p>
+      <p class="try-row">
+        <button class="primary" type="button">登录</button>
+        <a class="link-quiet" href="#">忘记口令</a>
+      </p>
+      <p class="try-row">
+        <a class="primary" href="#">去登录</a>
+        <a class="link-quiet" href="#">回文章列表</a>
+        <a class="link-quiet" href="#">全部 12 篇</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 甲 ═══════════════ -->
+
+<section class="fam" data-board="jia">
+  <h3>甲（推荐）· 一支笔、两语气</h3>
+  <p class="why">两族盒子收进线族：过道动作（描边盒）变灰字细线，悬停转墨；确认框里那句「删除这一篇」变印字印线（它是那一刻的重音，借的是错误提示那支印色）。导航当前从墨字对到印字——「当前」全站只剩一款记号（与筛选选中同款）。页面级的安静出口（分类、放弃改动、忘记口令…）保持今天的印调；主操作仍是唯一一块实心面。行内工具（编辑 / 查看公开页 / 删除）原样不动。</p>
+  <div class="demo">
+    <div class="cell" data-cell="a">
+      <p class="cap">① 写作台 · 工具行（不动）</p>
+      <div class="try-row">
+        <a class="link-quiet" href="#">分类</a>
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+    <div class="cell" data-cell="b">
+      <p class="cap">② 行内工具（不动）</p>
+      <p class="entry-acts">
+        <a class="act" href="#">编辑</a>
+        <a class="act" href="#">查看公开页</a>
+        <button class="act-danger" type="button">删除</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="c">
+      <p class="cap">③ 删除确认：盒 → 印字印线 + 灰字细线</p>
+      <div class="confirm">
+        <p><strong>删除《从登录到鉴权：理解 JWT、访问令牌与刷新令牌》？</strong></p>
+        <p>这一篇已经发布，公开地址 <code>/articles/7k3m9q2f/golang-jwt</code> 会立刻失效。没有回收站，删掉就找不回来了。</p>
+        <div class="confirm-actions">
+          <button class="link-quiet" type="button">删除这一篇</button>
+          <button class="gb" type="button">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="cell" data-cell="d">
+      <p class="cap">④ 保存条：面 + 印调出口 + 灰调删除（字号对齐 14px）</p>
+      <p class="try-save">
+        <button class="primary" type="button">保存</button>
+        <button class="link-quiet" type="button">放弃改动</button>
+        <a class="link-quiet" href="#">查看公开页</a>
+        <button class="act-danger t14" type="button">删除这一篇</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="e">
+      <p class="cap">⑤ 过道动作：盒 → 灰字细线（悬停转墨）</p>
+      <p class="try-row">
+        <a class="gb" href="#">返回文章列表</a>
+        <button class="gb" type="button">重新加载</button>
+        <button class="gb" type="button" disabled>上一页</button>
+        <button class="gb" type="button">下一页</button>
+        <button class="gb" type="button">退出登录</button>
+        <label class="gb upload-btn">插入图片</label>
+      </p>
+    </div>
+    <div class="cell" data-cell="f">
+      <p class="cap">⑥ 当前与选中：「当前」都成印字印线</p>
+      <div class="try-nav">
+        <nav class="nav" aria-label="导航样例">
+          <a href="#">文章</a>
+          <a class="nav-here nav-live" href="#">分类</a>
+          <a href="#">QA-Agent</a>
+          <a href="#">写作</a>
+          <a href="#">账号</a>
+        </nav>
+      </div>
+      <div class="filters" role="group" aria-label="文章分类">
+        <button class="filter" type="button" aria-pressed="false">全部</button>
+        <button class="filter" type="button" aria-pressed="true">后端</button>
+        <button class="filter" type="button" aria-pressed="false">前端</button>
+      </div>
+    </div>
+    <div class="cell" data-cell="g">
+      <p class="cap">⑦ 登录与页面级出口（不动）</p>
+      <p class="try-row">
+        <button class="primary" type="button">登录</button>
+        <a class="link-quiet" href="#">忘记口令</a>
+      </p>
+      <p class="try-row">
+        <a class="primary" href="#">去登录</a>
+        <a class="link-quiet" href="#">回文章列表</a>
+        <a class="link-quiet" href="#">全部 12 篇</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 乙 ═══════════════ -->
+
+<section class="fam" data-board="yi">
+  <h3>乙 · 一支笔、一语气</h3>
+  <p class="why">在甲上再安静一步：页面级的安静出口（分类、放弃改动、查看公开页、忘记口令、回文章列表、全部 N 篇…）也归灰字细线。印色只剩四处：主操作的面、当前 / 选中、确认删除、正文里的链接。</p>
+  <div class="demo">
+    <div class="cell" data-cell="a">
+      <p class="cap">① 写作台 · 工具行：「分类」归灰</p>
+      <div class="try-row">
+        <a class="gb" href="#">分类</a>
+        <a class="primary" href="#">写新的一篇</a>
+      </div>
+    </div>
+    <div class="cell" data-cell="b">
+      <p class="cap">② 行内工具（不动）</p>
+      <p class="entry-acts">
+        <a class="act" href="#">编辑</a>
+        <a class="act" href="#">查看公开页</a>
+        <button class="act-danger" type="button">删除</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="c">
+      <p class="cap">③ 删除确认：同甲</p>
+      <div class="confirm">
+        <p><strong>删除《从登录到鉴权：理解 JWT、访问令牌与刷新令牌》？</strong></p>
+        <p>这一篇已经发布，公开地址 <code>/articles/7k3m9q2f/golang-jwt</code> 会立刻失效。没有回收站，删掉就找不回来了。</p>
+        <div class="confirm-actions">
+          <button class="link-quiet" type="button">删除这一篇</button>
+          <button class="gb" type="button">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="cell" data-cell="d">
+      <p class="cap">④ 保存条：出口全归灰，印只剩「保存」</p>
+      <p class="try-save">
+        <button class="primary" type="button">保存</button>
+        <button class="gb" type="button">放弃改动</button>
+        <a class="gb" href="#">查看公开页</a>
+        <button class="act-danger t14" type="button">删除这一篇</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="e">
+      <p class="cap">⑤ 过道动作：同甲</p>
+      <p class="try-row">
+        <a class="gb" href="#">返回文章列表</a>
+        <button class="gb" type="button">重新加载</button>
+        <button class="gb" type="button" disabled>上一页</button>
+        <button class="gb" type="button">下一页</button>
+        <button class="gb" type="button">退出登录</button>
+        <label class="gb upload-btn">插入图片</label>
+      </p>
+    </div>
+    <div class="cell" data-cell="f">
+      <p class="cap">⑥ 当前与选中：同甲</p>
+      <div class="try-nav">
+        <nav class="nav" aria-label="导航样例">
+          <a href="#">文章</a>
+          <a class="nav-here nav-live" href="#">分类</a>
+          <a href="#">QA-Agent</a>
+          <a href="#">写作</a>
+          <a href="#">账号</a>
+        </nav>
+      </div>
+      <div class="filters" role="group" aria-label="文章分类">
+        <button class="filter" type="button" aria-pressed="false">全部</button>
+        <button class="filter" type="button" aria-pressed="true">后端</button>
+        <button class="filter" type="button" aria-pressed="false">前端</button>
+      </div>
+    </div>
+    <div class="cell" data-cell="g">
+      <p class="cap">⑦ 登录与出口：出口归灰</p>
+      <p class="try-row">
+        <button class="primary" type="button">登录</button>
+        <a class="gb" href="#">忘记口令</a>
+      </p>
+      <p class="try-row">
+        <a class="primary" href="#">去登录</a>
+        <a class="gb" href="#">回文章列表</a>
+        <a class="gb" href="#">全部 12 篇</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 丙 ═══════════════ -->
+
+<section class="fam" data-board="bing">
+  <h3>丙 · 全安静（连主操作也不留面）</h3>
+  <p class="why">在乙上再进一步：主操作也撤掉面，成印字印线——全站不再有任何按钮的「面」，字 + 细线一统到底。保存 / 登录 / 写新的一篇 就是页面上最重的那行印字。代价：主操作失去「唯一一块实心」的重音，一屏里它和确认框里那句「删除这一篇」是同一档长相。</p>
+  <div class="demo">
+    <div class="cell" data-cell="a">
+      <p class="cap">① 写作台 · 工具行：两个都是线</p>
+      <div class="try-row">
+        <a class="gb" href="#">分类</a>
+        <a class="link-quiet" href="#">写新的一篇</a>
+      </div>
+    </div>
+    <div class="cell" data-cell="b">
+      <p class="cap">② 行内工具（不动）</p>
+      <p class="entry-acts">
+        <a class="act" href="#">编辑</a>
+        <a class="act" href="#">查看公开页</a>
+        <button class="act-danger" type="button">删除</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="c">
+      <p class="cap">③ 删除确认：同甲</p>
+      <div class="confirm">
+        <p><strong>删除《从登录到鉴权：理解 JWT、访问令牌与刷新令牌》？</strong></p>
+        <p>这一篇已经发布，公开地址 <code>/articles/7k3m9q2f/golang-jwt</code> 会立刻失效。没有回收站，删掉就找不回来了。</p>
+        <div class="confirm-actions">
+          <button class="link-quiet" type="button">删除这一篇</button>
+          <button class="gb" type="button">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="cell" data-cell="d">
+      <p class="cap">④ 保存条：保存也成印字印线</p>
+      <p class="try-save">
+        <button class="link-quiet" type="button">保存</button>
+        <button class="gb" type="button">放弃改动</button>
+        <a class="gb" href="#">查看公开页</a>
+        <button class="act-danger t14" type="button">删除这一篇</button>
+      </p>
+    </div>
+    <div class="cell" data-cell="e">
+      <p class="cap">⑤ 过道动作：同甲</p>
+      <p class="try-row">
+        <a class="gb" href="#">返回文章列表</a>
+        <button class="gb" type="button">重新加载</button>
+        <button class="gb" type="button" disabled>上一页</button>
+        <button class="gb" type="button">下一页</button>
+        <button class="gb" type="button">退出登录</button>
+        <label class="gb upload-btn">插入图片</label>
+      </p>
+    </div>
+    <div class="cell" data-cell="f">
+      <p class="cap">⑥ 当前与选中：同甲</p>
+      <div class="try-nav">
+        <nav class="nav" aria-label="导航样例">
+          <a href="#">文章</a>
+          <a class="nav-here nav-live" href="#">分类</a>
+          <a href="#">QA-Agent</a>
+          <a href="#">写作</a>
+          <a href="#">账号</a>
+        </nav>
+      </div>
+      <div class="filters" role="group" aria-label="文章分类">
+        <button class="filter" type="button" aria-pressed="false">全部</button>
+        <button class="filter" type="button" aria-pressed="true">后端</button>
+        <button class="filter" type="button" aria-pressed="false">前端</button>
+      </div>
+    </div>
+    <div class="cell" data-cell="g">
+      <p class="cap">⑦ 登录与出口：登录也成线</p>
+      <p class="try-row">
+        <button class="link-quiet" type="button">登录</button>
+        <a class="gb" href="#">忘记口令</a>
+      </p>
+      <p class="try-row">
+        <a class="link-quiet" href="#">去登录</a>
+        <a class="gb" href="#">回文章列表</a>
+        <a class="gb" href="#">全部 12 篇</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 说明 ═══════════════ -->
+
+<section class="fam">
+  <h3>说明</h3>
+  <ul>
+    <li><b>事实来源</b>：2026-10-06 对着 <code>src/styles.css</code> 与全部视图清点，按钮共五族（盒两族、线三族，见页头注释）；你贴的五款对上是：写新的一篇=.primary / 退出登录=.pager-btn / 导航当前「分类」= 墨字 + 印线 / 写作台「分类」=.link-quiet / 编辑·查看公开页·删除=.act 一族。</li>
+    <li><b>三案的共同动作</b>：②描边盒、③描边印色盒 两族全部收进「字 + 细线」——过道动作变灰字细线（悬停转墨），确认框里那句「删除这一篇」变印字印线（它是那一刻的重音，借的是错误提示那支印色）；导航当前从墨字对到印字（与筛选选中同款）；行内工具（13px 那族）与全部控件原样不动。行内 13px、页面级 14px 的分档也维持现状。</li>
+    <li><b>三案的分岔</b>：甲 保留页面级安静出口的印调（今天 <code>.link-quiet</code> 的样子——「分类」「放弃改动」「忘记口令」这些）；乙 把它们也归灰，印只剩主操作面、当前/选中、确认删除、正文链接；丙 连主操作的面也撤（保存 / 登录变印字印线）。</li>
+    <li><b>我推荐甲</b>：你点名的两种线（印调、灰调）都保留，各管各的——乱的是那两族盒子，收进线族以后，全站就只剩「面（一屏一块）+ 两种线」。乙、丙更安静，代价是安静出口、甚至主操作失去记号；若偏好走到头，就选丙，页面上一个面都不剩。</li>
+    <li><b>没动的东西</b>：输入框 / 下拉 / 分段 / 搜索框与它的「搜索」钮 / 标签框与标签 ×（这些是控件容器，不是按钮）；正文里的链接与项目页的「在线体验」（内容里的链接语言）；导航普通项、页脚链接与「返回链」（这次没在里，若要一起收可另说）。</li>
+    <li><b>要怎么验</b>：每格悬停——灰字细线转墨、删除转印、印字印线转墨；翻页里禁用那颗是 45% 透明度（原样）；⑥ 的导航「分类」与筛选「后端」应长得一样（甲/乙/丙）；丙 的 ⑦ 里没有实心面，「保存 / 登录」就是一行印字。</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>

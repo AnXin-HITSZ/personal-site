@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>搜索框的清除钮 · 修复（乙，已落地）· 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：搜索框里那颗清除钮（type=search 自带）的长相。2026-10-06 查过：
+   src/styles.css 里没有任何 ::-webkit-search-cancel-button 规则，从没人管过它——
+   Chromium/Edge 上是浏览器默认的粗蓝 ✕，跟站里对不上。两处搜索框：文章列表页
+   （ArticleList.vue）与写作台列表页（AdminArticleListView.vue）。
+
+   ＊结论（2026-10-06 选定）：乙——原生钮重塑。-webkit-appearance:none + mask 画同款 ×，
+   灰字，悬停输入行时转印色（照标签的 ×）。规则已落 src/styles.css 的 .search 旁边；
+   甲（自绘真按钮）未选，格子与它的规则已删。原稿在 C:\Users\Lenovo\AppData\Local\
+   Temp\detail-mock\search-clear-原稿-20261006.html（里面有换皮前的现状与两案对照）。
+
+   和 .select 同一个做法：浏览器自带的东西，留行为、换皮——点击清空、Esc 清空都还是
+   原样（自检探针实测过点击路径）。出现时机也是浏览器自己的（有词、且聚焦或悬停时才
+   出现——这台 Chromium 上如此；无值不出现），换皮没碰它。只对 Chromium/WebKit 系生效。
+
+   下面这一页直接吃 src/styles.css：两格搜索框都是产品规则画的，悬停看看。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.fam { margin-top: 4rem; }
+.fam > h3 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.fam p.why { margin-top: .5rem; }
+.demo { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 24rem)); gap: 2.5rem 4rem; align-items: start; justify-content: start; }
+.cell > * + * { margin-top: 1.25rem; }
+.cap { margin: 0; color: var(--muted); font-size: .8125rem; }
+.fam > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.fam > ul li + li { margin-top: .4rem; }
+.fam > ul b { color: var(--ink); font-weight: 600; }
+.fam > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+</style>
+</head>
+<body>
+
+<p class="intro">
+搜索框里的清除钮（什么时候出现是浏览器自己说了算：这台 Chromium 上有词、且聚焦或悬停时
+才出现）原来长的是浏览器默认的粗蓝 ✕，站里从没管过它。落地方是乙——还是那枚原生钮
+（点击、Esc 都原样），只换皮：灰字的细 ×，悬停输入行时转印色，照的是站里已有的那颗 ×
+（下面对照）。这一页的两格搜索框就是落地后的真样子。
+</p>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 落地后 · 两处搜索框 ═══════════════ -->
+
+<section class="fam">
+  <h3>落地后 · 一条规则，两处搜索框</h3>
+  <p class="why">都是真控件：打印几个字、点右端那颗 ×，或者按 Esc——清空、光标回输入行，都还是浏览器原样。悬停输入行时 × 转印色。</p>
+  <div class="demo">
+    <div class="cell" data-cell="list">
+      <p class="cap">文章列表页的搜索框</p>
+      <form class="search" role="search">
+        <label class="sr-only" for="c-list">搜索文章标题与摘要</label>
+        <input id="c-list" type="search" value="JWT" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+    <div class="cell" data-cell="admin">
+      <p class="cap">写作台列表页的搜索框（同一条规则）</p>
+      <form class="search" role="search">
+        <label class="sr-only" for="c-admin">搜索文章标题与摘要</label>
+        <input id="c-admin" type="search" value="JWT" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 对照 ═══════════════ -->
+
+<section class="fam">
+  <h3>对照：标签的 ×（站里已有的 × 长相）</h3>
+  <p class="why">灰字、悬停变印色、不带边框——换皮的落点就是照它这一族。</p>
+  <div class="demo">
+    <div class="cell" data-cell="ref">
+      <p class="cap">标签片上的 ×（动它悬停看看）</p>
+      <p>
+        <span class="tag">jwt<button type="button" aria-label="移除标签 jwt">×</button></span>
+        <span class="tag">鉴权<button type="button" aria-label="移除标签 鉴权">×</button></span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 说明 ═══════════════ -->
+
+<section class="fam">
+  <h3>说明</h3>
+  <ul>
+    <li><b>落点</b>：<code>src/styles.css</code> 的 <code>.search</code> 旁边两条规则——换皮一条（<code>-webkit-appearance:none</code> + mask 画 ×，灰字），悬停一条（<code>input:hover</code> 时转印色）。字体色与形状都是站里的 token，字号随输入框。</li>
+    <li><b>当时的样子</b>：Chromium/Edge 自带的粗蓝 ✕——探针截图与原稿留档（原稿路径见页头注释）。换皮前它跟输入框、按钮、标签都不是一家的。</li>
+    <li><b>甲为什么没选</b>：自绘真按钮要在两个视图各加一枚按钮与几行脚本，还得把原生钮藏掉；清除钮属于「浏览器自带」这一类东西，照 <code>.select</code> 的做法留行为、换皮即可，一条规则两处生效，没有要维护的脚本。</li>
+    <li><b>要怎么验</b>：聚焦或悬停、且有词时，右端那颗是灰字的细 ×（出现时机是原生原样，换皮没碰）；悬停输入行时转印色；点它或按 Esc 都真清空；两处搜索框同一个长相。只对 Chromium/WebKit 系生效（本来就不长这颗钮的浏览器不受影响）。</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+/* 稿样里不让搜索真提交（提交会把这一页自己刷新掉）。 */
+for (const form of document.querySelectorAll('form.search')) form.addEventListener('submit', e => e.preventDefault());
+</script>
+
+</body>
+</html>
