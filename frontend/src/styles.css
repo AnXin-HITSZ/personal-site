@@ -827,12 +827,38 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
 /* 标签自己那点下边距在这里由 .md-head 出，两处都留着会白多一段 —— 留着它这一行就
    比原来那行标签高，切面时整段跟着长。 */
 .md-head .md-label { margin-bottom: 0; }
+/* 「看预览／看原文」这一行往下翻时钉在报头底下——不钉的话，翻到正文深处想切回去
+   得一路滚回顶上。三条各管一件事：
+
+   钉在哪：top 用 --masthead-h，和锚点让位是同一条线。桌面它是 89.6px，而报头实际
+   高 77.9px——差值那一段由报头淡出的不透明段盖着，滑过的东西不会从缝里露出来；
+   窄屏这条线自己变成 73.6px。谁压谁：报头的淡出从它底边往下再伸 52px，正好扫在
+   这一行头上，压在它下面这行字会被 99%→35% 的纸色罩住，所以取 6——它只压那道淡出，
+   两个盒子永远不碰面（吸点 89.6 > 报头底 77.9）；保存条仍在底下（4），一上一下互不
+   相干。自己的底：纸色，内容从底下滑过由它盖住。
+
+   收口用细线不用报头那样的淡出：这一行上面永远有正文，而淡出只能是常驻的，会把
+   滑过去的头几行一直压暗——保存条当时就是这么选的。线是画出来的，不是 border：
+   这一行的高度量过（见下面 .md-switch 那条注释），加 1px 边框会把正文框顶端推下去
+   1px，线用画的就不占位置；.ruled 的线也是这么画的。 */
+.md-head { position: sticky; top: var(--masthead-h); z-index: 6; background: var(--paper); }
+.md-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--rule);
+}
 /* 这一层的字号要跟着里面那枚字走：它默认继承正文的 17px，比那枚字（14px）大，
    空行按大的那一行算，整行因此比原来那行标签高 5.5px（31.45 vs 25.9）。定成同一个
    字号，正文框顶端就回到原来那个位置。 */
 .md-switch { margin-left: auto; cursor: pointer; font-size: var(--facts-size); }
-/* 正文框不给拖，也不设高度上限：一屏装满还有余，往下写靠页面滚，不再有内外两层
-   滚动条打架。 */
+/* 正文框不给拖。装不下的往哪儿去：页面滚，不是框滚——一屏装满还有余，往下写靠页面
+   滚，不再有内外两层滚动条打架。40rem 只是地板：空稿、短稿还是整页的样子，短稿切
+   过去两面照样等高；不设上限，因为正文是文档本身，加上限等于恰好在最长的稿子上把
+   内滚还回来（摘要框才有上限：它是有长度限制的字段）。 */
 .md-source {
   display: block;
   width: 100%;
@@ -845,6 +871,12 @@ a.primary:hover { background: var(--ink); border-color: var(--ink); }
   font-family: var(--stack-mono);
   font-size: .875rem;
   line-height: 1.8;
+}
+/* 上面那句「靠页面滚」要写成规则才算数——改这一块时只写了「不给拖」，这条漏了，
+   框一直是个固定高的窗口。包在 @supports 里，照上面 .field-area 那条的先例：不认
+   这条的浏览器退回固定一窗、框内滚动，也就是从那以后一直的样子。 */
+@supports (field-sizing: content) {
+  .md-source { field-sizing: content; }
 }
 /* 原文这一格里插进去的是真制表符，预览那一面把它画出来 —— 两处得是同一个宽度，
    不然同一个代码块在两边缩进的格数看着不一样。浏览器默认 8。 */

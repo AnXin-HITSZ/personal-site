@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写作台的吸顶切换行 · 甲 细线收口 · 最终稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：写作台里「看预览 / 看原文」那一行往下滚时钉住——它底下那条收口怎么做。
+
+   你提的用法：点开「看预览」往下翻，翻到正文深处想切回原文，得一路滚回顶上。所以它
+   要像报头一样钉住。三案里定的是甲：乙（报头那样的淡出）在这一行上不成立——它上面
+   永远有正文在滑过，淡出只能是常驻的，滑过去的头几行会一直被压暗；丙的硬边则让正文
+   贴着一条看不见的线被切掉。甲的细线本来就是这一页分段的记号。
+
+   ＊结论（2026-10-06）：甲 细线收口——已选定并落地，规则在 src/styles.css 的「写作
+   台」一节（挨着 .md 那一块），量过的数记在下文「落地记录」。那条线是画出来的
+   （.md-head::after），不是 border-bottom：这一行的高度是量过的，加 1px 边框会把
+   正文框顶端推下去 1px。乙、丙两张样片已按选择删除。
+
+   样片里「看原文 / 看预览」真能点——页尾那一小段脚本照抄产品的行为（两根 radio +
+   v-show、字跟着换），正式那套在 AdminArticleEditView.vue 里。正文是示意文字，
+   为了滚得动，不是要发表的内容。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 清单的选择器都收紧到 >：写成 `.variant ul`／`.variant code` 会套进样片里，
+   正文的 code、将来正文的列表都会被脚手架改掉，量出来的就不是产品的了。 */
+.variant > ul { margin-top: 1.25rem; max-width: var(--measure); padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.variant > ul li + li { margin-top: .4rem; }
+.variant > ul b { color: var(--ink); font-weight: 600; }
+.variant > ul code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* —— 产品的规则已落地：src/styles.css「写作台」一节（.md-head 的 position / top /
+   z-index / background，加画那条线的 ::after），一个字都不在这里抄——看到的就是
+   落地后的样子；下面只剩演示的脚手架。 */
+</style>
+</head>
+<body>
+
+<p class="intro">
+写作台的编辑页：头部、表单，然后是一整幅的正文（原文 / 预览两面切换），保存条钉在底下。
+往下翻时「看预览 / 看原文」这一行钉在报头底下——滚到「预览」深处看它钉住的样子，停在
+原处看静息的样子（那条细线是常驻的，没钉住时也在）；拖窄窗口，吸点从 89.6px 变成
+73.6px。样片里的「看原文 / 看预览」真能点。
+</p>
+
+<!-- 样片底下滚的是那枚真报头：报头与切换行的配合就在这儿看。 -->
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a class="nav-here" href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+<!-- ═══════════════ 甲 细线收口 ═══════════════ -->
+
+<section class="variant">
+  <h2>甲 细线收口（已落地）</h2>
+  <p class="why">钉住时照保存条那一支：下边缘压一条细线（<code>--rule</code>）收口——站里为「上面永远有东西」的位置已经定过一次这条线（见 styles.css 保存条那段注释）。静息时它也在，只是那时它是这一页分段本来的记号。切到原文那一面，细线下面 7.2px 就是正文框自己那条更深的边，两条线并排——滚一滚、切一面看看。</p>
+
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">地址</span><br>ft64bqcc</p>
+      <p>写于 <time class="date" datetime="2026-09-21">09.21</time><br>改于 <time class="date" datetime="2026-10-05">10.05</time></p>
+      <p>2,764 字 · 约 11 分钟</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">从登录到鉴权：理解 JWT、访问令牌与刷新令牌</h1>
+      <p class="piece-summary">公开地址 <code>/articles/ft64bqcc/jwt-auth-tokens</code></p>
+    </div>
+  </section>
+
+  <form class="composer row ruled">
+    <p class="facts">状态决定它现在外面看不看得到</p>
+    <div class="composer-form">
+      <div class="field">
+        <span id="c1-status-label" class="field-label">状态</span>
+        <div class="status-row">
+          <div class="segmented" role="radiogroup" aria-labelledby="c1-status-label">
+            <input id="c1-status-draft" class="sr-only" type="radio" name="c1-status" value="draft">
+            <label for="c1-status-draft">草稿</label>
+            <input id="c1-status-published" class="sr-only" type="radio" name="c1-status" value="published" checked>
+            <label for="c1-status-published">已发布</label>
+          </div>
+          <p class="field-hint">保存后改动立刻在外面可见。</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="c1-title">标题</label>
+        <input id="c1-title" class="field-input input-title" type="text" value="从登录到鉴权：理解 JWT、访问令牌与刷新令牌">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="c1-summary">摘要</label>
+        <textarea id="c1-summary" class="field-area" rows="3">JWT 如何携带身份信息，又如何通过签名建立信任？本文从登录流程出发，介绍 JWT 的结构、HS256 与 RS256 的区别、后端验证流程，以及访问令牌、刷新令牌和服务端会话的协作方式，厘清签名、加密、认证与鉴权之间的边界。</textarea>
+        <p class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+      </div>
+
+      <div class="field-pair">
+        <div class="field">
+          <label class="field-label" for="c1-slug">地址里的名字</label>
+          <input id="c1-slug" class="field-input" type="text" value="jwt-auth-tokens">
+          <p class="field-hint">改它不会让任何既有链接失效——地址里真正管用的是 id。</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="c1-category">分类</label>
+          <span class="select">
+            <select id="c1-category">
+              <option value="backend" selected>后端开发</option>
+              <option value="frontend">前端开发</option>
+              <option value="ai">AI</option>
+              <option value="notes">随笔</option>
+            </select>
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="c1-tags">标签</label>
+        <div class="tags">
+          <span class="tag">JWT<button type="button" aria-label="移除标签 JWT">×</button></span>
+          <span class="tag">鉴权与授权<button type="button" aria-label="移除标签 鉴权与授权">×</button></span>
+          <span class="tag">Token<button type="button" aria-label="移除标签 Token">×</button></span>
+          <span class="tag">Web 安全<button type="button" aria-label="移除标签 Web 安全">×</button></span>
+          <span class="tag">后端开发<button type="button" aria-label="移除标签 后端开发">×</button></span>
+          <input id="c1-tags" type="text" placeholder="键入后按 Enter" autocomplete="off">
+        </div>
+        <p class="field-hint">按 Enter 加一个。最多 10 个，每个不超过 32 个字符。已加 5 个。</p>
+      </div>
+    </div>
+  </form>
+
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label">预览</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input id="c1-body-source" class="sr-only" type="radio" name="c1-body-mode" value="source">
+        <input id="c1-body-preview" class="sr-only" type="radio" name="c1-body-mode" value="preview" checked>
+        <label class="link-quiet" for="c1-body-source">看原文</label>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="source" hidden>
+      <textarea class="md-source" aria-label="Markdown 原文" spellcheck="false" aria-describedby="c1-body-keys">## 为什么需要 JWT？
+
+登录是一次交换：你交出一份凭据（邮箱和密码），服务端确认之后，给你一件能带在身上的东西。HTTP 天生不记事，每一次请求都是初见的陌生人——访问令牌就是那件随身带着的凭据。而在它之前，先要把「你是谁」写进一张纸条，再给这张纸条盖上章，这就是 JWT。
+
+> **注意：**签名不是加密。JWT 的负载只是 Base64URL 编码，复制出来谁都能读——签名保证的是「没被改过」，不是「没人看见」。密码、手机号这类不能公开的东西，不要放进令牌。
+
+最朴素的办法是服务端会话：存一张表，每次请求拿着 cookie 来查。一台机器时它简单好用；机器多了，每台都要看得见那张表，于是引入共享存储。JWT 换了个方向：状态还给客户端，服务端只验签名，不查表。
+
+```text
+POST /auth/login    邮箱 + 密码
+  → 200 { accessToken, refreshToken }
+后续请求            Authorization: Bearer &lt;accessToken&gt;
+  → 验签名 → 通过
+```
+
+## 一张 JWT 长什么样
+
+三段：头部、负载、签名，用点连起来。头部说用了哪种签名算法，负载放你要携带的事实——谁、什么时候过期，签名是前两段加上一把只有服务端知道的钥匙算出来的。
+
+## HS256 还是 RS256
+
+对称算法只有一把钥匙，签和验用同一把。一旦有别的服务也要验签，就得把这把钥匙复制出去。跨服务时换 RS256：私钥签、公钥验。
+
+## 访问令牌与刷新令牌
+
+访问令牌短命，几十分钟就过期。刷新令牌活得久，只在换新访问令牌时用一次。访问令牌可以放在内存里，刷新令牌要放在更稳的地方。
+
+## 服务端还留着什么
+
+要能「让他立刻下线」，服务端还是得记一笔：哪些刷新令牌有效、哪一批已经作废。把这笔账记小、记少，才是 JWT 真正省下来的东西。</textarea>
+      <p id="c1-body-keys" class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+      <div class="md-tools">
+        <label class="pager-btn upload-btn" for="c1-file">插入图片</label>
+        <input id="c1-file" class="sr-only" type="file" accept="image/*">
+        <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+      </div>
+    </div>
+
+    <div class="md-pane" data-pane="preview">
+      <div class="prose">
+        <p>登录是一次交换：你交出一份凭据（邮箱和密码），服务端确认之后，给你一件能带在身上的东西。HTTP 天生不记事，每一次请求都是初见的陌生人——访问令牌就是那件随身带着的凭据。而在它之前，先要把「你是谁」写进一张纸条，再给这张纸条盖上章，这就是 JWT。</p>
+        <blockquote>
+          <p><strong>注意：</strong>签名不是加密。JWT 的负载只是 Base64URL 编码，复制出来谁都能读——签名保证的是「没被改过」，不是「没人看见」。密码、手机号这类不能公开的东西，不要放进令牌。</p>
+        </blockquote>
+        <h2>为什么需要 JWT？</h2>
+        <p>最朴素的办法是服务端会话：存一张表，每次请求拿着 cookie 来查。一台机器时它简单好用；机器多了，每台都要看得见那张表，于是引入共享存储——会话从「内存里的一小块」变成「另一个必须一直活着的组件」。JWT 换了个方向：状态还给客户端，服务端只验签名，不查表。</p>
+        <pre><code>POST /auth/login    邮箱 + 密码
+  → 200 { accessToken, refreshToken }
+后续请求            Authorization: Bearer &lt;accessToken&gt;
+  → 验签名 → 通过</code></pre>
+        <h2>一张 JWT 长什么样</h2>
+        <p>三段：头部、负载、签名，用点连起来。头部说用了哪种签名算法，负载放你要携带的事实——谁、什么时候过期，签名是前两段加上一把只有服务端知道的钥匙算出来的。前两段谁都能读，唯独签名伪造不了：改一个字符，验签就过不去。</p>
+        <h2>HS256 还是 RS256</h2>
+        <p>对称算法只有一把钥匙，签和验用同一把。单服务时它够用；一旦有别的服务也要验签，就得把这把钥匙复制出去——能签名的钥匙落到别人手里，等于谁都能冒充你。所以跨服务时换 RS256：私钥签、公钥验，公钥公开也无妨。</p>
+        <h2>访问令牌与刷新令牌</h2>
+        <p>访问令牌短命，几十分钟就过期，偷去也只能用一个窗口。过期之后不想让人重新输密码，于是有了刷新令牌：它活得久，只在换新访问令牌时用一次。两者的保管方式也不同——访问令牌可以放在内存里，刷新令牌要放在更稳、也更难被脚本读到的地方。</p>
+        <h2>服务端还留着什么</h2>
+        <p>状态并没有完全消失，只是换了位置。要能「让他立刻下线」，服务端还是得记一笔：哪些刷新令牌有效、哪一批已经作废。把这笔账记小、记少，才是 JWT 真正省下来的东西。</p>
+        <p>把这几件事分开看，边界就清楚了：签名负责完整，过期负责时间，刷新负责续命，服务端那本小账负责反悔。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="save row ruled" data-dirty="false" data-leaving="false">
+    <div class="facts">
+      <p class="save-state-clean">改动都保存了</p>
+      <p class="save-note-clean">删掉就没有了。</p>
+    </div>
+    <div class="main save-actions">
+      <button class="primary" type="button">保存</button>
+      <a class="link-quiet act-away" href="#">查看公开页<span class="sr-only">（新窗口）</span></a>
+      <button class="act-danger act-away" type="button">删除这一篇</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 落地记录 ═══════════════ -->
+
+<section class="variant">
+  <h2>落地记录</h2>
+  <ul>
+    <li><b>规则落点</b>：styles.css「写作台」一节、<code>.md-head .md-label</code> 与 <code>.md-switch</code> 之间加两条——<code>.md-head</code>（<code>position: sticky</code>、<code>top: var(--masthead-h)</code>、<code>z-index: 6</code>、<code>background: var(--paper)</code>）与画那条线的 <code>.md-head::after</code>（left / right / bottom 全 0，高 1px，<code>--rule</code>）。线用画的不用 <code>border-bottom</code>：这一行的高度是量过的（<code>.md-switch</code> 那条注释，25.9px 是照着原来那行标签调的），1px 边框会把正文框顶端推下去 1px；站里 <code>.ruled</code> 的线也是这么画的。</li>
+    <li><b>为什么是甲</b>：这一行上面永远有正文在滑过，位置与保存条同类——淡出只能是常驻的，会把滑过去的头几行一直压暗（保存条当时就没选它）；丙的硬边让正文贴着一条看不见的线被切掉。乙的暗，是把三案钉住状态的同一段标题裁出来对过的。</li>
+    <li><b>与报头怎么分工</b>：吸点 <code>var(--masthead-h)</code>（桌面 89.6px / 窄屏 73.6px）就是锚点让位那条线，报头实际高 77.9px，差值那一段由报头淡出的不透明段盖着。z 6 只压报头那道从 77.9 伸到 129.9 的淡出——两个盒子永远不碰面（89.6 &gt; 77.9）；保存条仍在底下（4），一上一下互不相干。吸程是 <code>.md</code> 这一段自身的高度：滚过段尾，这一行被推出去，行下那点间隙（sticky 约束的是 margin box）跟着留在段里。切面、换字的行为一个字没动。</li>
+    <li><b>这一页上还有另一处（不属于这一问）</b>：正文框「跟随」——框跟着内容长、整页只有一处滚动，2026-10-06 定的是乙，已落地；它的最终稿与记录在 <code>editor-autogrow.html</code>。两份样片现在都是两处落地后的样子：往下翻，这一行钉住，正文框不再自己滚。</li>
+    <li><b>验证</b>：无头逐条对 18 项全过——钉点 89.6（窄屏 73.6）且与报头底不相碰、sticky + z 6 + 纸色、细线 1px <code>--rule</code> 画在行底、行上没有边框、静息与原文那一面到正文框的间隙都还是 .45rem（线没占布局）、报头 0 / 切换行 89.6 / 保存条 900（z 4）三层同框、切面脚本翻字翻面、矮窗口里滚到段尾它跟着出去；1600×900 与 560×800 两档截图看过；<code>npm run check</code>、84 项测试、<code>npm run build</code> 全绿。</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+/* 切面这一小段照抄产品的行为（两根 radio + v-show、字跟着换）——只为让样片能切着看
+   两面；正式那套在 AdminArticleEditView.vue 里，是 Vue 的事，不是要落地的代码。 */
+for (const md of document.querySelectorAll('.md')) {
+  const [toSource, toPreview] = md.querySelectorAll('.md-switch input');
+  const word = md.querySelector('.md-label');
+  const link = md.querySelector('.md-switch label');
+  for (const radio of [toSource, toPreview]) {
+    radio.addEventListener('change', () => {
+      const mode = radio.value;
+      word.textContent = mode === 'source' ? 'Markdown 原文' : '预览';
+      link.textContent = mode === 'source' ? '看预览' : '看原文';
+      link.setAttribute('for', mode === 'source' ? toPreview.id : toSource.id);
+      for (const pane of md.querySelectorAll('.md-pane')) {
+        pane.hidden = pane.dataset.pane !== mode;
+      }
+    });
+  }
+}
+</script>
+
+</body>
+</html>
