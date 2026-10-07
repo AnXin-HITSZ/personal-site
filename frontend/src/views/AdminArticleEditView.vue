@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import MarkdownIt from 'markdown-it';
+import { renderMarkdown } from '../markdown.js';
 import {
   articleLimits, articleProblems, createArticle, getAdminArticle, updateArticle, uploadImage,
 } from '../api/admin-articles.js';
@@ -66,9 +66,8 @@ const uploading = ref(false);
 const uploaded = ref('');
 const uploadError = ref('');
 
-/* markdown-it 默认 html: false，正文里的 HTML 会被转义后原样显示——和详情页同一套。 */
-const markdown = new MarkdownIt();
-const preview = computed(() => markdown.render(form.body));
+/* 预览与详情页同一套渲染（src/markdown.js）。 */
+const preview = computed(() => renderMarkdown(form.body));
 
 function snapshot(source) {
   return {

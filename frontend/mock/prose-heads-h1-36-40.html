@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正文标题 · 一级 36 与 40 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 一级两档比较（2026-10-07，接 prose-heads-scale.html）。
+
+   用户圈定丙（全梯 +4px），判据是「标题字号应该比正文更大或持平」——
+   丙里 h6 与正文持平（18）、其余更大。丙既定，剩一级的底子没选：
+   甲一（32）底加 4 是 36，甲二（36）底加 4 是 40。
+
+   两格只有一级不同（字号与上距），h2–h6 逐字相同：
+     左  一级 36（2.25rem）／上距 3.5rem —— 甲一底 + 丙
+     右  一级 40（2.5rem） ／上距 4rem   —— 甲二底 + 丙
+
+   ＊结论（选定）：一级 40（甲二底）。但「只动一级」的口径随后改为整梯同起
+   （prose-heads-ladder-36-40.html）——最终 40/32/28/26/24/22，已落地。
+
+   一级要比照的对象是页面文章标题：clamp(2.5rem, 5vw, 3.75rem)，
+   即 40–60px。一级取 40 时，正值它的下沿。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.intro + .intro { margin-top: .9rem; }
+.intro code, .why code { font-family: var(--stack-mono); font-size: .8125rem; }
+.variant { margin-top: 4rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+.demo { margin-top: 2rem; }
+.demo .prose { max-width: var(--measure); }
+
+/* —— 丙的梯子（h2–h6 两格共用；选定后移植进 styles.css）——
+   共享项与甲案一致：宋体、400、行高 1.4、字距 .01em、下边距归零；
+   上距沿用甲案现值：3 / 2.25 / 2 / 1.75rem。 */
+.case-c.prose h3, .case-c.prose h4, .case-c.prose h5, .case-c.prose h6 {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: .01em;
+  margin-bottom: 0;
+}
+.case-c.prose h2 { font-size: 1.75rem; margin-top: 3rem; }
+.case-c.prose h3 { font-size: 1.5rem; margin-top: 2.25rem; }
+.case-c.prose h4 { font-size: 1.375rem; margin-top: 2rem; }
+.case-c.prose h5 { font-size: 1.25rem; margin-top: 1.75rem; color: var(--muted); }
+.case-c.prose h6 { font-size: 1.125rem; margin-top: 1.75rem; color: var(--muted); }
+
+/* 一级：两格各一条，只有字号与上距。serif 400／1.4／.01em 沿用产品共享规则。 */
+.case-h36.prose h1 { font-size: 2.25rem; margin-top: 3.5rem; }
+.case-h40.prose h1 { font-size: 2.5rem; margin-top: 4rem; }
+/* 窄屏与产品的 h2（2.5rem）同一节补的。 */
+@media (max-width: 44rem) {
+  .case-h36.prose h1 { margin-top: 3rem; }
+  .case-h40.prose h1 { margin-top: 3.25rem; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a class="nav-here" href="#">文章</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">登录</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+丙既定（h2 28 · h3 24 · h4 22 · h5 20灰 · h6 18灰，正文 18 是尺子），剩一级的底子。两格只有一级不同：
+左边一级 36（甲一 32 加 4）、右边 40（甲二 36 加 4），二级往下逐字相同。示例文与上一稿一致，方便逐行对照。
+</p>
+<p class="intro">
+一级要比照的对象是页面文章标题（40–60px）：右边这一档 40 正好落在它的下沿。
+<b>＊结论（选定）：一级 40——口径后改为整梯同起，最终版见 prose-final.html。</b>
+</p>
+
+<section class="variant">
+  <h2>甲一底：一级 36（2.25rem）</h2>
+  <p class="why">上距 3.5rem。比二级（28）高一整级 8px；与页面文章标题的下沿（40）还留 4px。</p>
+  <section class="row ruled demo" data-demo="pick-36">
+    <div class="facts"><p>一级 36</p></div>
+    <div class="main">
+      <div class="prose case-c case-h36">
+        <p>先说令牌的用处，再拆结构：它是一张通行证——验证方不用查库，就能确认「这串数据是本站签的、还没过期」。</p>
+        <h1>一级标题：令牌的全貌</h1>
+        <p>JWT 由三段 base64url 拼成：头部说明这个令牌怎么被验证，载荷放声明，签名把前两段连起来做一次 MAC 或 RSA 签名。</p>
+        <h2>二级标题：签名的两半</h2>
+        <p>验证分两步：先验签名，再验声明。签名对了但声明过期，令牌照样不能用——这两步大多数实现都放在同一个中间件里，顺序不能反。</p>
+        <h3>三级标题：HMAC 还是 RSA</h3>
+        <p>对称密钥算得快，代价是验证方也能签发；非对称的一把钥匙只签不验。本站自己签、自己验，没有第三方验证方，所以用 HMAC。</p>
+        <p>对照一行：<strong>整句加粗之后是这个样子，请和上面的三级标题并排比一比，分不出来就说明三级该改。</strong></p>
+        <h4>四级标题：密钥轮换</h4>
+        <p>换密钥那天，旧令牌还得认——验证端同时认新旧两把钥匙，等最长的过期时间过去，旧钥匙才能下线。</p>
+        <h5>五级标题：再深一层</h5>
+        <p>更深的层在正文里很少出现，放一段只为看清五级落在什么位置、和正文差多少。</p>
+        <h6>六级标题：最深的层</h6>
+        <p>六级之后没有了。这一段收尾，用来看六级与正文之间的距离。</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<section class="variant">
+  <h2>甲二底：一级 40（2.5rem）</h2>
+  <p class="why">上距 4rem。比二级（28）高 12px；正值页面文章标题的下沿——正文里的「篇」级切开，与最轻的页面标题平手。</p>
+  <section class="row ruled demo" data-demo="pick-40">
+    <div class="facts"><p>一级 40</p></div>
+    <div class="main">
+      <div class="prose case-c case-h40">
+        <p>先说令牌的用处，再拆结构：它是一张通行证——验证方不用查库，就能确认「这串数据是本站签的、还没过期」。</p>
+        <h1>一级标题：令牌的全貌</h1>
+        <p>JWT 由三段 base64url 拼成：头部说明这个令牌怎么被验证，载荷放声明，签名把前两段连起来做一次 MAC 或 RSA 签名。</p>
+        <h2>二级标题：签名的两半</h2>
+        <p>验证分两步：先验签名，再验声明。签名对了但声明过期，令牌照样不能用——这两步大多数实现都放在同一个中间件里，顺序不能反。</p>
+        <h3>三级标题：HMAC 还是 RSA</h3>
+        <p>对称密钥算得快，代价是验证方也能签发；非对称的一把钥匙只签不验。本站自己签、自己验，没有第三方验证方，所以用 HMAC。</p>
+        <p>对照一行：<strong>整句加粗之后是这个样子，请和上面的三级标题并排比一比，分不出来就说明三级该改。</strong></p>
+        <h4>四级标题：密钥轮换</h4>
+        <p>换密钥那天，旧令牌还得认——验证端同时认新旧两把钥匙，等最长的过期时间过去，旧钥匙才能下线。</p>
+        <h5>五级标题：再深一层</h5>
+        <p>更深的层在正文里很少出现，放一段只为看清五级落在什么位置、和正文差多少。</p>
+        <h6>六级标题：最深的层</h6>
+        <p>六级之后没有了。这一段收尾，用来看六级与正文之间的距离。</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<section class="variant">
+  <h2>落地要动的东西（选定后）</h2>
+  <ul style="max-width: var(--measure); padding-left: 1.1rem; list-style: disc; color: var(--muted); font-size: var(--facts-size); line-height: 1.7">
+    <li><code>styles.css</code> 正文一节：<code>.prose h1</code> 从「按二级处理」里拆出来——字号 2.25rem 或 2.5rem、上距 3.5rem 或 4rem；旧注释删掉。</li>
+    <li>h2–h6 用丙的值（1.75 / 1.5 / 1.375 / 1.25 灰 / 1.125 灰），宋体组规则与上距照旧。</li>
+    <li>窄屏节补 <code>.prose h1 { margin-top: 3rem }</code>（或 3.25rem），挨着现有的 <code>.prose h2 { margin-top: 2.5rem }</code>。</li>
+    <li>公式甲案（KaTeX 居中）与共享 <code>markdown.js</code> 照旧，不受这一稿影响。</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>

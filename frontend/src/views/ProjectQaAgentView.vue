@@ -5,7 +5,7 @@
    那类字比一片空白更像这一页坏了。 */
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import MarkdownIt from 'markdown-it';
+import { renderMarkdown } from '../markdown.js';
 import { config } from '../config.js';
 import { setMetadata } from '../metadata.js';
 /* 正文写在 src/content/projects/qa-agent.md：Markdown 原文，和写文章同一套语法，
@@ -15,10 +15,8 @@ import source from '../content/projects/qa-agent.md?raw';
 const route = useRoute();
 const heading = ref(null);
 
-/* markdown-it 默认 html: false，正文里手写的标签会被转义后原样显示，能成为标签的
-   只有 Markdown 语法自己生成的——和文章详情页同一条。 */
-const markdown = new MarkdownIt();
-const body = markdown.render(source);
+/* 与文章详情页同一条渲染（src/markdown.js）。 */
+const body = renderMarkdown(source);
 
 /* 页面上不再写一遍简介（正文由主人自己写），但 description 不能空着：空着会留着
    上一页那一句，搜索引擎读到的就是别的页。这一句与首页「项目」那一栏是同一句。 */
@@ -55,7 +53,7 @@ onMounted(() => {
     <!-- 正文一栏。空的时候整块不出现：一块空的 .prose 照样占着 3rem 的上边距，
          看着像内容丢了。 -->
     <div v-if="body" class="piece-body row">
-      <!-- v-html 在这里是安全的：上面那个 MarkdownIt 用的是默认的 html: false，
+      <!-- v-html 在这里是安全的：正文由 src/markdown.js 渲染，那里用的是 html: false，
            正文里手写的标签会被转义成文字，能成为标签的只有 Markdown 语法自己生成的。 -->
       <div class="main prose" v-html="body"></div>
     </div>

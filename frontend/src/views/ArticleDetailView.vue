@@ -3,7 +3,7 @@
    每一种都得有出口——地址错了的人也要走得回列表，而不是停在一句「不存在」上。 */
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import MarkdownIt from 'markdown-it';
+import { renderMarkdown } from '../markdown.js';
 import { ArticleNotFoundError, getArticle } from '../api/articles.js';
 import { setMetadata } from '../metadata.js';
 import { formatDate } from '../format.js';
@@ -17,9 +17,7 @@ const missing = ref(false);
 const heading = ref(null);
 let controller;
 
-/* markdown-it 默认 html: false，正文里的 HTML 会被转义后原样显示。 */
-const markdown = new MarkdownIt();
-const body = computed(() => article.value ? markdown.render(article.value.body) : '');
+const body = computed(() => article.value ? renderMarkdown(article.value.body) : '');
 
 async function load() {
   controller?.abort();
@@ -126,7 +124,7 @@ onUnmounted(() => controller?.abort());
         </header>
 
         <div class="piece-body row">
-          <!-- v-html 在这里是安全的：上面那个 MarkdownIt 用的是默认的 html: false，
+          <!-- v-html 在这里是安全的：正文由 src/markdown.js 渲染，那里用的是 html: false，
                正文里手写的标签会被转义成文字，能成为标签的只有 Markdown 语法自己生成的。 -->
           <div class="main prose" v-html="body"></div>
         </div>

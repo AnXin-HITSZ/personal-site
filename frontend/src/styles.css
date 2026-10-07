@@ -374,17 +374,22 @@ html { scroll-padding-top: var(--masthead-h); }
 .prose { font-size: calc(var(--body-size) + 1px); }
 .prose > * + * { margin-top: 1.5rem; }
 .prose > :first-child { margin-top: 0; }
-/* 正文自带的一级标题按二级处理：页面的 h1 已经给了文章标题，正文里的 h1 只是它自己的小节。 */
-.prose h1, .prose h2 {
+/* 正文里的标题是一条从一级起递减的梯子：40 / 32 / 28 / 26 / 24 / 22（−8 −4 −2 −2 −2）。
+   每一级都不小于正文（18px）——比正文还小的标题读者认不出；末尾两级靠灰色弱化，不靠再缩小。
+   下边距归零：h4–h6 不在全局 reset 里，自带的默认边距得在这一层收掉。 */
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
   font-family: var(--stack-display);
   font-weight: 400;
-  font-size: 1.5rem;
   line-height: 1.4;
   letter-spacing: .01em;
-  margin-top: 3rem;
+  margin-bottom: 0;
 }
-.prose h1 { font-size: 1.65rem; }
-.prose h3 { font-size: 1.0625rem; font-weight: 600; line-height: 1.6; margin-top: 2.25rem; }
+.prose h1 { font-size: 2.5rem; margin-top: 4rem; }
+.prose h2 { font-size: 2rem; margin-top: 3rem; }
+.prose h3 { font-size: 1.75rem; margin-top: 2.25rem; }
+.prose h4 { font-size: 1.625rem; margin-top: 2rem; }
+.prose h5 { font-size: 1.5rem; margin-top: 1.75rem; color: var(--muted); }
+.prose h6 { font-size: 1.375rem; margin-top: 1.75rem; color: var(--muted); }
 .prose strong { font-weight: 600; }
 .prose ul, .prose ol { padding-left: 1.5rem; }
 .prose li + li { margin-top: .4rem; }
@@ -415,6 +420,10 @@ html { scroll-padding-top: var(--masthead-h); }
 }
 .prose pre { background: var(--fill); border-radius: 2px; padding: 1rem 1.25rem; overflow-x: auto; }
 .prose pre code { background: none; padding: 0; font-size: .875rem; line-height: 1.7; }
+/* 独立公式：居中、超宽可横滚。padding-block 收住 KaTeX 字形的上下溢出，
+   免得 overflow-x:auto 连带把竖滚动条也立起来。 */
+.prose .katex-display { margin: 0; }
+.prose .katex-block { display: flex; justify-content: safe center; overflow-x: auto; padding-block: .375rem; }
 
 .notice h1, .notice h3 { font-size: 1.1875rem; font-weight: 600; }
 .notice p { margin-top: .6rem; color: var(--muted); font-size: .9375rem; }
@@ -1043,6 +1052,7 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
   .piece-body { margin-top: 2.25rem; }
   .piece-foot { margin-top: 2.5rem; }
   .prose h2 { margin-top: 2.5rem; }
+  .prose h1 { margin-top: 3.25rem; }
   .prose pre { margin-inline: calc(var(--pad) * -1); border-radius: 0; }
   /* 表比一栏宽时整张自己横滚，页面不跟着宽。 */
   .prose table { display: block; overflow-x: auto; }
