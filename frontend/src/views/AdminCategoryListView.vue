@@ -240,6 +240,9 @@ onMounted(() => {
 <template>
   <section class="piece row ruled">
     <div class="facts">
+      <!-- 回退两头各一枚，与详情页同一支 .piece-back：头上这枚管「进来发现走错了」，
+           页脚那枚管「扫完这一列」。 -->
+      <p class="piece-return"><router-link class="piece-back" :to="{ name: 'admin-articles' }">返回写作</router-link></p>
       <p v-if="state === 'loading'"><span class="sk sk-fact"></span></p>
       <p v-else-if="state === 'failed'">没有读到</p>
       <p v-else-if="!items.length">0 个分类</p>
@@ -382,4 +385,11 @@ onMounted(() => {
       </article>
     </template>
   </div>
+
+  <!-- 失败态不摆页脚这枚：那一屏只有一屏高（头 + 提示条），头上那枚就够了。 -->
+  <nav v-if="state !== 'failed'" class="piece-foot row ruled" aria-label="返回">
+    <div class="main">
+      <router-link class="piece-back" :to="{ name: 'admin-articles' }">返回写作</router-link>
+    </div>
+  </nav>
 </template>

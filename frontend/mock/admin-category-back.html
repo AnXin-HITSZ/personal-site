@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写作-分类 · 回退 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 写作-分类 的回退（2026-10-07）。
+
+   这一页是一条死路：进它的路是写作页工具行里那枚「分类」，页内却没有回去的口子
+   ——只能走报头。补的这一枚，参考的是站内已有的回退按钮 .piece-back（灰字 +
+   细线，悬停转印色）。它现在有两种落位，差别只在摆哪儿：
+     注文栏头上 .piece-return —— 详情页「返回文章列表」、项目页「返回首页」
+     页脚 .piece-foot nav   —— 同一页的最末那一条（同一个 .piece-back）
+   三个案子就是这两处的三种摆法；按钮本身一个字不改，样式一条不加。
+
+   目的页：写作（/admin/articles）。那几个字怎么叫，末尾「附」里单独比。
+
+   ＊结论（选定）：丙（两处都放），用词「返回写作」——已落地（AdminCategoryListView.vue
+   注文栏头上 + 页脚各一枚，styles.css 零改动）。报头高亮那件独立小事未动。
+
+   走法：每一格是这一页的完整版面（注文栏 + 正文栏），分类取一组真会出现的
+   （4 个、9 篇）。乙案要滚到整列的最末才看得见返回——分类多的时候这笔距离更长，
+   这是它和甲案唯一真正的差别。窄屏下甲案并进注文栏那一行（产品现成规则：
+   窄屏节里 .piece-return { margin-bottom: 0 }），乙案仍在最末。
+   报头照产品现状画：这一页上「写作」那一栏不高亮（App.vue 的 nav-here 只列了
+   三条写作路由，漏了 admin-categories）——要不要顺手补，见末尾附注。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.intro + .intro { margin-top: .9rem; }
+.intro code, p.why code, .note code, .todo code { font-family: var(--stack-mono); font-size: .8125rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 每一格是产品那一页的整幅版面，不再套稿样的框——行线本身就是边界。
+   格与格之间的分隔靠上面 .variant 的间距，版面自己的上距（.piece 5.5rem）照旧。 */
+.variant .piece { margin-top: 3.5rem; }
+
+.todo { margin-top: 2rem; max-width: var(--measure); padding-left: 1.1rem; list-style: disc; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.todo li + li { margin-top: .4rem; }
+/* 附注那两小格只有注文栏有内容，正文栏用来放说明。 */
+.frag-note { font-size: var(--facts-size); color: var(--muted); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <!-- 这一页在产品的报头里不高亮任何一栏（照现状画），见开头注释。 -->
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+写作-分类（<code>/admin/categories</code>）现在没有回退：进它的路是写作页工具行里那枚「分类」，页内却没有回去的口子，只能走报头。
+这一稿补上，并沿用站内已有的那枚回退按钮——<code>.piece-back</code>（灰字 + 细线，悬停转印色）。它在详情页有两种落位，
+下面三格就是这两处的三种摆法：按钮本身一个字不改，只比摆哪儿。
+</p>
+<p class="intro">
+目的页是写作（<code>/admin/articles</code>）。<b>＊结论（选定）：丙（两处都放）＋「返回写作」——已落地（<code>AdminCategoryListView.vue</code>：注文栏头上 + 页脚；<code>styles.css</code> 零改动）。</b>
+</p>
+
+<!-- ═══════════ 甲 注文栏头上 ═══════════ -->
+<section class="variant" data-case="jia">
+  <h2>甲：注文栏头上一条（<code>.piece-return</code>）</h2>
+  <p class="why">
+    照详情页注文栏那一处：进页面第一眼就在，悬停向左挪 .2rem（「上一页」的老方向）。
+    代价：往下滚过分类列表时它跟着注文栏一起走了，扫到一半想回去，得先滚回顶上。
+  </p>
+
+  <section class="piece row ruled">
+    <div class="facts">
+      <p class="piece-return"><a class="piece-back" href="#">返回写作</a></p>
+      <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">第一个是写新文章时的默认分类</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <p class="facts">每一篇都归在其中一个下面，没有「未分类」这一档。</p>
+        <button class="primary" type="button">新建一个分类</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+    <article class="entry row ruled">
+      <div class="facts"><p>4 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">后端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button" disabled>上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>3 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">AI</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════ 乙 页脚 ═══════════ -->
+<section class="variant" data-case="yi">
+  <h2>乙：页脚一条（<code>.piece-foot</code>）</h2>
+  <p class="why">
+    照详情页页脚那一处：扫完这一列，返回就在收尾的地方（不挪位置，悬停只转色）。
+    代价：它在整列的最末——分类多起来，头一屏没有回去的口子。
+  </p>
+
+  <section class="piece row ruled">
+    <div class="facts">
+      <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">第一个是写新文章时的默认分类</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <p class="facts">每一篇都归在其中一个下面，没有「未分类」这一档。</p>
+        <button class="primary" type="button">新建一个分类</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+    <article class="entry row ruled">
+      <div class="facts"><p>4 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">后端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button" disabled>上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>3 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">AI</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="piece-foot row ruled" aria-label="返回">
+    <div class="main">
+      <a class="piece-back" href="#">返回写作</a>
+    </div>
+  </nav>
+</section>
+
+<!-- ═══════════ 丙 两处都放 ═══════════ -->
+<section class="variant" data-case="bing">
+  <h2>丙：两处都放（照详情页整套）</h2>
+  <p class="why">
+    详情页就是这么摆的：正文长，两头各备一个。这一页同理——头上那枚管「进错了立刻退」，
+    页脚那枚管「扫完了退」。代价：同一页两枚同一个链接（详情页已有此先例）。
+  </p>
+
+  <section class="piece row ruled">
+    <div class="facts">
+      <p class="piece-return"><a class="piece-back" href="#">返回写作</a></p>
+      <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 class="piece-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+    </div>
+  </section>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">第一个是写新文章时的默认分类</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <p class="facts">每一篇都归在其中一个下面，没有「未分类」这一档。</p>
+        <button class="primary" type="button">新建一个分类</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="entries entries-ledger">
+    <article class="entry row ruled">
+      <div class="facts"><p>4 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">后端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button" disabled>上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>3 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">前端</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>2 篇</p><p>其中 1 篇草稿</p></div>
+      <div class="main">
+        <h3 class="entry-title">AI</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button">下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts"><p>0 篇</p></div>
+      <div class="main">
+        <h3 class="entry-title">读书笔记</h3>
+        <p class="entry-acts">
+          <button class="act" type="button">上移</button>
+          <button class="act" type="button" disabled>下移</button>
+          <button class="act" type="button">改名</button>
+          <button class="act-danger" type="button">删除</button>
+        </p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="piece-foot row ruled" aria-label="返回">
+    <div class="main">
+      <a class="piece-back" href="#">返回写作</a>
+    </div>
+  </nav>
+</section>
+
+<!-- ═══════════ 附：用词 ═══════════ -->
+<section class="variant" data-case="word">
+  <h2>附：那几个字怎么叫（诊断，不是第四个案子）</h2>
+  <p class="why">
+    摆法取甲案，只换文字。详情页的先例是「返回文章列表」——「返回」加目的页的称呼。
+    目的页自己的 h1 和报头那一栏都叫「写作」，所以最短是「返回写作」；「返回写作列表」与
+    「返回文章列表」同构，把「回去的是哪儿」写得更实，代价是多两个字。
+  </p>
+
+  <section class="row ruled" style="margin-top: 1.75rem">
+    <div class="facts">
+      <p class="piece-return"><a class="piece-back" href="#">返回写作</a></p>
+      <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="main">
+      <p class="frag-note">「返回写作」——与目的页同名，报头那一栏也是这么叫的；注文栏里短。</p>
+    </div>
+  </section>
+
+  <section class="row ruled" style="margin-top: 1.75rem">
+    <div class="facts">
+      <p class="piece-return"><a class="piece-back" href="#">返回写作列表</a></p>
+      <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+    </div>
+    <div class="main">
+      <p class="frag-note">「返回写作列表」——与「返回文章列表」同构，去处写得更实。</p>
+    </div>
+  </section>
+</section>
+
+<!-- ═══════════ 落地要动的东西 ═══════════ -->
+<section class="variant">
+  <h2>落地要动的东西（选定后）</h2>
+  <ul class="todo">
+    <li><code>AdminCategoryListView.vue</code>：
+      甲案——注文栏 <code>.facts</code> 顶上加一行 <code>&lt;p class="piece-return"&gt;</code>，
+      里面是 <code>&lt;router-link class="piece-back" :to="{ name: 'admin-articles' }"&gt;</code>；
+      乙案——在 <code>.entries-ledger</code> 之后加
+      <code>&lt;nav class="piece-foot row ruled" aria-label="返回"&gt;</code>，正文栏里放同一枚链接；
+      丙案＝两处都加。</li>
+    <li><code>styles.css</code>：零改动——<code>.piece-back</code>、<code>.piece-return</code>、
+      <code>.piece-foot</code> 三条都是现成的，窄屏并行的规则也已经写好。</li>
+    <li>附注（与本案独立，可做可不做）：<code>App.vue</code> 报头「写作」那一栏的
+      <code>nav-here</code> 条件补上 <code>'admin-categories'</code>——现在人在这一页时，
+      报头一栏都不亮。</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>
