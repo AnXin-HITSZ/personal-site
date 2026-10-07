@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分类页 · 「编辑分类」入口 · 最终稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 公开分类页的「编辑分类」入口 + 写作台那枚改名（2026-10-07，最终稿）。
+
+   事由：一个词指两件事。写作台工具行那枚「分类」去的是写作-分类页（管分类：新建 /
+   改名 / 排序 / 删除）；报头「分类」和公开分类页（/categories）是另一件事（读分类
+   下的文章）。改法：写作台那枚改名「编辑分类」；公开分类页加一枚「编辑分类」通向
+   /admin/categories——入口与去处同名。
+
+   选定（2026-10-07）：入口落在标题旁（.archive-main 里 h2 之后，只给作者）；写作台
+   改名与 h1 保持「分类」一并定。另两种落位（状态行下、页脚）未选，本稿只留选定的
+   一版。h1 不动，是因为站里 h1 全是地名（写作 / 账号 / 分类），动词只出现在链接上；
+   这一页的 metadata「分类 · 写作 · Anxin」已经把两个「分类」页分开了。
+
+   这份稿子是一处设计的三种看法：
+     一、公开分类页——作者登录后看到的完整版面，改动就在头一屏的标题旁；
+     二、写作台工具行——改名那一处在原地看；
+     三、读者视角——同一版面，读者那份 DOM 一个像素都不多。这正是实现前提：
+         CategoryListView 要开始读登录身份，是站里第一次在公开页里按身份分支。
+
+   走法：窄屏下链接仍在标题旁（与 h2 同一条基线行，拍图验过）。产品代码待落地——
+   清单见末尾「落地要动的东西」。 */
+</style>
+<style>
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.intro + .intro { margin-top: .9rem; }
+.intro code, p.why code, .note code, .todo code, h2 code { font-family: var(--stack-mono); font-size: .8125rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+/* 每一节画的是产品那一页的整幅版面，不再套稿样的框——行线本身就是边界。产品自己的
+   上距（.archive 6.5rem）在这里收成 3.5rem，免得节与节之间空掉一整屏；版面不受影响。 */
+.variant .archive { margin-top: 3.5rem; }
+.todo { margin-top: 2rem; max-width: var(--measure); padding-left: 1.1rem; list-style: disc; color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.todo li + li { margin-top: .4rem; }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <!-- 这一页是 /categories，产品里「分类」这一栏亮。 -->
+    <a href="#" class="nav-here" aria-current="page">分类</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+写作台工具行那枚「分类」（去的是 <code>/admin/categories</code>，管分类：新建 / 改名 / 排序 / 删除）和报头、公开分类页的「分类」（<code>/categories</code>，读分类下的文章）是两个东西。
+一个词指两件事，所以动词还给链接：写作台那枚改名「编辑分类」，公开分类页加一枚「编辑分类」通向同一个地方——入口与去处同名。
+</p>
+<p class="intro">
+<b>＊选定：入口落在标题旁（h2 之后，只给作者）；写作台改名与 h1 保持「分类」一并定。</b>
+下面三节是同一处设计的三种看法：作者登录后看到的完整版面、写作台那一行、以及读者看到什么（一个像素都不多）。
+</p>
+
+<!-- ═══════════ 一、公开分类页（作者登录后） ═══════════ -->
+<section class="variant" data-case="page">
+  <h2>一、公开分类页——作者登录后看到的</h2>
+  <p class="why">
+    改动只有标题旁那一枚：贴在 <code>.archive-main</code> 的现成写法上（「标题 + 一枚小字」的基线行，开发数据源下「示例内容」徽记占过的槽位），
+    不占新行、不加新的线。形态是站里的安静链接 <code>.link-quiet</code>（印字印线），与写作台那枚同一个长相。
+  </p>
+
+  <div class="cat-body">
+    <section class="archive" aria-labelledby="archive-title-page">
+      <div class="archive-head row ruled">
+        <p class="archive-count" role="status" aria-live="polite">3 个分类 · 13 篇文章</p>
+        <div class="archive-main">
+          <h2 id="archive-title-page">分类</h2>
+          <a class="link-quiet" href="#">编辑分类</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat row ruled" aria-labelledby="cat-backend-page">
+      <div class="facts">
+        <p>8 篇</p>
+        <p>最近 2026.09.30</p>
+      </div>
+      <div class="main">
+        <h3 id="cat-backend-page" class="cat-name">后端</h3>
+        <ul class="cat-list">
+          <li><a href="#">JWT 是怎么签出来的</a><time datetime="2026-09-30">2026.09.30</time></li>
+          <li><a href="#">一次 OSS 直传的取舍</a><time datetime="2026-09-24">2026.09.24</time></li>
+          <li><a href="#">迁移脚本交给手跑的理由</a><time datetime="2026-09-18">2026.09.18</time></li>
+          <li><a href="#">Redis 缓存该在什么时候关掉</a><time datetime="2026-09-11">2026.09.11</time></li>
+          <li><a href="#">请求体上限的三层</a><time datetime="2026-09-05">2026.09.05</time></li>
+          <li><a href="#">RowsAffected 不是「记录不存在」</a><time datetime="2026-08-29">2026.08.29</time></li>
+        </ul>
+        <p class="cat-all"><a class="link-quiet" href="#">全部 8 篇</a></p>
+      </div>
+    </section>
+
+    <section class="cat row ruled" aria-labelledby="cat-frontend-page">
+      <div class="facts">
+        <p>3 篇</p>
+        <p>最近 2026.09.28</p>
+      </div>
+      <div class="main">
+        <h3 id="cat-frontend-page" class="cat-name">前端</h3>
+        <ul class="cat-list">
+          <li><a href="#">正文标题的那把梯子</a><time datetime="2026-09-28">2026.09.28</time></li>
+          <li><a href="#">KaTeX 接进 Markdown 的三处</a><time datetime="2026-09-20">2026.09.20</time></li>
+          <li><a href="#">按钮的一族安静下来</a><time datetime="2026-09-14">2026.09.14</time></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cat row ruled" aria-labelledby="cat-ai-page">
+      <div class="facts">
+        <p>2 篇</p>
+        <p>最近 2026.09.22</p>
+      </div>
+      <div class="main">
+        <h3 id="cat-ai-page" class="cat-name">AI</h3>
+        <ul class="cat-list">
+          <li><a href="#">给 QA-Agent 换一套检索</a><time datetime="2026-09-22">2026.09.22</time></li>
+          <li><a href="#">提示词里的那几句约束</a><time datetime="2026-09-12">2026.09.12</time></li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ═══════════ 二、写作台工具行 ═══════════ -->
+<section class="variant" data-case="rename">
+  <h2>二、写作台工具行——那枚改名（同一份改动）</h2>
+  <p class="why">
+    左侧那枚从「分类」改成「编辑分类」；右侧主操作「写新的一篇」不动。改完这一页上「分类」只指页面名，动词留给链接——
+    两个去处也从此同名：这一枚和公开分类页那枚，写同一句话、去同一个地方。
+  </p>
+
+  <div class="archive-tools row ruled">
+    <p class="facts">按最近改动排</p>
+    <div class="archive-tools-main">
+      <div class="tools">
+        <div class="tools-find">
+          <div class="filters" role="group" aria-label="按状态筛选">
+            <button class="filter" type="button" aria-pressed="true">全部</button>
+            <button class="filter" type="button" aria-pressed="false">草稿</button>
+            <button class="filter" type="button" aria-pressed="false">已发布</button>
+          </div>
+          <form class="search" role="search" onsubmit="return false">
+            <label class="sr-only" for="mock-search">搜索文章标题和摘要</label>
+            <input id="mock-search" type="search" placeholder="搜标题和摘要" maxlength="100">
+            <button type="submit">搜索</button>
+          </form>
+        </div>
+        <div class="tools-acts">
+          <a class="link-quiet" href="#">编辑分类</a>
+          <a class="primary" href="#">写新的一篇</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top: 1.5rem">
+    写作页只有这一处叫「分类」。编辑台里那枚「去建一个分类」（一个分类都没有时的那句提示里）不动——
+    那句话的场景是「你没有分类，去建一个」，换成「去编辑分类」反而绕。
+  </p>
+</section>
+
+<!-- ═══════════ 三、读者视角 ═══════════ -->
+<section class="variant" data-case="reader">
+  <h2>三、读者看到的——同一版面，一眼不多</h2>
+  <p class="why">
+    入口套在 <code>v-if="isAuthor"</code> 里，读者那份 DOM 与今天完全一样。下面这段与上一屏逐像素相同——只少那枚链接。
+  </p>
+
+  <div class="cat-body">
+    <section class="archive" aria-labelledby="archive-title-reader">
+      <div class="archive-head row ruled">
+        <p class="archive-count" role="status" aria-live="polite">3 个分类 · 13 篇文章</p>
+        <div class="archive-main">
+          <h2 id="archive-title-reader">分类</h2>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat row ruled" aria-labelledby="cat-backend-reader">
+      <div class="facts">
+        <p>8 篇</p>
+        <p>最近 2026.09.30</p>
+      </div>
+      <div class="main">
+        <h3 id="cat-backend-reader" class="cat-name">后端</h3>
+        <ul class="cat-list">
+          <li><a href="#">JWT 是怎么签出来的</a><time datetime="2026-09-30">2026.09.30</time></li>
+          <li><a href="#">一次 OSS 直传的取舍</a><time datetime="2026-09-24">2026.09.24</time></li>
+          <li><a href="#">迁移脚本交给手跑的理由</a><time datetime="2026-09-18">2026.09.18</time></li>
+          <li><a href="#">Redis 缓存该在什么时候关掉</a><time datetime="2026-09-11">2026.09.11</time></li>
+          <li><a href="#">请求体上限的三层</a><time datetime="2026-09-05">2026.09.05</time></li>
+          <li><a href="#">RowsAffected 不是「记录不存在」</a><time datetime="2026-08-29">2026.08.29</time></li>
+        </ul>
+        <p class="cat-all"><a class="link-quiet" href="#">全部 8 篇</a></p>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ═══════════ 落地要动的东西 ═══════════ -->
+<section class="variant">
+  <h2>落地要动的东西</h2>
+  <ul class="todo">
+    <li><code>AdminArticleListView.vue</code>：工具行那枚 <code>.link-quiet</code> 的文字「分类」→「编辑分类」（L195，只改文字；那一行注释说的还是同一件事）。</li>
+    <li><code>CategoryListView.vue</code>：<code>.archive-main</code> 里 h2 之后加那一枚——
+      <code>&lt;router-link v-if="isAuthor" class="link-quiet" :to="{ name: 'admin-categories' }"&gt;编辑分类&lt;/router-link&gt;</code>。
+      <b>这一页要开始 import session</b>——站里第一次在公开页里按登录身份分支；身份照 <code>App.vue</code> 的算法（<code>session.account?.role === 'admin'</code>）。
+      若嫌两处各算一遍，可把它收进 <code>session.js</code> 导出，App.vue 跟着改一行。</li>
+    <li><code>styles.css</code>：零改动——<code>.archive-main</code> 本来就是「标题 + 一枚小字」的基线行，安静链接的样也是现成的。</li>
+    <li>不动：写作-分类页的 h1（保持「分类」）、编辑台那枚「去建一个分类」、报头。</li>
+    <li>另记（与本案无关的旧账）：<code>App.vue</code> L41 报头「写作」栏的 <code>nav-here</code> 漏了 <code>'admin-categories'</code>
+      ——人在写作-分类页时报头不亮，一行可补。</li>
+  </ul>
+</section>
+
+</main>
+
+<!-- 站点页脚：产品每页都有，这里只画一次。 -->
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+</body>
+</html>

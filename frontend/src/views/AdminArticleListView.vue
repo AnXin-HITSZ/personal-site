@@ -190,9 +190,9 @@ onMounted(() => {
           </form>
         </div>
         <div class="tools-acts">
-          <!-- 分类是这一页要用的东西（每一篇都归在其中一个下面），但它不是这一页
-               的主操作，所以走安静的那一枚，印色留给「写新的一篇」。 -->
-          <router-link class="link-quiet" :to="{ name: 'admin-categories' }">分类</router-link>
+          <!-- 编辑分类去的是这一页要用的东西（每一篇都归在其中一个下面），但它不是
+               这一页的主操作，所以走安静的那一枚，印色留给「写新的一篇」。 -->
+          <router-link class="link-quiet" :to="{ name: 'admin-categories' }">编辑分类</router-link>
           <router-link class="primary" :to="{ name: 'admin-article-new' }">写新的一篇</router-link>
         </div>
       </div>
