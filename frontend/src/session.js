@@ -10,6 +10,9 @@ let pending = null;
 
 export const session = readonly(state);
 export const signedIn = computed(() => state.account !== null);
+/* 「写作」那一栏和公开分类页里那枚「编辑分类」都读它：作者专属的东西只在作者眼前
+   出现，对别人连一个字都不该有——同一个判断也不该有第二份。 */
+export const isAuthor = computed(() => state.account?.role === 'admin');
 
 export function apply(view) {
   state.account = view.account;

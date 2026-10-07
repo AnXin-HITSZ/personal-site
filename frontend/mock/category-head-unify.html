@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公开分类页 · 页题升格（丙案）· 最终稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 公开分类页的页题样式（2026-10-07，最终稿）。
+
+   事由：四处页头里，后三处（写作 /admin/articles、账号 /account、写作-分类
+   /admin/categories）的标题一致，公开分类页那一个不是。后三处是同一个写法、同一条
+   规则：.piece-title（styles.css L334）＝宋体那一栈、400、clamp(2rem, 4vw, 2.75rem)、
+   行高 1.32、字距 .01em（1600px 下 44px，≤44rem 落到 1.75rem，见 L1051）。
+   公开的文章详情页也是这个头——公开侧并不缺这种大标题，缺的是分类页这一处。
+   公开分类页走的是另一族：.archive-main h2（L232）＝ 1.75rem / 600 / 正文字体栈。
+
+   选定（2026-10-07）：丙案——整头升格成 .piece（注文栏放活的计数、h1.piece-title、
+   一行摘要、「编辑分类」落在摘要行下的 .piece-act）。摘要要，用拟的那句；入口不留在
+   标题旁（.piece 的标题自己占一行，标题旁没有现成槽位，硬留要往统一写法里加特例）。
+   顺带把 h2 升成 h1：公开分类页今天是站里唯一没有 h1 的页面（其余每页恰好一个）。
+   未选的甲（只换字）、乙（连首页一起换）不在本稿里——三案原稿留在 Temp。
+
+   这一页的牵连先摆明：.archive-main h2 这条规则不是分类页独有的，首页那一段文章列表
+   （ArticleList.vue，h2「文章」）与它共用同一条规则——丙案不动它，首页一字不改。
+
+   这份稿子是一处设计的三种看法：
+     一、公开分类页——作者登录后看到的完整版面；
+     二、读者视角——同一版面，只少入口那一枚；
+     三、对照——与写作-分类页的头并排，同构看得见。
+
+   走法：公开页与后台标本的页题逐五项对过 computed style；读者节与作者节逐字相同；
+   窄屏无横向溢出。落地清单见末尾。 */
+</style>
+<style>
+/* —— 稿样脚手架（不属产品）—— */
+.intro, p.why, .note, .todo { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 2rem; }
+.intro + .intro { margin-top: .9rem; }
+.intro code, p.why code, .note code, .todo code, h2 code { font-family: var(--stack-mono); font-size: .8125rem; }
+.variant { margin-top: 4.5rem; }
+.variant > h2 { font-family: var(--stack-display); font-size: 1.25rem; font-weight: 600; }
+.variant p.why { margin-top: .5rem; }
+.cap { margin-top: 2.5rem; color: var(--muted); font-size: var(--facts-size); }
+/* 每一节画的是产品那一页的整幅版面，不再套稿样的框——行线本身就是边界。产品自己的
+   上距（.piece 5.5rem、.cat 3.25rem）在这里收成 3rem，免得节与节之间空掉一整屏；
+   版面本身不受影响。 */
+.variant .piece, .variant .cat { margin-top: 3rem; }
+.todo { margin-top: 2rem; padding-left: 1.1rem; list-style: disc; }
+.todo li + li { margin-top: .4rem; }
+/* 对照节里那两件头叠在一起时，线不要贴线。 */
+.pair .piece + .piece { margin-top: 2.5rem; }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#">文章</a>
+    <!-- 这一页是 /categories，产品里「分类」这一栏亮。 -->
+    <a href="#" class="nav-here" aria-current="page">分类</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<p class="intro">
+  选定的是<b>丙案</b>：公开分类页的整个头升格成后三种的样子。规则一条不加——<code>.piece</code>、<code>.facts</code>、
+  <code>.piece-main</code>、<code>.piece-title</code>、<code>.piece-summary</code>、<code>.piece-act</code> 全是现成的类，
+  <code>styles.css</code> 零改动。
+</p>
+<p class="intro">
+  两处附带的决定一并定下：页题下的摘要行<strong>要</strong>（正文用拟的那句）；「编辑分类」从「贴着标题」挪到摘要行下的
+  <code>.piece-act</code> 槽位（项目页「在线体验」占过的那一个）——<code>.piece</code> 的标题自己占一行，标题旁没有现成槽位，
+  硬留就得往统一写法里加一条特例。
+</p>
+
+<!-- ═══════════ 一、公开分类页（作者登录后） ═══════════ -->
+<section class="variant" data-case="page">
+  <h2>一、公开分类页——作者登录后看到的</h2>
+  <p class="why">
+    左注文栏是这一页的活计数（加载中是「正在整理分类…」，失败是「加载失败」，所以那一行带
+    <code>role="status" aria-live</code>）；右栏是 <code>h1.piece-title</code>、一行摘要、以及摘要行下的入口。
+    页题从 <code>h2</code> 升成 <code>h1</code>——公开分类页今天是站里唯一没有 h1 的页面；下面的类名仍是
+    <code>h3</code>，与写作页、写作-分类页同一个习惯。
+  </p>
+
+  <section class="piece row ruled" aria-labelledby="archive-title-page">
+    <div class="facts">
+      <!-- 加载中这一行是「正在整理分类…」；第二行只在读完之后出现。 -->
+      <p role="status" aria-live="polite"><span class="key">3 个分类</span></p>
+      <p>13 篇文章</p>
+    </div>
+    <div class="piece-main">
+      <h1 id="archive-title-page" class="piece-title" data-pick="page-title">分类</h1>
+      <p class="piece-summary">每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</p>
+      <p class="piece-act"><a class="link-quiet" href="#">编辑分类</a></p>
+    </div>
+  </section>
+
+  <section class="cat row ruled" aria-labelledby="cat-backend-page">
+    <div class="facts">
+      <p>8 篇</p>
+      <p>最近 2026.09.30</p>
+    </div>
+    <div class="main">
+      <h3 id="cat-backend-page" class="cat-name">后端</h3>
+      <ul class="cat-list">
+        <li><a href="#">JWT 是怎么签出来的</a><time datetime="2026-09-30">2026.09.30</time></li>
+        <li><a href="#">一次 OSS 直传的取舍</a><time datetime="2026-09-24">2026.09.24</time></li>
+        <li><a href="#">迁移脚本交给手跑的理由</a><time datetime="2026-09-18">2026.09.18</time></li>
+        <li><a href="#">Redis 缓存该在什么时候关掉</a><time datetime="2026-09-11">2026.09.11</time></li>
+        <li><a href="#">请求体上限的三层</a><time datetime="2026-09-05">2026.09.05</time></li>
+        <li><a href="#">RowsAffected 不是「记录不存在」</a><time datetime="2026-08-29">2026.08.29</time></li>
+      </ul>
+      <p class="cat-all"><a class="link-quiet" href="#">全部 8 篇</a></p>
+    </div>
+  </section>
+
+  <section class="cat row ruled" aria-labelledby="cat-frontend-page">
+    <div class="facts">
+      <p>3 篇</p>
+      <p>最近 2026.09.28</p>
+    </div>
+    <div class="main">
+      <h3 id="cat-frontend-page" class="cat-name">前端</h3>
+      <ul class="cat-list">
+        <li><a href="#">正文标题的那把梯子</a><time datetime="2026-09-28">2026.09.28</time></li>
+        <li><a href="#">KaTeX 接进 Markdown 的三处</a><time datetime="2026-09-20">2026.09.20</time></li>
+        <li><a href="#">按钮的一族安静下来</a><time datetime="2026-09-14">2026.09.14</time></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="cat row ruled" aria-labelledby="cat-ai-page">
+    <div class="facts">
+      <p>2 篇</p>
+      <p>最近 2026.09.22</p>
+    </div>
+    <div class="main">
+      <h3 id="cat-ai-page" class="cat-name">AI</h3>
+      <ul class="cat-list">
+        <li><a href="#">给 QA-Agent 换一套检索</a><time datetime="2026-09-22">2026.09.22</time></li>
+        <li><a href="#">提示词里的那几句约束</a><time datetime="2026-09-12">2026.09.12</time></li>
+      </ul>
+    </div>
+  </section>
+</section>
+
+<!-- ═══════════ 二、读者视角 ═══════════ -->
+<section class="variant" data-case="reader">
+  <h2>二、读者看到的——同一版面，一眼不多</h2>
+  <p class="why">
+    入口套在 <code>v-if="isAuthor"</code> 里，读者那份 DOM 只少 <code>.piece-act</code> 那一行
+    （连它一起 <code>v-if</code>，免得空段落留下 1.25rem 的余白）。下面这段与上一屏逐像素相同——只少那一枚链接。
+  </p>
+
+  <section class="piece row ruled" aria-labelledby="archive-title-reader">
+    <div class="facts">
+      <p role="status" aria-live="polite"><span class="key">3 个分类</span></p>
+      <p>13 篇文章</p>
+    </div>
+    <div class="piece-main">
+      <h1 id="archive-title-reader" class="piece-title">分类</h1>
+      <p class="piece-summary">每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</p>
+    </div>
+  </section>
+
+  <section class="cat row ruled" aria-labelledby="cat-backend-reader">
+    <div class="facts">
+      <p>8 篇</p>
+      <p>最近 2026.09.30</p>
+    </div>
+    <div class="main">
+      <h3 id="cat-backend-reader" class="cat-name">后端</h3>
+      <ul class="cat-list">
+        <li><a href="#">JWT 是怎么签出来的</a><time datetime="2026-09-30">2026.09.30</time></li>
+        <li><a href="#">一次 OSS 直传的取舍</a><time datetime="2026-09-24">2026.09.24</time></li>
+        <li><a href="#">迁移脚本交给手跑的理由</a><time datetime="2026-09-18">2026.09.18</time></li>
+        <li><a href="#">Redis 缓存该在什么时候关掉</a><time datetime="2026-09-11">2026.09.11</time></li>
+        <li><a href="#">请求体上限的三层</a><time datetime="2026-09-05">2026.09.05</time></li>
+        <li><a href="#">RowsAffected 不是「记录不存在」</a><time datetime="2026-08-29">2026.08.29</time></li>
+      </ul>
+      <p class="cat-all"><a class="link-quiet" href="#">全部 8 篇</a></p>
+    </div>
+  </section>
+</section>
+
+<!-- ═══════════ 三、对照 ═══════════ -->
+<section class="variant pair" data-case="pair">
+  <h2>三、对照——与后三种是同一套</h2>
+  <p class="why">
+    上：公开分类页（改后）。下：写作-分类页今天的样子——后三种的页头都长这样。两处的页题逐五项相同
+    （字族 / 400 / 字号 / 行高 / 字距），注文栏都是计数，往下都是 <code>h1</code> 直落 <code>h3</code>。
+    剩的差别只在内容：这页的计数是活的（带 <code>role="status"</code>），多了「编辑分类」那一枚作者专属的动作。
+  </p>
+
+  <section class="piece row ruled" aria-labelledby="pair-public">
+    <div class="facts">
+      <p role="status" aria-live="polite"><span class="key">3 个分类</span></p>
+      <p>13 篇文章</p>
+    </div>
+    <div class="piece-main">
+      <h1 id="pair-public" class="piece-title">分类</h1>
+      <p class="piece-summary">每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</p>
+      <p class="piece-act"><a class="link-quiet" href="#">编辑分类</a></p>
+    </div>
+  </section>
+
+  <section class="piece row ruled" aria-labelledby="pair-admin">
+    <div class="facts">
+      <p><span class="key">2 个分类</span></p>
+      <p>13 篇归在其中</p>
+    </div>
+    <div class="piece-main">
+      <h1 id="pair-admin" class="piece-title" data-ref="admin-title">分类</h1>
+      <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+    </div>
+  </section>
+</section>
+
+<!-- ═══════════ 落地要动的东西 ═══════════ -->
+<section class="variant">
+  <h2>落地要动的东西</h2>
+  <ul class="todo">
+    <li><code>CategoryListView.vue</code>：头那一段（<code>section.archive &gt; .archive-head</code>）换成 <code>section.piece.row.ruled</code> 三件——
+      <code>.facts</code>（计数那半搬进来，<code>role="status" aria-live</code> 照带）+ <code>.piece-main</code> &gt; <code>h1.piece-title</code>（id 仍是 <code>archive-title</code>，<code>aria-labelledby</code> 不动）+ 摘要 + <code>.piece-act</code> 里的入口。
+      <b>h2 升 h1</b>（一个字；这一页从此与别页一样有 h1）。状态那个 computed 拆两半：活的那半（分类数 / 加载中 / 加载失败）在第一行，第二行「N 篇文章」只在读完之后出现。</li>
+    <li>摘要那句照稿样：<b>每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</b></li>
+    <li>入口那枚 <code>v-if="isAuthor"</code> 连同 <code>.piece-act</code> 那一行一起给——读者不剩空段落。</li>
+    <li><code>styles.css</code>：零改动。首页那一段仍走 <code>.archive-main h2</code> 那条老规则，一字不动。</li>
+    <li>开发数据源下那枚「示例内容」徽记（<code>config.dataSource === 'mock'</code>）改落在左注文栏计数下面一行——只有本地看得见，用现成的 <code>.facts</code> 一行就够，不必新类。</li>
+    <li>不动：分类节本身（<code>.cat</code>）、首页、写作 / 账号 / 写作-分类三页、报头与页脚（报头只动下一行那处旧账）。</li>
+    <li>另记（与本案无关的旧账，已办）：<code>App.vue</code> 报头「写作」栏的 <code>nav-here</code> 漏了 <code>'admin-categories'</code>——人在写作-分类页时报头不亮。<b>已补</b>：那个条件里接上了 <code>'admin-categories'</code>，写作-分类页现在与写作台列表、编辑器一样把「写作」点亮。</li>
+  </ul>
+</section>
+
+</main>
+
+<!-- 站点页脚：产品每页都有，这里只画一次。 -->
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -2,14 +2,11 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { config } from './config.js';
-import { session, signedIn } from './session.js';
+import { isAuthor, signedIn } from './session.js';
 
 const route = useRoute();
 
 const year = new Date().getFullYear();
-
-/* 「写作」只在作者看得见的地方出现——对别人它连一个字都不该有。 */
-const isAuthor = computed(() => session.account?.role === 'admin');
 
 /* 翻页那一层按这个键认人：键变了才播进出场，键不变就只是同一页换了地址。
    文章页只认 id——详情页取到数据后会把地址栏补成规范 slug（router.replace），

@@ -5,6 +5,7 @@ import { listArticles } from '../api/articles.js';
 import { listCategories } from '../api/categories.js';
 import { formatDate } from '../format.js';
 import { defaultMetadata, setMetadata } from '../metadata.js';
+import { isAuthor } from '../session.js';
 
 /* 每一类先摆这么多篇，与文章列表每页同数；读完这一截还有剩，就接一行「全部 N 篇」。
    觉得早或晚改这一个数——等真需要按屏高自适应再说。 */
@@ -16,7 +17,11 @@ const loading = ref(true);
 const error = ref('');
 let controller;
 
-const status = computed(() => loading.value ? '正在整理分类…' : error.value ? '加载失败' : `${groups.value.length} 个分类 · ${total.value} 篇文章`);
+/* 页头注文栏两行。上面那行是活的（正在整理 / 加载失败 / 几个分类），读屏靠 role="status"
+   知道这一页读完了没有，所以它一个人占一行；篇数那行读完之后才有，不与它并排。 */
+const state = computed(() => loading.value ? 'loading' : error.value ? 'failed' : 'ready');
+const headLine = computed(() => state.value === 'loading' ? '正在整理分类…' : state.value === 'failed' ? '加载失败' : `${groups.value.length} 个分类`);
+const headTotal = computed(() => state.value === 'ready' ? `${total.value} 篇文章` : '');
 
 /* 先取分类表（每一条自带篇数和最近时间），再给每一类借现成的文章接口拉一小截：
    「N 篇」不必数前端手里的这几条——数是服务端给的，摆出来的只是最近几篇。
@@ -53,13 +58,26 @@ onUnmounted(() => { controller?.abort(); });
 
 <template>
   <div class="cat-body">
-    <section class="archive" aria-labelledby="archive-title">
-      <div class="archive-head row ruled">
-        <p class="archive-count" role="status" aria-live="polite">{{ status }}</p>
-        <div class="archive-main">
-          <h2 id="archive-title">分类</h2>
-          <span v-if="config.dataSource === 'mock'" class="archive-sample">示例内容</span>
-        </div>
+    <!-- 页头与后三种（写作 / 账号 / 写作-分类）同构：左注文栏摆这一页的事实，右栏是页题、
+         一行摘要、以及作者才看得见的入口。全是现成的 .piece 一族，没有新样式。
+         标题是整页唯一的一个，所以是 h1——这一页从前是站里唯一没有 h1 的页面。 -->
+    <section class="piece row ruled" aria-labelledby="archive-title">
+      <div class="facts">
+        <p role="status" aria-live="polite"><span :class="{ key: state === 'ready' }">{{ headLine }}</span></p>
+        <p v-if="headTotal">{{ headTotal }}</p>
+        <!-- 开发数据源下才有的标记，只有本地看得见。 -->
+        <p v-if="config.dataSource === 'mock'">示例内容</p>
+      </div>
+      <div class="piece-main">
+        <h1 id="archive-title" class="piece-title">分类</h1>
+        <p class="piece-summary">每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</p>
+        <!-- 到这一页来的作者多半是来看读者看见了什么的；想改分类，口子就在摘要下面——
+             .piece 的标题自己占一行，标题旁没有槽位，所以走项目页「在线体验」占过的
+             .piece-act。这是站里第一件长在公开页里的作者专属物：整行一起给，读者那份
+             DOM 连一段空白都不多。 -->
+        <p v-if="isAuthor" class="piece-act">
+          <router-link class="link-quiet" :to="{ name: 'admin-categories' }">编辑分类</router-link>
+        </p>
       </div>
     </section>
 
