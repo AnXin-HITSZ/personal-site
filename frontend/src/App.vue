@@ -35,7 +35,8 @@ const pageKey = computed(() => {
       <a :href="config.qaUrl" target="_blank" rel="noopener noreferrer">QA-Agent<span class="sr-only">（新窗口）</span></a>
       <router-link
         v-if="isAuthor" to="/admin/articles"
-        :class="{ 'nav-here': $route.name === 'admin-articles' || $route.name === 'admin-article' || $route.name === 'admin-article-new' }"
+        :class="{ 'nav-here': $route.name === 'admin-articles' || $route.name === 'admin-article'
+          || $route.name === 'admin-article-new' || $route.name === 'admin-categories' }"
       >写作</router-link>
       <router-link v-if="signedIn" to="/account" :class="{ 'nav-here': $route.name === 'account' }">账号</router-link>
       <router-link v-else to="/login" :class="{ 'nav-here': $route.name === 'login' }">登录</router-link>
