@@ -39,44 +39,80 @@ function mathInline(state, silent) {
   return true;
 }
 
-/* $$…$$ 独立成行：同一行收口，或从 $$ 那一行一直吃到收口那一行。收口的 $$ 后头还有字
-   就不算收口——宁可把那行当正文，也不悄悄吞掉半行。找不到收口就照原文排。 */
-function mathBlock(state, startLine, endLine, silent) {
-  const start = state.bMarks[startLine] + state.tShift[startLine];
-  if (state.src.slice(start, start + 2) !== '$$') return false;
-  const first = state.src.slice(start + 2, state.eMarks[startLine]);
-  let tex = null;
-  let next = startLine;
-  const sameLine = first.indexOf('$$');
-  if (sameLine >= 0 && !first.slice(sameLine + 2).trim()) {
-    tex = first.slice(0, sameLine);
-  } else if (sameLine < 0) {
-    const lines = [first];
-    for (next = startLine + 1; next < endLine; next++) {
-      const from = state.bMarks[next] + state.tShift[next];
-      const line = state.src.slice(from, state.eMarks[next]);
-      const close = line.indexOf('$$');
-      if (close >= 0 && !line.slice(close + 2).trim()) {
-        lines.push(line.slice(0, close));
-        tex = lines.join('\n');
-        break;
-      }
-      lines.push(line);
+/* \(…\) 行内：与 $…$ 同一档，只是记号不同。也只在同一行里找收口。首尾留不留空白
+   这边不管——$ 那边盯着的是钱，这边没有那种歧义。 */
+function mathInlineParen(state, silent) {
+  const start = state.pos;
+  if (state.src[start] !== '\\' || state.src[start + 1] !== '(') return false;
+  let end = start + 2;
+  let closed = false;
+  for (; end < state.posMax - 1; end++) {
+    const ch = state.src[end];
+    if (ch === '\\') {
+      /* 收口就在眼前；\\（TeX 的换行记号）要整对跳过，它后面的 ) 不算收口。 */
+      if (state.src[end + 1] === ')') { closed = true; break; }
+      end++;
+      continue;
     }
+    /* 与 $ 那一支同理：不跨行、不进代码段的地盘。 */
+    if (ch === '\n' || ch === '`') return false;
   }
-  if (tex === null) return false;
+  if (!closed) return false;
+  const tex = state.src.slice(start + 2, end);
   if (!silent) {
-    const token = state.push('math_block', 'div', 0);
-    token.block = true;
+    const token = state.push('math_inline', 'span', 0);
     token.content = tex;
-    token.map = [startLine, next + 1];
-    state.line = next + 1;
   }
+  state.pos = end + 2;
   return true;
 }
 
+/* 独立公式两族（$$…$$ 与 \[…\]）共用一套扫描，只有记号不同：都必须自己起一行，
+   同一行收口，或从开记号那一行一直吃到收口那一行。收口记号后头还有字就不算收口
+   ——宁可把那行当正文，也不悄悄吞掉半行。找不到收口就照原文排。 */
+function mathBlockRule(open, close) {
+  return function mathBlock(state, startLine, endLine, silent) {
+    const start = state.bMarks[startLine] + state.tShift[startLine];
+    if (state.src.slice(start, start + open.length) !== open) return false;
+    const first = state.src.slice(start + open.length, state.eMarks[startLine]);
+    let tex = null;
+    let next = startLine;
+    const sameLine = first.indexOf(close);
+    if (sameLine >= 0 && !first.slice(sameLine + close.length).trim()) {
+      tex = first.slice(0, sameLine);
+    } else if (sameLine < 0) {
+      const lines = [first];
+      for (next = startLine + 1; next < endLine; next++) {
+        const from = state.bMarks[next] + state.tShift[next];
+        const line = state.src.slice(from, state.eMarks[next]);
+        const at = line.indexOf(close);
+        if (at >= 0 && !line.slice(at + close.length).trim()) {
+          lines.push(line.slice(0, at));
+          tex = lines.join('\n');
+          break;
+        }
+        lines.push(line);
+      }
+    }
+    if (tex === null) return false;
+    if (!silent) {
+      const token = state.push('math_block', 'div', 0);
+      token.block = true;
+      token.content = tex;
+      token.map = [startLine, next + 1];
+      state.line = next + 1;
+    }
+    return true;
+  };
+}
+
 md.inline.ruler.before('escape', 'math_inline', mathInline);
-md.block.ruler.before('fence', 'math_block', mathBlock, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
+/* 这一支必须排在 escape 前面：不抢在它前头，\( 会被它当成「转义过的左括号」，
+   反斜杠当场就没了，KaTeX 再也见不到。 */
+md.inline.ruler.before('escape', 'math_inline_paren', mathInlineParen);
+const mathBlockAlt = { alt: ['paragraph', 'reference', 'blockquote', 'list'] };
+md.block.ruler.before('fence', 'math_block', mathBlockRule('$$', '$$'), mathBlockAlt);
+md.block.ruler.before('fence', 'math_block_bracket', mathBlockRule('\\[', '\\]'), mathBlockAlt);
 md.renderer.rules.math_inline = (tokens, idx) =>
   katex.renderToString(tokens[idx].content, { ...formula, displayMode: false });
 /* 独立公式套一层 .katex-block：居中与横滚归它管（见 styles.css 的正文一节）。 */
