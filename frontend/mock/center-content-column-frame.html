@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN" data-plan="now" data-guide="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>版心 · 正文栏居中 —— 标本 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 版心：正文栏居中，注文栏顺势左移（2026-10-10，待选案）。
+
+   现状：两栏是 [--margin 13rem][--gutter 3rem][--measure 45rem]，整块 61rem 填满
+   .shell 的内容框，而 .shell 自己居中 —— 居中的是「注文栏 + 间距 + 正文」这一整块。
+   于是正文栏的中心比页心偏右 (13 + 3) / 2 = 8rem（1280px 上一次偏 128px）。读文章时
+   看得最清楚：正文右边只剩一拃，左边却空着整整一栏的余量。
+
+   选定方向：居中目标从「整块」换成「正文栏本身」，注文栏顺势挂进页面的左边距
+   （它本来就是批注，挂在正文的左余白里才对）。尺寸一个不动：--margin 13rem、
+   --gutter 3rem、--measure 45rem、字号行距、56rem / 44rem 两道窄屏断点，全部照旧。
+
+   左移量 = (--margin + --gutter) / 2 = 8rem。这笔钱只能从页边拿：.shell 67rem
+   居中之后，左右各有 (视口 − 67rem) / 2 的空边，再加 3rem 内边距，够了才移得动。
+   临界算得出来：8rem ≤ (视口 − 67rem) / 2 + 3rem → 视口 ≥ 77rem。
+   两栏里那一栏（注文栏 + 间距）在视口左边还剩下多少，是可以量的 —— 随宽度变化的
+   读数在对照台的横条里。
+
+   三案的分别只在「不够宽的时候怎么办」：
+     甲（断点左移）：≥ 80rem 才移，更窄一字不动。临界 77rem，取 80rem 留一口气
+        （1280px，常见的笔记本宽度）。代价：跨过 80rem 时正文横跳 128px。
+     乙（全宽左移）：不设断点。用它看窄窗口下的代价 —— 视口窄于 1248px 起，
+        注文栏左沿出屏被切，窄到 1088px 以下连正文栏都跟着左移。
+     丙（连续左移）：左移量取「半个两栏」与「页边富余」的较小者，视口越宽移得越多，
+        77rem 处正好移满。没有跳变，67rem 以下与现状完全一致。代价：67–77rem
+        这一段正文只是偏得少一点、并未居中；富余用 100vw 估（含滚动条那十几像素），
+        所以扣掉 0.5rem 作保守量。
+
+   这一份是标本本身，可以直接当页面打开（就是现在的窗口几何）；对照台
+   center-content-column.html 把它嵌进一个滑杆可改宽度的框里，并由它遥控
+   data-plan / data-guide。
+
+   产品已落地（2026-10-10），只有一条规则（甲案），在 src/styles.css 的 .row 骨架规则
+   近旁：
+     @media (min-width: 80rem) { .row, .shell > .md, .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2); } }
+   （.md 是编辑台那一栏、.banner 是写作-分类页顶上的横幅：不是 .row 但共用同一条左沿，
+   一起走。）为什么用 translate 不用 margin-left：页脚是 .row.shell 一体的（margin-inline:
+   auto 在居中），负 margin-left 会顶掉 auto 居中，把整块推到视口外；translate 只挪画出
+   来的位置，不动排版。写编辑页那条钉底的保存条同样跟着走 —— 它也是 .row。 */
+</style>
+<style>
+/* —— 乙、丙两案的实现（甲在样式表里，这里不重复；样式表那条对所有 data-plan 都生效，
+   所以「现状」要把它抵消回去）—— */
+html[data-plan="now"] .row { translate: none; }
+html[data-plan="yi"] .row { translate: calc((var(--margin) + var(--gutter)) / -2); }
+html[data-plan="bing"] .row {
+  translate: calc(-1 * max(0rem, min((var(--margin) + var(--gutter)) / 2, (100vw - var(--shell)) / 2 + var(--pad) - .5rem)));
+}
+</style>
+<style>
+/* —— 标本脚手架（不属产品）—— */
+.variant > h2 {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3.5rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+}
+/* 标本之间收一收上距，免得一节占掉一整屏；版面本身不动。 */
+.variant .statement, .variant .project { margin-top: 2.5rem; }
+.variant .piece { margin-top: 2.5rem; }
+.guide { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+html[data-guide="off"] .guide { display: none; }
+.guide i { position: absolute; top: 0; bottom: 0; width: 1px; display: none; }
+.guide i::after {
+  position: absolute; top: 4.4rem; transform: translateX(-50%);
+  font-size: .6875rem; color: var(--seal); white-space: nowrap;
+}
+html[data-guide="on"] .guide i { display: block; }
+.g-center { background: var(--seal); opacity: .55; }
+.g-center::after { content: "页心"; }
+.g-left { background: var(--seal); opacity: .2; }
+.g-left::after { content: "正文栏左沿"; }
+.g-right { background: var(--seal); opacity: .2; }
+.g-right::after { content: "正文栏右沿"; }
+/* 单独打开这一份时（不在对照台里）才露面的一行小字。 */
+.frametip {
+  position: fixed; left: 1rem; bottom: 1rem; z-index: 50;
+  background: var(--paper); border: 1px solid var(--rule);
+  padding: .4rem .6rem; font-size: var(--facts-size); color: var(--muted);
+}
+</style>
+</head>
+<body>
+
+<header class="masthead shell">
+  <a class="brand" href="#" aria-label="Anxin 首页">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a href="#" class="nav-here" aria-current="page">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main id="main" class="shell">
+
+<section class="variant">
+  <h2>标本一 · 首页（题记 + 项目 + 一条文章）</h2>
+
+  <section class="statement row">
+    <p class="statement-fact">2026</p>
+    <div class="statement-body">
+      <h1>把思考写下来，<br>让想法发生。</h1>
+      <p class="statement-lede">这里是 Anxin 的个人空间。记录代码、学习，以及从问题到答案的过程。</p>
+    </div>
+  </section>
+
+  <aside class="project row">
+    <p class="project-fact">项目</p>
+    <div class="project-body">
+      <h2 class="project-name">QA-Agent</h2>
+      <p class="project-line">融合 SOP 流程指引、知识库检索与图文理解的实验室智能问答助手。</p>
+      <a class="project-link" href="#">了解项目</a>
+    </div>
+  </aside>
+
+  <article class="entry row ruled">
+    <div class="facts facts-stamp">
+      <p class="mark">最新</p>
+      <p class="key">后端</p>
+      <p><time class="date" datetime="2026-10-10">2026.10.10</time></p>
+      <p>15 分钟阅读</p>
+    </div>
+    <div class="main">
+      <h3 class="entry-title"><a href="#">Go 切片作为函数参数：为什么 append 后调用方看不到变化？</a></h3>
+      <p class="entry-summary">Go 切片包含对底层数组的引用，但函数内执行 append，并不意味着调用方的切片也会更新。本文从一段二叉树中序遍历代码出发，解释切片的按值传递、长度与容量、append 的扩容行为，以及正确传回追加结果的方法。</p>
+      <p class="entry-tags">Go / 切片 / 值传递 / append / 递归</p>
+    </div>
+  </article>
+</section>
+
+<section class="variant">
+  <h2>标本二 · 文章详情（页头 + 正文 + 页脚）</h2>
+
+    <article class="piece">
+      <header class="piece-head row ruled">
+        <div class="facts facts-stamp">
+          <p class="piece-return"><a class="piece-back" href="#">返回文章列表</a></p>
+          <p class="key">后端</p>
+          <p><time class="date" datetime="2026-10-10">2026.10.10</time></p>
+          <p>15 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h1 class="piece-title" tabindex="-1">Go 切片作为函数参数：为什么 append 后调用方看不到变化？</h1>
+          <p class="piece-summary">Go 切片包含对底层数组的引用，但函数内执行 append，并不意味着调用方的切片也会更新。</p>
+          <p class="piece-tags">Go / 切片 / 值传递 / append / 递归</p>
+        </div>
+      </header>
+
+      <div class="piece-body row">
+        <div class="main prose">
+          <p>切片本身是个三字结构：指向底层数组的指针、长度、容量。把它传进函数，传的是这三个字的一份拷贝——函数里让切片长出一截，改的是那份拷贝。</p>
+          <p>于是同一段代码，容量够与不够会走出两种结果：容量够时，两边共享同一个底层数组，写入看得见；容量不够时 append 另开一块，调用方手里的还是旧的那块。</p>
+          <h2>一段中序遍历</h2>
+          <p>下面这段把结果追加进参数里的切片，调用方却拿到空的那一份——原因不在 append，在返回值。</p>
+        </div>
+      </div>
+
+      <nav class="piece-foot row ruled" aria-label="返回">
+        <div class="main">
+          <a class="piece-back" href="#">返回文章列表</a>
+        </div>
+      </nav>
+    </article>
+</section>
+
+</main>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+<div class="guide" aria-hidden="true">
+  <i class="g-center"></i><i class="g-left"></i><i class="g-right"></i>
+</div>
+
+<p class="frametip" hidden>标本本身 · 对照台在 <a href="center-content-column.html">center-content-column.html</a></p>
+
+<script>
+/* 标本本身：画三条对齐线，并把实测的几何报给对照台。对照台用 postMessage 遥控
+   data-plan 与 data-guide；直接打开时按各自的初始值渲染。产品里没有这一段。 */
+const doc = document.documentElement;
+const lines = {
+  center: document.querySelector('.g-center'),
+  left: document.querySelector('.g-left'),
+  right: document.querySelector('.g-right'),
+};
+
+function measure() {
+  const shell = document.querySelector('main.shell').getBoundingClientRect();
+  const text = document.querySelector('.entry .main').getBoundingClientRect();
+  const facts = document.querySelector('.entry .facts').getBoundingClientRect();
+  const center = (shell.left + shell.right) / 2;
+  lines.center.style.left = center + 'px';
+  lines.left.style.left = text.left + 'px';
+  lines.right.style.left = text.right + 'px';
+  const data = {
+    type: 'measure',
+    plan: doc.dataset.plan,
+    viewport: window.innerWidth,
+    client: doc.clientWidth,
+    off: (text.left + text.right) / 2 - center,
+    factsLeft: facts.left,
+    textLeft: text.left,
+    textRight: text.right,
+    textWidth: text.width,
+  };
+  if (window.parent !== window) window.parent.postMessage(data, '*');
+  return data;
+}
+
+addEventListener('message', event => {
+  const d = event.data;
+  if (!d || d.type !== 'control') return;
+  if (d.plan) doc.dataset.plan = d.plan;
+  if (typeof d.guide === 'boolean') doc.dataset.guide = d.guide ? 'on' : 'off';
+  measure();
+});
+addEventListener('resize', measure);
+addEventListener('load', measure);
+measure();
+
+if (window.top === window) document.querySelector('.frametip').hidden = false;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="zh-CN" data-plan="jia">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>版心 · 正文栏居中（甲）· 全站页面 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 稿样：甲案（正文栏居中、注文栏顺势左移）的整站页面。2026-10-10 选定，尚未落地。
+
+   甲案本身：两栏是 [--margin 13rem][--gutter 3rem][--measure 45rem]，整块 45 + 3 + 13
+   = 61rem 正好填满 .shell 的内容框，而 .shell 自己居中——居中的是「整块」。于是正文栏
+   的中线比页心偏右 (13 + 3) / 2 = 8rem（1512px 的窗口上一次偏 128px）；读文章时看得最
+   清楚：正文右边只剩一拃，左边却空着整整一栏的余量。甲案把居中的对象从「整块」换成
+   「正文栏本身」：整块左移 8rem，注文栏正好挂进左边那道页余白。
+
+   一个尺寸都不动：--margin、--gutter、--measure、字号行距、两道窄屏断点（56rem / 44rem）
+   全部照旧，动的只是整块的位置。
+
+   左移的钱只能从页边拿：8rem ≤ (视口 − 67rem) / 2 + 3rem → 视口 ≥ 77rem。甲案取 80rem
+   （1280px）当门槛，留一口气；比 80rem 窄的窗口一字不动（与现状逐像素相同）。代价是
+   跨过 80rem 时正文横跳 128px——选定甲时就带着这笔账。乙（不设断点）与丙（连续左移）
+   的代价与八档实测见对照台 center-content-column.html，标本是
+   center-content-column-frame.html。
+
+   ＊落地形态——下面这一段就是产品规则，落地时原文进 src/styles.css（去掉 html[data-plan]
+   那一层）。为什么用 translate 不用负 margin-left：页脚是 .row.shell 一体的（靠
+   margin-inline: auto 居中），负 margin-left 会顶掉自动居中、把整块推出视口；translate
+   只挪画出来的位置，不动排版，粘性、锚点、断行都还是老样子。
+
+   ＊两条「顺带」不是新决定，是同一次左移的机械后果：.md（编辑台的 Markdown 一栏）与
+   写作-分类页顶上那条 .banner 都不是 .row，但它们今天就和整块共用同一条左沿（.shell
+   内容框的左沿），三样必须一起走——不然在编辑台上，正文框会与它上面那张表单差出整整
+   8rem。带 .shell 直接子代前缀，是为了避开长在 .row 里面的那些 .banner（登录、注册、
+   账号、编辑台里都有）：那些跟着外层的 .row 走，再移一次就成了移两回。
+
+   ＊报头（.masthead.shell）不在左移之列：它是站的门面，宽度单算一档（--site-shell
+   105rem），本来就不与下面那一块的左沿对齐——现状即如此，甲案没碰它。页脚是 .row，
+   跟着走。 */
+
+/* ════════ 稿样脚手架（不属产品） ════════ */
+
+/* 报头、编辑台的切换行、保存条三处粘性在这一页放平：这是十四个整页叠起来的
+   读物，粘住的盒子会一路盖在下一段上。报头放平之后它底下那道淡出也没有用了
+   （那是垫给滚过去的正文的），一并收掉，免得扣在下面内容的头上。
+   粘性本身另有 sticky-masthead.html 与 editor-sticky.html 把关，与丙无关。 */
+.masthead { position: relative; }
+.masthead::after { display: none; }
+.md-head { position: relative; top: auto; }
+.save { position: static; }
+
+/* 页首说明与目录。 */
+.intro { max-width: var(--measure); margin-top: 2rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.75; }
+.intro + .intro { margin-top: .85rem; }
+.idx { max-width: var(--measure); margin: 1.25rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .45rem 1.5rem; font-size: var(--facts-size); }
+.idx a { color: var(--seal); border-bottom: 1px solid currentColor; padding-bottom: .1rem; transition: color .18s ease; }
+.idx a:hover { color: var(--ink); }
+
+/* 每一页的界桩：一条满墨的粗线 + 一行小字（页名、路由、导航当前项、看点）。 */
+.pg { border-top: 3px solid var(--ink); margin-top: 6rem; padding-top: 1.25rem; scroll-margin-top: 1rem; }
+.pgcap { max-width: var(--site-shell); margin-inline: auto; padding-inline: var(--pad); display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1.5rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.6; }
+.pgcap b { color: var(--ink); font-weight: 600; font-size: 1.0625rem; }
+.pgcap code { font-family: var(--stack-mono); font-size: .8125rem; color: var(--ink); }
+.pgcap .note { flex-basis: 100%; }
+
+/* 说明那一节。 */
+.doc { max-width: var(--measure); }
+.doc h2 { font-family: var(--stack-display); font-weight: 400; font-size: 1.375rem; margin-top: 2.5rem; }
+.doc h2:first-child { margin-top: 0; }
+.doc ul { margin: .75rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: var(--facts-size); line-height: 1.75; }
+.doc li + li { margin-top: .5rem; }
+.doc li b { color: var(--ink); font-weight: 600; }
+.doc code { font-family: var(--stack-mono); font-size: .8125rem; background: var(--fill); border-radius: 2px; padding: .1em .3em; }
+
+/* ════════ 甲案（这一册要看的东西；落地时进 src/styles.css） ════════ */
+@media (min-width: 80rem) {
+  .row,
+  .shell > .md,
+  .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2); }
+}
+/* 稿样开关。切回现状时把上面那一条整个抵消——选择器更具体、排在后面。
+   产品里没有这一段。 */
+html[data-plan="now"] .row,
+html[data-plan="now"] .shell > .md,
+html[data-plan="now"] .shell > .banner { translate: none; }
+
+/* 开关本身。 */
+.planbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem 1.5rem; margin-top: 1.5rem; font-size: var(--facts-size); color: var(--muted); }
+.planbar .lbl { color: var(--ink); font-weight: 600; }
+.planbar label { cursor: pointer; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<p class="intro">
+你选定了甲：把居中对象从「整块」换成「正文栏本身」——整块左移 8rem，正文栏的中线落在页心上，注文栏顺势挂进左边的页余白。
+这一页把整站十四个页面按甲案落地后的样子整页排出来，一页一页往下看。
+</p>
+<p class="intro">
+页面吃的是真的 <code>src/styles.css</code>，再加上本页头上那一条甲案规则——就是将来要原文进产品样式表的那一条。
+类名、文案、结构照真视图，演示数据取自 <code>mocks/articles.js</code>。每页上方那行小字写着路由、导航当前项，以及这一页在甲案下值得看的地方。
+</p>
+<p class="intro">
+甲案<strong>要到窗口宽 1280px（80rem）才生效</strong>：更窄的窗口一字不动，与现状逐像素相同；从 1279px 到 1280px 那一下，正文横跳 128px（选甲时就带着这笔账）。
+想对照着看，用下面的开关切回现状；想试各种宽度，去 <a href="center-content-column.html">对照台</a>——拖它的宽度滑杆等于拖窗口边框。
+</p>
+<p class="planbar" role="group" aria-label="甲案左移开关">
+  <span class="lbl">甲案左移</span>
+  <label><input type="radio" name="plan" value="jia" checked> 开（落地后的样子）</label>
+  <label><input type="radio" name="plan" value="now"> 关（现状：整块居中）</label>
+</p>
+<nav aria-label="目录">
+  <ol class="idx">
+    <li><a href="#p-articles">① 文章列表</a></li>
+    <li><a href="#p-detail">② 文章详情</a></li>
+    <li><a href="#p-categories">③ 分类</a></li>
+    <li><a href="#p-project">④ QA-Agent 项目页</a></li>
+    <li><a href="#p-login">⑤ 登录</a></li>
+    <li><a href="#p-register">⑥ 注册</a></li>
+    <li><a href="#p-verify">⑦ 验证邮箱</a></li>
+    <li><a href="#p-forgot">⑧ 忘记口令</a></li>
+    <li><a href="#p-reset">⑨ 重置口令</a></li>
+    <li><a href="#p-account">⑩ 账号</a></li>
+    <li><a href="#p-notfound">⑪ 404</a></li>
+    <li><a href="#p-admin-list">⑫ 写作台列表</a></li>
+    <li><a href="#p-admin-editor">⑬ 写作台编辑</a></li>
+    <li><a href="#p-admin-categories">⑭ 分类管理</a></li>
+    <li><a href="#p-notes">落地改动一览</a></li>
+  </ol>
+</nav>
+
+<!-- ══════════ ① 文章列表 ══════════ -->
+<section class="pg" id="p-articles" data-page="articles">
+  <p class="pgcap"><b>① 文章列表</b><code>/</code><span>导航当前：文章</span><span class="note">首页三段（题记 / 项目 / 列表）都在同一套两栏格子里：题记那个大年份、项目的「项目」、每条文章的注文栏，左沿是同一条竖线——整块左移之后这条线跟着走，正文栏（45rem）的中线落在页心。翻页行与页脚同属这一套格子。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a class="nav-here" aria-current="page" href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="statement row">
+      <p class="statement-fact">2026</p>
+      <div class="statement-body">
+        <h1>把思考写下来，<br>让想法发生。</h1>
+        <p class="statement-lede">这里是 Anxin 的个人空间。记录代码、学习，以及从问题到答案的过程。</p>
+      </div>
+    </section>
+
+    <aside class="project row">
+      <p class="project-fact">项目</p>
+      <div class="project-body">
+        <h2 class="project-name">QA-Agent</h2>
+        <p class="project-line">融合 SOP 流程指引、知识库检索与图文理解的实验室智能问答助手。</p>
+        <a class="project-link" href="#p-project">了解项目</a>
+      </div>
+    </aside>
+
+    <section id="articles" class="archive" aria-labelledby="archive-title">
+      <div class="archive-head row ruled">
+        <p class="archive-count" role="status">9 篇文章</p>
+        <div class="archive-main">
+          <h2 id="archive-title">文章</h2>
+          <span class="archive-sample">示例内容</span>
+        </div>
+      </div>
+
+      <div class="archive-tools row">
+        <div class="archive-tools-main">
+          <div class="filters" role="group" aria-label="文章分类">
+            <button class="filter" type="button" aria-pressed="true">全部</button>
+            <button class="filter" type="button" aria-pressed="false">后端开发</button>
+            <button class="filter" type="button" aria-pressed="false">前端实践</button>
+            <button class="filter" type="button" aria-pressed="false">AI 探索</button>
+            <button class="filter" type="button" aria-pressed="false">学习随笔</button>
+          </div>
+          <form class="search" role="search">
+            <label class="sr-only" for="m-q-articles">搜索文章标题与摘要</label>
+            <input id="m-q-articles" type="search" placeholder="搜索标题或摘要" maxlength="100">
+            <button type="submit">搜索</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="entries">
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="mark">最新</p>
+            <p class="key">后端开发</p>
+            <p><time class="date" datetime="2026-09-21">2026.09.21</time></p>
+            <p>8 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">从一个接口开始，搭建自己的 Go 服务</a></h3>
+            <p class="entry-summary">把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。</p>
+            <p class="entry-tags">Go / HTTP</p>
+          </div>
+        </article>
+
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="key">AI 探索</p>
+            <p><time class="date" datetime="2026-09-18">2026.09.18</time></p>
+            <p>6 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">一个好问题，需要多少上下文？</a></h3>
+            <p class="entry-summary">在问答应用中，问题并不是全部。整理上下文、拆解意图，观察答案如何随输入而改变。</p>
+            <p class="entry-tags">AI / QA-Agent</p>
+          </div>
+        </article>
+
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="key">前端实践</p>
+            <p><time class="date" datetime="2026-09-14">2026.09.14</time></p>
+            <p>7 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">让页面与数据各自做好一件事</a></h3>
+            <p class="entry-summary">从模拟数据开始，给接口留出边界。页面负责呈现，适配器负责数据，让后续联调变得自然。</p>
+            <p class="entry-tags">JavaScript / 工程实践</p>
+          </div>
+        </article>
+
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="key">学习随笔</p>
+            <p><time class="date" datetime="2026-09-10">2026.09.10</time></p>
+            <p>4 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">边做边学：给学习留下一个可运行的结果</a></h3>
+            <p class="entry-summary">把大目标拆成一次次可以验证的小练习，用真实的问题推动下一步，而不是等待准备充分。</p>
+            <p class="entry-tags">学习 / 记录</p>
+          </div>
+        </article>
+
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="key">后端开发</p>
+            <p><time class="date" datetime="2026-09-06">2026.09.06</time></p>
+            <p>5 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">文章列表里的分页，究竟约定了什么</a></h3>
+            <p class="entry-summary">页码、总数和边界条件看似简单，却决定了前后端是否真的理解彼此。从一个列表梳理接口契约。</p>
+            <p class="entry-tags">Go / API 设计</p>
+          </div>
+        </article>
+
+        <article class="entry row ruled">
+          <div class="facts facts-stamp">
+            <p class="key">前端实践</p>
+            <p><time class="date" datetime="2026-09-02">2026.09.02</time></p>
+            <p>6 分钟阅读</p>
+          </div>
+          <div class="main">
+            <h3 class="entry-title"><a href="#p-detail">那些让界面更好用的小细节</a></h3>
+            <p class="entry-summary">加载中的反馈、空结果的提示与键盘可用的按钮。把正常路径之外的体验，也纳入设计。</p>
+            <p class="entry-tags">交互 / 可访问性</p>
+          </div>
+        </article>
+      </div>
+
+      <nav class="pager row ruled" aria-label="文章分页">
+        <div class="pager-nav">
+          <button class="pager-btn" type="button" disabled>上一页</button>
+          <span class="pager-count">1 / 2</span>
+          <button class="pager-btn" type="button">下一页</button>
+        </div>
+      </nav>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ② 文章详情 ══════════ -->
+<section class="pg" id="p-detail" data-page="detail">
+  <p class="pgcap"><b>② 文章详情</b><code>/articles/9k2m4p7r/go-api-first-step</code><span>导航当前：文章（详情页也算文章这一栏）</span><span class="note">这次改动的来由就是这一页：正文栏左右两边现在留得一样宽（窗宽减去 45rem 后对半分，1512px 的窗口下各约 390px），注文栏（返回、类别、日期、时长）挂进左边那一段。头、正文、页脚三条 .row 同起同落；.ruled 那条线仍从正文栏左沿起。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a class="nav-here" href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <article class="piece">
+      <header class="piece-head row ruled">
+        <div class="facts facts-stamp">
+          <p class="piece-return"><a class="piece-back" href="#p-articles">返回文章列表</a></p>
+          <p class="key">后端开发</p>
+          <p><time class="date" datetime="2026-09-21">2026.09.21</time></p>
+          <p>8 分钟阅读</p>
+        </div>
+        <div class="main">
+          <h1 class="piece-title">从一个接口开始，搭建自己的 Go 服务</h1>
+          <p class="piece-summary">把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。</p>
+          <p class="piece-tags">Go / HTTP</p>
+        </div>
+      </header>
+
+      <div class="piece-body row">
+        <div class="main prose">
+          <h2>先定约定，再写实现</h2>
+          <p>接口的价值多半在写代码之前就定下了：它承诺返回什么，失败时又说什么。</p>
+          <ul>
+            <li>路径要能被猜出来</li>
+            <li>字段名要能被读懂</li>
+            <li>分页要能自洽</li>
+          </ul>
+          <h2>从最小的那个开始</h2>
+          <pre><code>func (h *Handler) List(c *gin.Context) {
+	c.JSON(http.StatusOK, result)
+}</code></pre>
+          <p>先让它跑通，再让它跑对。</p>
+        </div>
+      </div>
+
+      <nav class="piece-foot row ruled" aria-label="返回">
+        <div class="main">
+          <a class="piece-back" href="#p-articles">返回文章列表</a>
+        </div>
+      </nav>
+    </article>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ③ 分类 ══════════ -->
+<section class="pg" id="p-categories" data-page="categories">
+  <p class="pgcap"><b>③ 分类</b><code>/categories</code><span>导航当前：分类</span><span class="note">页头 2026-10-07 「整头升格」之后与写作台那几页同构：左栏是事实（几个分类 / 几篇文章），右栏是页题加一行摘要；作者登录后摘要下面还多一行「编辑分类」——站里第一件长在公开页里的作者专属物，读者那份 DOM 连一段空白都不多。下面每一类一节，仍是同一套格子。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a class="nav-here" aria-current="page" href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <div class="cat-body">
+      <section class="piece row ruled" aria-labelledby="cat-title">
+        <div class="facts">
+          <p role="status" aria-live="polite"><span class="key">4 个分类</span></p>
+          <p>9 篇文章</p>
+          <p>示例内容</p>
+        </div>
+        <div class="piece-main">
+          <h1 id="cat-title" class="piece-title">分类</h1>
+          <p class="piece-summary">每个分类下先摆最近几篇；想看全的，去文章列表里筛那一类。</p>
+        </div>
+      </section>
+
+      <section class="cat row ruled">
+        <div class="facts">
+          <p>3 篇</p>
+          <p>最近 2026.09.21</p>
+        </div>
+        <div class="main">
+          <h3 class="cat-name">后端开发</h3>
+          <ul class="cat-list">
+            <li><a href="#p-detail">从一个接口开始，搭建自己的 Go 服务</a><time datetime="2026-09-21">2026.09.21</time></li>
+            <li><a href="#p-detail">文章列表里的分页，究竟约定了什么</a><time datetime="2026-09-06">2026.09.06</time></li>
+            <li><a href="#p-detail">把错误当作接口的一部分</a><time datetime="2026-08-23">2026.08.23</time></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="cat row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+          <p>最近 2026.09.14</p>
+        </div>
+        <div class="main">
+          <h3 class="cat-name">前端实践</h3>
+          <ul class="cat-list">
+            <li><a href="#p-detail">让页面与数据各自做好一件事</a><time datetime="2026-09-14">2026.09.14</time></li>
+            <li><a href="#p-detail">那些让界面更好用的小细节</a><time datetime="2026-09-02">2026.09.02</time></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="cat row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+          <p>最近 2026.09.18</p>
+        </div>
+        <div class="main">
+          <h3 class="cat-name">AI 探索</h3>
+          <ul class="cat-list">
+            <li><a href="#p-detail">一个好问题，需要多少上下文？</a><time datetime="2026-09-18">2026.09.18</time></li>
+            <li><a href="#p-detail">先找到，再回答：检索过程的学习笔记</a><time datetime="2026-08-28">2026.08.28</time></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="cat row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+          <p>最近 2026.09.10</p>
+        </div>
+        <div class="main">
+          <h3 class="cat-name">学习随笔</h3>
+          <ul class="cat-list">
+            <li><a href="#p-detail">边做边学：给学习留下一个可运行的结果</a><time datetime="2026-09-10">2026.09.10</time></li>
+            <li><a href="#p-detail">给想法留一个地方</a><time datetime="2026-08-20">2026.08.20</time></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ④ QA-Agent 项目页 ══════════ -->
+<section class="pg" id="p-project" data-page="project">
+  <p class="pgcap"><b>④ QA-Agent 项目页</b><code>/projects/qa-agent</code><span>导航当前：无（报头那条「QA-Agent」去的是应用，不是这一页）</span><span class="note">这一页左栏只有两行（返回首页 / 项目）。正文一栏来自一份 markdown，这里摆的是它没有内容的那一态——空的时候整块不出现（产品规则，空 <code>.prose</code> 照样占着 3rem 上距）。左移在这一页一样生效，看标题与左栏是不是跟着整块走。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <article class="piece">
+      <header class="piece-head row ruled">
+        <div class="facts">
+          <p class="piece-return"><a class="piece-back" href="#p-articles">返回首页</a></p>
+          <p class="key">项目</p>
+        </div>
+        <div class="main">
+          <h1 class="piece-title">QA-Agent</h1>
+          <p class="piece-act"><a class="project-link" href="#">在线体验<span class="sr-only">（新窗口）</span></a></p>
+        </div>
+      </header>
+
+      <nav class="piece-foot row ruled" aria-label="返回">
+        <div class="main">
+          <a class="piece-back" href="#p-articles">返回首页</a>
+        </div>
+      </nav>
+    </article>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑤ 登录 ══════════ -->
+<section class="pg" id="p-login" data-page="login">
+  <p class="pgcap"><b>⑤ 登录</b><code>/login</code><span>导航当前：登录</span><span class="note">一页一张表单，长在右栏里（左栏两行事实）。甲案只动位置：标题、表单、下面那条 .form-alt 的相对关系一个像素不变。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a class="nav-here" aria-current="page" href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">会话</span><br>登录后 30 天内免登录，可以随时在账号页撤销</p>
+        <p><span class="key">邮箱</span><br>没验证过的邮箱登不进来</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="form-title">登录</h1>
+        <p class="form-lede">用注册时的邮箱和口令进来。</p>
+
+        <form class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="m-login-mail">邮箱</label>
+            <input id="m-login-mail" class="field-input" type="email" autocomplete="email">
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-login-pass">口令</label>
+            <input id="m-login-pass" class="field-input" type="password" autocomplete="current-password">
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">登录</button>
+            <a class="link-quiet" href="#p-forgot">忘记口令</a>
+          </div>
+        </form>
+
+        <p class="form-alt"><span>还没有账号？</span><a href="#p-register">注册</a></p>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑥ 注册 ══════════ -->
+<section class="pg" id="p-register" data-page="register">
+  <p class="pgcap"><b>⑥ 注册</b><code>/register</code><span>导航当前：无（报头的「登录」只在 /login 上算当前）</span><span class="note">三格字段、一枚「注册」，同一条右栏；表单下面那条分隔线下是 .form-alt 的「登录」。整块左移之后，这一段上下关系照旧。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">下一步</span><br>会收到一封验证信，点里面的链接才算注册完</p>
+        <p><span class="key">有效期</span><br>链接 24 小时</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="form-title">注册</h1>
+
+        <form class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="m-register-mail">邮箱</label>
+            <input id="m-register-mail" class="field-input" type="email" autocomplete="email" aria-describedby="m-register-mail-hint">
+            <p id="m-register-mail-hint" class="field-hint">验证信会寄到这里</p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-register-pass">口令</label>
+            <input id="m-register-pass" class="field-input" type="password" autocomplete="new-password" aria-describedby="m-register-pass-hint">
+            <p id="m-register-pass-hint" class="field-hint">至少 12 个字符</p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-register-pass2">再输一遍口令</label>
+            <input id="m-register-pass2" class="field-input" type="password" autocomplete="new-password">
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">注册</button>
+          </div>
+        </form>
+
+        <p class="form-alt"><span>已经有账号？</span><a href="#p-login">登录</a></p>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑦ 验证邮箱（五态里的「成了」） ══════════ -->
+<section class="pg" id="p-verify" data-page="verify">
+  <p class="pgcap"><b>⑦ 验证邮箱 · 成了</b><code>/verify-email?token=…</code><span>导航当前：无</span><span class="note">五态里摆「成了」那一屏（正在核 / 链接不能用了 / 没核成 / 没从邮件来四态同款，不再另摆）。左栏一行事实，标题与动作行长在右栏里。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">会话</span><br>登录后 30 天内免登录</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="form-title">邮箱验证完成</h1>
+        <p class="form-lede">这个邮箱已经确认是你的。现在可以登录了。</p>
+        <div class="form-actions">
+          <a class="primary" href="#p-login">去登录</a>
+          <a class="link-quiet" href="#p-articles">回文章列表</a>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑧ 忘记口令（填表那一屏） ══════════ -->
+<section class="pg" id="p-forgot" data-page="forgot">
+  <p class="pgcap"><b>⑧ 忘记口令 · 填表</b><code>/forgot-password</code><span>导航当前：无</span><span class="note">一页只有一处动作、左栏一行事实——页面越干净，这一下左移在观感上的变化越清楚。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">有效期</span><br>重置链接 30 分钟</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="form-title">重置口令</h1>
+        <p class="form-lede">填注册时用的邮箱，我们会寄一条重设口令的链接过去。</p>
+
+        <form class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="m-forgot-mail">邮箱</label>
+            <input id="m-forgot-mail" class="field-input" type="email" autocomplete="email">
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">发送重置链接</button>
+          </div>
+        </form>
+
+        <p class="form-alt"><span>想起来了？</span><a href="#p-login">去登录</a></p>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑨ 重置口令（填表那一屏） ══════════ -->
+<section class="pg" id="p-reset" data-page="reset">
+  <p class="pgcap"><b>⑨ 重置口令 · 填表</b><code>/reset-password?token=…</code><span>导航当前：无</span><span class="note">两格口令加一枚「保存新口令」；「口令已更新」「链接不能用了」两屏与它同款。左栏一行事实，右栏是整张表单。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">有效期</span><br>这条链接 30 分钟</p>
+        <p><span class="key">改完之后</span><br>所有设备都要重新登录</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="form-title">设置新口令</h1>
+        <p class="form-lede">设一个新口令。设完之后所有设备都要重新登录。</p>
+
+        <form class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="m-reset-pass">新口令</label>
+            <input id="m-reset-pass" class="field-input" type="password" autocomplete="new-password" aria-describedby="m-reset-pass-hint">
+            <p id="m-reset-pass-hint" class="field-hint">至少 12 个字符</p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-reset-pass2">再输一遍新口令</label>
+            <input id="m-reset-pass2" class="field-input" type="password" autocomplete="new-password">
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">保存新口令</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑩ 账号 ══════════ -->
+<section class="pg" id="p-account" data-page="account">
+  <p class="pgcap"><b>⑩ 账号</b><code>/account</code><span>导航当前：账号（已登录，报头多「写作」一条）</span><span class="note">三段：身份（dl）、改口令、登录设备。三类内容形状不同，量的却是同一条左沿——设备每行也是 facts + main 的格子。翻到这儿，把左栏的日期与 IP 和上面几段的左栏比一比。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-admin-list">写作</a>
+      <a class="nav-here" aria-current="page" href="#p-account">账号</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">改口令</span><br>改完其它设备全部登出，当前这台留着</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="piece-title">账号</h1>
+
+        <dl class="identity">
+          <div>
+            <dt>邮箱</dt>
+            <dd>anxin@example.com <span class="badge">已验证</span></dd>
+          </div>
+          <div><dt>身份</dt><dd>作者</dd></div>
+          <div><dt>注册于</dt><dd class="date">2026.08.12</dd></div>
+        </dl>
+
+        <div class="section-head">
+          <h2 class="section-title">改口令</h2>
+          <p class="section-note">改完其它设备会全部登出，这一台留着。</p>
+        </div>
+
+        <form class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="m-account-current">当前口令</label>
+            <input id="m-account-current" class="field-input" type="password" autocomplete="current-password">
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-account-pass">新口令</label>
+            <input id="m-account-pass" class="field-input" type="password" autocomplete="new-password" aria-describedby="m-account-pass-hint">
+            <p id="m-account-pass-hint" class="field-hint">至少 12 个字符，且不能和现在这个一样</p>
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">保存新口令</button>
+            <button class="pager-btn" type="button">退出登录</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section row ruled">
+      <p class="facts">2 台</p>
+      <div class="main">
+        <h2 class="section-title">登录设备</h2>
+        <p class="section-note">认不出哪一台，就在那一行上把它登出。改动口令也会全部登出。</p>
+      </div>
+    </section>
+
+    <div class="devices">
+      <article class="device row ruled">
+        <div class="facts">
+          <p class="mark">本机</p>
+          <p><time class="date">2026.10.06 09:12</time></p>
+          <p>203.0.113.7</p>
+        </div>
+        <div class="device-main">
+          <p class="device-ua">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36</p>
+          <p class="device-meta">2026.11.05 过期</p>
+        </div>
+      </article>
+
+      <article class="device row ruled">
+        <div class="facts">
+          <p><time class="date">2026.09.28 21:40</time></p>
+          <p>198.51.100.23</p>
+        </div>
+        <div class="device-main">
+          <p class="device-ua">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15</p>
+          <p class="device-meta">2026.10.28 过期</p>
+          <div class="device-actions">
+            <button class="pager-btn" type="button">在这台设备上登出</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑪ 404 ══════════ -->
+<section class="pg" id="p-notfound" data-page="notfound">
+  <p class="pgcap"><b>⑪ 404</b><code>/某个不存在的地址</code><span>导航当前：无</span><span class="note">这一页左栏是空的，正文栏照样居中——空着的那一栏仍然占着格位（是格子，不是碰巧），解释与出口都从正文栏左沿起。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a href="#p-login">登录</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="main notice">
+        <h1>页面不存在</h1>
+        <p>这个地址下没有内容，也许链接已经变更。</p>
+        <a class="pager-btn" href="#p-articles">返回文章列表</a>
+      </div>
+    </section>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑫ 写作台列表 ══════════ -->
+<section class="pg" id="p-admin-list" data-page="admin-list">
+  <p class="pgcap"><b>⑫ 写作台列表</b><code>/admin/articles</code><span>导航当前：写作（已登录且是作者）</span><span class="note">工具行里「编辑分类」与「写新的一篇」并排（前者 2026-10-07 由「分类」改称）。页题一段、工具行、条目、翻页四段同属一套格子，一起左移。列表演示只摆四行，真实一页十行。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a class="nav-here" aria-current="page" href="#p-admin-list">写作</a>
+      <a href="#p-account">账号</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">11 篇</span><br>其中 2 篇还是草稿</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="piece-title">写作</h1>
+        <p class="piece-summary">草稿只有你看得到。改成「已发布」并保存，那一篇才会出现在文章列表里。</p>
+      </div>
+    </section>
+
+    <div class="archive-tools row ruled">
+      <p class="facts">按最近改动排</p>
+      <div class="archive-tools-main">
+        <div class="tools">
+          <div class="tools-find">
+            <div class="filters" role="group" aria-label="按状态筛选">
+              <button class="filter" type="button" aria-pressed="true">全部</button>
+              <button class="filter" type="button" aria-pressed="false">草稿</button>
+              <button class="filter" type="button" aria-pressed="false">已发布</button>
+            </div>
+            <form class="search" role="search">
+              <label class="sr-only" for="m-admin-search">搜索文章标题和摘要</label>
+              <input id="m-admin-search" type="search" placeholder="搜标题和摘要" maxlength="100">
+              <button type="submit">搜索</button>
+            </form>
+          </div>
+          <div class="tools-acts">
+            <a class="link-quiet" href="#p-admin-categories">编辑分类</a>
+            <a class="primary" href="#p-admin-editor">写新的一篇</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="entries entries-ledger">
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="mark">草稿</p>
+          <p>改于 <time class="date" datetime="2026-10-06">10 月 6 日</time></p>
+          <p>约 4 分钟</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#p-admin-editor">迁移日志：把文章地址从 slug 换成 id</a></h3>
+          <p class="entry-summary">一次把公开地址从 slug 换成 id 的改动记录：为什么不需要兼容旧链接，以及那两天验证了什么。</p>
+          <p class="entry-tags">Go / 工程实践</p>
+          <p class="entry-acts">
+            <a class="act" href="#p-admin-editor">继续写</a>
+            <button class="act-danger" type="button">删除</button>
+          </p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>已发布</p>
+          <p>改于 <time class="date" datetime="2026-10-05">10 月 5 日</time></p>
+          <p>约 5 分钟</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#p-admin-editor">文章列表里的分页，究竟约定了什么</a></h3>
+          <p class="entry-summary">页码、总数和边界条件看似简单，却决定了前后端是否真的理解彼此。从一个列表梳理接口契约。</p>
+          <p class="entry-tags">Go / API 设计</p>
+
+          <div class="confirm">
+            <p><strong>删除《文章列表里的分页，究竟约定了什么》？</strong></p>
+            <p>
+              这一篇已经发布，公开地址 <code>/articles/2p8r5t3v/pagination-basics</code> 会立刻失效。
+              没有回收站，删掉就找不回来了。
+            </p>
+            <div class="confirm-actions">
+              <button class="btn-danger" type="button">删除这一篇</button>
+              <button class="pager-btn" type="button">取消</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>已发布</p>
+          <p>改于 <time class="date" datetime="2026-09-30">9 月 30 日</time></p>
+          <p>约 6 分钟</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#p-admin-editor">那些让界面更好用的小细节</a></h3>
+          <p class="entry-summary">加载中的反馈、空结果的提示与键盘可用的按钮。把正常路径之外的体验，也纳入设计。</p>
+          <p class="entry-tags">交互 / 可访问性</p>
+          <p class="entry-acts">
+            <a class="act" href="#p-admin-editor">编辑</a>
+            <a class="act" href="#p-detail">查看公开页<span class="sr-only">（新窗口）</span></a>
+            <button class="act-danger" type="button">删除</button>
+          </p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p class="mark">草稿</p>
+          <p>改于 <time class="date" datetime="2026-09-24">9 月 24 日</time></p>
+          <p>约 3 分钟</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title"><a href="#p-admin-editor">给编辑器留一条退出正文框的路</a></h3>
+          <p class="entry-summary">记录 Tab 缩进之外的那条出路：先按 Esc，再按 Tab，焦点才离开正文框。</p>
+          <p class="entry-tags">交互</p>
+          <p class="entry-acts">
+            <a class="act" href="#p-admin-editor">继续写</a>
+            <button class="act-danger" type="button">删除</button>
+          </p>
+        </div>
+      </article>
+    </div>
+
+    <nav class="pager row ruled" aria-label="翻页">
+      <div class="pager-nav">
+        <button class="pager-btn pager-prev" type="button" disabled>上一页</button>
+        <span class="pager-count">第 1 / 2 页 · 共 11 篇</span>
+        <button class="pager-btn pager-next" type="button">下一页</button>
+      </div>
+    </nav>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑬ 写作台编辑 ══════════ -->
+<section class="pg" id="p-admin-editor" data-page="admin-editor">
+  <p class="pgcap"><b>⑬ 写作台编辑</b><code>/admin/articles/9k2m4p7r</code><span>导航当前：写作</span><span class="note">这一页藏着一处非做不可的顺带：Markdown 那一栏（.md）不是 .row，产品里原来没有任何规则带着它走；甲案把它（连同写作-分类页顶上那条 .banner）一起带上——不然正文框会与它上面那张表单差出整整 8rem。翻到这儿核对：表单、Markdown 框、底下的保存条是不是同一条左沿。底栏按「有改动没保存」那一态排。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a class="nav-here" href="#p-admin-list">写作</a>
+      <a href="#p-account">账号</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p><span class="key">地址</span><br>9k2m4p7r</p>
+        <p>
+          写于 <time class="date" datetime="2026-09-21">9 月 21 日</time><br>
+          改于 <time class="date" datetime="2026-10-05">10 月 5 日</time>
+        </p>
+        <p>1,024 字 · 约 8 分钟</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="piece-title">从一个接口开始，搭建自己的 Go 服务</h1>
+        <p class="piece-summary">
+          公开地址 <code>/articles/9k2m4p7r/go-api-first-step</code>
+        </p>
+      </div>
+    </section>
+
+    <form class="composer row ruled" novalidate>
+      <p class="facts">状态决定它现在外面看不看得到</p>
+      <div class="composer-form">
+        <div class="field">
+          <span id="m-article-status-label" class="field-label">状态</span>
+          <div class="status-row">
+            <div class="segmented" role="radiogroup" aria-labelledby="m-article-status-label" aria-describedby="m-article-status-hint">
+              <input id="m-article-status-draft" class="sr-only" type="radio" name="m-article-status" value="draft">
+              <label for="m-article-status-draft">草稿</label>
+              <input id="m-article-status-published" class="sr-only" type="radio" name="m-article-status" value="published" checked>
+              <label for="m-article-status-published">已发布</label>
+            </div>
+            <p id="m-article-status-hint" class="field-hint">保存后改动立刻在外面可见。</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="m-article-title">标题</label>
+          <input id="m-article-title" class="field-input input-title" type="text" placeholder="一句话说清这篇在讲什么" value="从一个接口开始，搭建自己的 Go 服务">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="m-article-summary">摘要</label>
+          <textarea id="m-article-summary" class="field-area" rows="3" placeholder="列表页上跟在标题后面的那两三行" aria-describedby="m-article-summary-hint">把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。</textarea>
+          <p id="m-article-summary-hint" class="field-hint">必填。写清楚这篇解决什么问题，读者靠它决定点不点进来。</p>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label class="field-label" for="m-article-slug">地址里的名字</label>
+            <input id="m-article-slug" class="field-input" type="text" placeholder="go-api-first-step" value="go-api-first-step" aria-describedby="m-article-slug-hint">
+            <p id="m-article-slug-hint" class="field-hint">改它不会让任何既有链接失效——地址里真正管用的是 id。</p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="m-article-category">分类</label>
+            <span class="select">
+              <select id="m-article-category">
+                <option value="b7k2m9pq" selected>后端开发</option>
+                <option value="f8n3s5t7">前端实践</option>
+                <option value="a9w2y4z6">AI 探索</option>
+                <option value="n6h4j2m8">学习随笔</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="m-article-tags">标签</label>
+          <div class="tags">
+            <span class="tag">Go<button type="button" aria-label="移除标签 Go">×</button></span>
+            <span class="tag">HTTP<button type="button" aria-label="移除标签 HTTP">×</button></span>
+            <input id="m-article-tags" type="text" placeholder="键入后按 Enter" autocomplete="off" aria-describedby="m-article-tags-hint">
+          </div>
+          <p id="m-article-tags-hint" class="field-hint">按 Enter 加一个。最多 10 个，每个不超过 32 个字符。已加 2 个。</p>
+        </div>
+      </div>
+    </form>
+
+    <section class="md">
+      <div class="md-head">
+        <span class="md-label">Markdown 原文</span>
+        <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+          <input id="m-body-source" class="sr-only" type="radio" name="m-body-mode" value="source" checked>
+          <input id="m-body-preview" class="sr-only" type="radio" name="m-body-mode" value="preview">
+          <label class="link-quiet" for="m-body-preview">看预览</label>
+        </div>
+      </div>
+
+      <div class="md-pane" data-pane="source">
+        <textarea id="m-article-body" class="md-source" aria-label="Markdown 原文" spellcheck="false" aria-describedby="m-article-body-keys">## 先定约定，再写实现
+
+接口的价值多半在写代码之前就定下了：它承诺返回什么，失败时又说什么。
+
+- 路径要能被猜出来
+- 字段名要能被读懂
+- 分页要能自洽
+
+## 从最小的那个开始
+
+```go
+func (h *Handler) List(c *gin.Context) {
+	c.JSON(http.StatusOK, result)
+}
+```
+
+先让它跑通，再让它跑对。</textarea>
+        <p id="m-article-body-keys" class="field-hint">Tab 缩进，Shift+Tab 退回一格。要离开这一格，先按 Esc，再按 Tab。</p>
+        <div class="md-tools">
+          <label class="pager-btn upload-btn" for="m-article-file">插入图片</label>
+          <input id="m-article-file" class="sr-only" type="file" accept="image/*">
+          <p class="field-hint">JPEG / PNG / GIF / WebP，单张不超过 4 MB。传完插在光标处。</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="save row ruled" data-dirty="true" data-leaving="false">
+      <div class="facts">
+        <p class="save-state-clean">改动都保存了</p>
+        <p class="save-state-dirty"><span class="mark">有改动没保存</span></p>
+        <p class="save-note-clean">删掉就没有了。</p>
+        <p class="save-note-dirty">离开这一页就没了。</p>
+        <p class="save-note-leaving">要去别的页，改动还没保存。</p>
+      </div>
+      <div class="main save-actions">
+        <button class="primary" type="button">保存</button>
+        <button class="link-quiet act-abandon" type="button">放弃改动</button>
+        <a class="link-quiet act-away" href="#p-detail">查看公开页<span class="sr-only">（新窗口）</span></a>
+        <button class="act-danger act-away" type="button">删除这一篇</button>
+      </div>
+    </div>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ ⑭ 分类管理 ══════════ -->
+<section class="pg" id="p-admin-categories" data-page="admin-categories">
+  <p class="pgcap"><b>⑭ 分类管理</b><code>/admin/categories</code><span>导航当前：写作（2026-10-07 起，人在这一页时报头的「写作」点亮）</span><span class="note">页头与页脚各一枚「返回写作」（同日补，与详情页同一支 .piece-back）。三张就地表单（改名 / 删除确认 / 新建）同时在场上，都在右栏里；删除确认那颗「挪走这 2 篇，删掉分类」是站上第二处也是最后一处 .btn-danger。</span></p>
+  <header class="masthead shell">
+    <a class="brand" href="#p-articles" aria-label="Anxin 首页">Anxin</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#p-articles">文章</a>
+      <a href="#p-categories">分类</a>
+      <a href="#">QA-Agent<span class="sr-only">（新窗口）</span></a>
+      <a class="nav-here" aria-current="page" href="#p-admin-list">写作</a>
+      <a href="#p-account">账号</a>
+    </nav>
+  </header>
+  <div class="shell">
+    <section class="piece row ruled">
+      <div class="facts">
+        <p class="piece-return"><a class="piece-back" href="#p-admin-list">返回写作</a></p>
+        <p><span class="key">4 个分类</span><br>9 篇归在其中</p>
+      </div>
+      <div class="piece-main">
+        <h1 class="piece-title">分类</h1>
+        <p class="piece-summary">读者在文章列表上看见的筛选项就是这几个，先后也照这个顺序。改名字不会动到任何一篇文章的地址——地址里带的是 id。</p>
+      </div>
+    </section>
+
+    <div class="archive-tools row ruled">
+      <p class="facts">第一个是写新文章时的默认分类</p>
+      <div class="archive-tools-main">
+        <div class="tools">
+          <p class="facts">每一篇都归在其中一个下面，没有「未分类」这一档。</p>
+          <button class="primary" type="button">新建一个分类</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="entries entries-ledger">
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>3 篇</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title">后端开发</h3>
+          <p class="entry-acts">
+            <button class="act" type="button" disabled>上移</button>
+            <button class="act" type="button">下移</button>
+            <button class="act" type="button">改名</button>
+            <button class="act-danger" type="button">删除</button>
+          </p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+        </div>
+        <div class="main">
+          <div class="cat-name-field">
+            <div class="field">
+              <label class="field-label" for="m-cat-rename">名字</label>
+              <input id="m-cat-rename" class="field-input" type="text" placeholder="比如：读书笔记" value="前端实践" aria-describedby="m-cat-rename-hint">
+              <p id="m-cat-rename-hint" class="field-hint">改的是它在站上的叫法。文章存的是分类的 id，所以这 2 篇一个字都不动。</p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="button">保存</button>
+            <button class="pager-btn" type="button">取消</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title">AI 探索</h3>
+          <div class="confirm">
+            <p><strong>删除「AI 探索」？</strong></p>
+            <p>这个分类下还有 2 篇文章。删掉分类之前，得先给它们找个去处。</p>
+            <div class="cat-name-field field">
+              <label class="field-label" for="m-cat-move">这 2 篇改归到</label>
+              <span class="select">
+                <select id="m-cat-move">
+                  <option value="" disabled selected>选一个分类</option>
+                  <option value="b7k2m9pq">后端开发</option>
+                  <option value="f8n3s5t7">前端实践</option>
+                  <option value="n6h4j2m8">学习随笔</option>
+                </select>
+              </span>
+            </div>
+            <p>文章本身一个字都不动，只有分类换成新的那一个。它们的地址里带的是 id，也不会变。</p>
+            <div class="confirm-actions">
+              <button class="btn-danger" type="button" disabled>挪走这 2 篇，删掉分类</button>
+              <button class="pager-btn" type="button">取消</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts">
+          <p>2 篇</p>
+        </div>
+        <div class="main">
+          <h3 class="entry-title">学习随笔</h3>
+          <p class="entry-acts">
+            <button class="act" type="button">上移</button>
+            <button class="act" type="button">下移</button>
+            <button class="act" type="button">改名</button>
+            <button class="act-danger" type="button">删除</button>
+          </p>
+        </div>
+      </article>
+
+      <article class="entry row ruled">
+        <div class="facts"><p class="mark">新的</p></div>
+        <div class="main">
+          <div class="cat-name-field">
+            <div class="field">
+              <label class="field-label" for="m-cat-new-name">名字</label>
+              <input id="m-cat-new-name" class="field-input" type="text" placeholder="比如：读书笔记" aria-describedby="m-cat-new-name-hint">
+              <p id="m-cat-new-name-hint" class="field-hint">写的就是读者在文章列表上看见的那几个字。最多 16 个字。</p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="button">加上</button>
+            <button class="pager-btn" type="button">取消</button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <nav class="piece-foot row ruled" aria-label="返回">
+      <div class="main">
+        <a class="piece-back" href="#p-admin-list">返回写作</a>
+      </div>
+    </nav>
+  </div>
+  <footer class="footer row shell ruled">
+    <p class="footer-made">© 2026 Anxin</p>
+    <div class="footer-main">
+      <p>记录，是为了走得更远。</p>
+      <a href="#">anxin-hitsz.com</a>
+    </div>
+  </footer>
+</section>
+
+<!-- ══════════ 落地改动一览（不是页面） ══════════ -->
+<section class="pg" id="p-notes">
+  <p class="pgcap"><b>落地改动一览</b><span>这一节不是页面，是这次改动与不动的清单（条文落地时进 src/styles.css，现在还没有）。</span></p>
+  <div class="shell">
+    <div class="doc">
+      <h2>甲：一条规则</h2>
+      <ul>
+        <li><b>规则</b>：<code>@media (min-width: 80rem) { .row, .shell > .md, .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2) } }</code>
+          ——整块左移 8rem（半个两栏），正文栏的中线落到页心上。落地时原文进 <code>src/styles.css</code>，就写在 <code>.row</code> 那条骨架规则的近旁；这一页头上那一段就是它。</li>
+        <li><b>为什么是 translate 不是负 margin</b>：页脚是 <code>.row.shell</code> 一体的（靠 <code>margin-inline: auto</code> 居中），负 <code>margin-left</code> 会顶掉自动居中、把整块推出视口；
+          <code>translate</code> 只挪画出来的位置，不动排版——粘性、锚点让位、断行都还是老样子。</li>
+        <li><b>门槛 80rem 的来路</b>：左移的钱只能从页边拿，8rem ≤ (视口 − 67rem) / 2 + 3rem，解出视口 ≥ 77rem；甲案取 80rem（1280px）留一口气。比它窄的窗口一字不动。</li>
+        <li><b>两条顺带</b>：<code>.md</code>（编辑台的 Markdown 一栏）与写作-分类页顶上的 <code>.banner</code> 不是 <code>.row</code>，但今天与整块共用同一条左沿，必须一起走——不然编辑台上正文框差出整整 8rem。
+          带 <code>.shell</code> 直接子代前缀，是为了避开长在 <code>.row</code> 里的那些 <code>.banner</code>（登录、注册、账号、编辑台里都有），免得移两回。顶层的那种这一册里没有摆（它是「这一下没做成」的错误态）。</li>
+      </ul>
+      <h2>不动</h2>
+      <ul>
+        <li>所有尺寸：<code>--margin</code> 13rem、<code>--gutter</code> 3rem、<code>--measure</code> 45rem、字号与行距、两道窄屏断点（56rem / 44rem，都在 80rem 之下，与甲案无交集）。</li>
+        <li>报头：它是站的门面，宽度单算一档（<code>--site-shell</code> 105rem），本来就不与内容左沿对齐——现状即如此，甲案没碰它。页脚是 <code>.row</code>，跟着走。</li>
+        <li><code>.ruled</code> 那条线仍从正文栏左沿起；页脚那条线左右各宽 3rem，是页脚自身那 3rem 内边距造成的（既有小账，甲案不动）。</li>
+        <li>窄屏：80rem 以下，甲案的页面与现状逐像素相同。</li>
+      </ul>
+      <h2>看的时候可以留意</h2>
+      <ul>
+        <li>跨过 1280px 那一下：正文横跳 128px 是甲案的已知代价（选甲时把乙、丙的同档读数都比过）。</li>
+        <li>窗口越宽，注文栏左边余得越多；1280px 时余量最小（约 17px）——那是最紧的一档。</li>
+        <li>用上面的开关切两态对照：每一页的整块应当整整平移 8rem，报头不动，页脚跟着走。</li>
+        <li>这一页里报头、编辑台的切换行、保存条不再粘住：十四个整页叠起来，粘住的盒子会一路盖住下文。粘性另有 sticky-masthead.html 与 editor-sticky.html 把关。</li>
+        <li>演示数据取自 mocks/articles.js；写作台列表只摆四行，真实一页十行。</li>
+      </ul>
+      <h2>怎么验</h2>
+      <ul>
+        <li>逐页量（CDP 探针 <code>center-content-column-pages-probe.mjs</code>）：逐页读正文栏左沿与页心，1512 / 1280 / 1200 三档 × 开关两态——
+          1512 与 1280 下两态互差应为 128px（<code>min-width</code> 含等号，1280 正是规则生效的最紧一档），1200 下应为 0；同时核对滚动宽恒等于 clientWidth（不出横向滚动条），并逐页出整页图。</li>
+        <li>对照着看：四案 × 八档的实测表在 <a href="center-content-column.html">对照台</a> 底部，那是选定甲时的读数出处。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+/* 甲案开关：切「关」时 <head> 里那条 html[data-plan="now"] 会把左移整个抵消。
+   产品里没有这一段。 */
+for (const input of document.querySelectorAll('input[name="plan"]')) {
+  input.addEventListener('change', () => { document.documentElement.dataset.plan = input.value; });
+}
+
+/* 稿样里不让表单真提交（提交会把这一页自己刷新掉）。 */
+for (const form of document.querySelectorAll('form')) form.addEventListener('submit', e => e.preventDefault());
+</script>
+
+</body>
+</html>
