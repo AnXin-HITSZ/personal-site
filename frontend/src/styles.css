@@ -84,6 +84,25 @@ html { scrollbar-gutter: stable; }
   align-items: start;
 }
 
+/* 甲案（2026-10-10 选定）：居中的对象从「整块」换成「正文栏本身」。13 + 3 + 45 = 61rem
+   正好填满 .shell 的内容框，而 .shell 自己居中——居中的是整块，正文栏的中线因此比
+   页心偏右 (13 + 3) / 2 = 8rem；读文章时看得最清楚：正文右边只剩一拃，左边却空着一栏。
+   整块左移这 8rem，正文栏的中线落回页心上，注文栏顺势挂进左边的页余白。一个尺寸都
+   不动，动的只是整块的位置。
+   用 translate 不用负 margin-left：页脚是 .row.shell 一体的（靠 margin-inline: auto
+   居中），负 margin 会顶掉自动居中、把整块推出视口；translate 只挪画出来的位置，不动
+   排版——粘性、锚点让位、断行都还是老样子。
+   门槛 80rem：左移的钱只能从页边拿，解 8rem ≤ (视口 − 67rem) / 2 + 3rem 得视口 ≥ 77rem，
+   取 80rem 留一口气；更窄的窗口一字不动，代价是跨过 1280px 那一下正文横跳 128px。
+   .md 与 .shell > .banner 不是 .row 但今天与整块共用同一条左沿，必须一起走——不然
+   编辑台上正文框会与它上面那张表单差出整整 8rem；带 .shell 子代前缀是避开长在 .row
+   里的那些 .banner（登录、注册、账号、编辑台都有），免得移两回。 */
+@media (min-width: 80rem) {
+  .row,
+  .shell > .md,
+  .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2); }
+}
+
 /* 分隔线只横跨正文栏，注文栏因此是一整条连续的批注。 */
 .ruled { position: relative; padding-top: 1.5rem; }
 .ruled::before {
@@ -841,11 +860,16 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 .field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; }
 .field-pair .field + .field { margin-top: 0; }
 
-/* 正文这一段自己占满整幅：原文要看得见行，注文栏在这一段让位。
+/* 正文这一段不在 .row 里（这一节没有注文栏），按到正文栏那一格上（2026-10-10 改，
+   原来是占满整幅）：左沿从 --text-start 起——就是 .ruled 起笔的那条算式，窄屏断点
+   改写变量时自己跟上；壳的内容框 61rem 减去这一截，余宽正好是 --measure，没有新立
+   的数字。于是预览面就是读者看到的那一栏（同一左沿、同一宽、同一断行），原文框的
+   边框也对在栏上（720px，含边框与内边距）。
    原文和预览不再并排——并排时两边各分走一半，都窄；改成点着切，一次只给一面。
    换面靠 v-show（display），所以这里没有「谁藏起来」的规则，只有两面的尺寸。 */
 .md {
   margin-top: 3rem;
+  margin-inline-start: var(--text-start);
   /* 正文框那个下限。预览那一面要跟着同一个数走：它没有「插入图片」那一行，得自己
      把这个高度补上，否则切过去整段短一截。窄屏降高也只改这一处。 */
   --md-source-h: 40rem;
@@ -921,14 +945,16 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
    内收 2px：环带落进框沿里面，保存条盖住框沿那 1px 时把它一起盖住；记号仍在控件身上。 */
 .md-source:focus-visible { outline-offset: -2px; }
 /* 校样不加框：它就是印出来的那一页，加框等于把它降格成一个控件。 */
-/* 预览那一面自己补上原文那一面「插入图片」那一行的高度：1rem 的上边距 + 2.5rem 的
-   按钮；再加框下面那句按键说明（.4rem 上边距 + 一行字，1.61875rem = .875 × 1.85）。
-   短文章切过去整段高度不动，靠的就是这一条。 */
-.md-pane[data-pane="preview"] { min-height: calc(var(--md-source-h) + 3.5rem + .4rem + var(--facts-size) * var(--leading)); }
+/* 预览那一面自己补上原文那一面「插入图片」那一行的高度：1rem 的上边距 + 那一行本身
+   （.pager-btn 现在是一条灰字细线：一行字 + .1rem 内边距 + 1px 下线，共 28.5px）；
+   再加框下面那句按键说明（.4rem 上边距 + 一行字，1.61875rem = .875 × 1.85）。
+   旧算式按当年那枚 2.5rem 的盒子扣，比现物多出 11.5px——短稿切到预览面整段会比
+   原文面高一截；2026-10-10 按现物改回。短文章切过去整段高度不动，靠的就是这一条。 */
+.md-pane[data-pane="preview"] { min-height: calc(var(--md-source-h) + 1.5rem + 1px + var(--facts-size) * var(--leading) * 2); }
 /* 预览的字长对着公开页：公开页正文那一栏就是 --measure。原文那一面不封顶——它是
-   控件，行越长越好。中间那一段视口（44–67rem）公开页那栏会被注文栏挤窄，预览仍按
-   45rem 断行，宽出 148–176px；要一模一样得把 .row 那三笔算式搬到这儿再配一句
-   container-type，为一段校对时才看得出的差别，不值当。 */
+   控件，行越长越好。.md 归栏之后这条已是兜底：那一格的宽本来就是正文栏那条算式
+   让出来的（窄于 67rem 的视口里，公开页那栏与它一起被挤窄，两边始终同宽），
+   max-width 只保证预览永远不越过 --measure。 */
 .md-pane[data-pane="preview"] .prose { max-width: var(--measure); }
 .md-tools { margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .md-tools .upload-btn { cursor: pointer; }

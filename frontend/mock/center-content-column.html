@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>版心 · 正文栏居中 · 对照台 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 对照台：把标本嵌进一扇宽度可拖的框里，四案随点随换（2026-10-10，待选案）。
+   框内的媒体查询、vw、以及 .shell 的居中全部按框宽算 —— 拖滑杆与拖窗口边框等价。
+   标本与三案的完整说明在 center-content-column-frame.html 的头部；这一份只管脚手架。 */
+
+body { margin: 0; }
+
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+}
+.bar-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .55rem 1.75rem;
+  padding-block: .7rem; font-size: var(--facts-size);
+}
+.ctl { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .8rem; }
+.ctl .lbl { color: var(--muted); }
+.ctl label { cursor: pointer; white-space: nowrap; }
+.ctl input[type="range"] { width: 15rem; vertical-align: baseline; }
+.ctl output { font-family: var(--stack-mono); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.ctl button {
+  font: inherit; color: inherit; background: var(--paper);
+  border: 1px solid var(--rule); padding: .1rem .55rem; cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.ctl button:hover { border-color: var(--ink); }
+.readout {
+  flex-basis: 100%; margin: 0; max-width: none;
+  font-family: var(--stack-mono); font-size: .75rem; color: var(--muted);
+  line-height: 1.65; font-variant-numeric: tabular-nums;
+}
+.readout b { color: var(--ink); font-weight: 400; }
+
+/* 舞台：框比窗口宽时横向滚，但不裁左边（.stage-box 随内容长到 max-content）。 */
+.stage-scroll { overflow-x: auto; padding: 1.5rem 0; background: var(--paper); }
+.stage-box { width: max-content; min-width: 100%; display: flex; justify-content: center; }
+/* 边框归零（UA 样式表给 iframe 留了 2px 内嵌框），改用 outline ——
+   不占宽，于是框宽就是框内视口宽，与滑杆标的数一模一样。 */
+.stage { height: 74vh; border: 0; outline: 1px solid var(--rule); background: var(--paper); }
+
+.note, .cap { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.note { margin-top: 1.5rem; }
+.note strong, .cap strong { color: var(--ink); font-weight: 600; }
+.note code, .cap code { font-family: var(--stack-mono); font-size: .8125rem; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 2.75rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.cap { margin-top: 1.25rem; }
+.grid { border-collapse: collapse; margin-top: .5rem; font-size: var(--facts-size); font-variant-numeric: tabular-nums; }
+.grid th, .grid td { border-bottom: 1px solid var(--rule); padding: .35rem 1.25rem .35rem 0; text-align: right; }
+.grid th:first-child, .grid td:first-child { text-align: left; padding-right: 2rem; }
+.grid th { font-weight: 600; color: var(--muted); white-space: nowrap; }
+.grid td em { font-style: normal; color: var(--muted); }
+.grid b { color: var(--seal); font-weight: 400; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in shell">
+    <div class="ctl">
+      <span class="lbl">方案</span>
+      <label><input type="radio" name="plan" value="now" checked> 现状</label>
+      <label><input type="radio" name="plan" value="jia"> 甲 断点左移</label>
+      <label><input type="radio" name="plan" value="yi"> 乙 全宽左移</label>
+      <label><input type="radio" name="plan" value="bing"> 丙 连续左移</label>
+    </div>
+    <div class="ctl">
+      <span class="lbl">模拟窗口宽度</span>
+      <input type="range" id="w" min="700" max="1560" step="1" value="1512" aria-label="模拟窗口宽度">
+      <output id="wv" for="w">1512px</output>
+    </div>
+    <div class="ctl">
+      <button type="button" data-w="1512">1512</button>
+      <button type="button" data-w="1280">1280</button>
+      <button type="button" data-w="1248">1248</button>
+      <button type="button" data-w="1200">1200</button>
+      <button type="button" data-w="1100">1100</button>
+      <button type="button" data-w="900">900</button>
+      <button type="button" data-w="700">700</button>
+    </div>
+    <label class="ctl"><input type="checkbox" id="guide" checked> 画对齐线</label>
+    <p class="readout" id="readout">量一量…</p>
+  </div>
+</header>
+
+<div class="stage-scroll">
+  <div class="stage-box">
+    <iframe id="stage" class="stage" src="center-content-column-frame.html" width="1512" height="720"
+            title="版心标本（可改宽度的模拟窗口）"></iframe>
+  </div>
+</div>
+
+<main class="shell">
+
+<p class="note">
+  <strong>怎么用</strong>：拖上面的宽度滑杆，等于拖窗口边框；框内的媒体查询、<code>vw</code>、以及外壳的居中都按框宽算，与真窗口一字不差。
+  三案<strong>在 1280px 以上完全一样</strong>（都居中），<strong>在 1088px 以下也完全一样</strong>（都退回现状）——
+  差别只活在 <strong>1088–1280 这一段</strong>。所以：把滑杆拖到 <strong>1200</strong> 附近，四案逐个点（就是下面表里那三行）；
+  再拖着滑杆来回<strong>跨过 1280</strong>，看甲案那一下横跳、丙案怎么滑过来、乙案怎么把注文栏顶出屏。
+</p>
+<p class="note">
+  要看的三样：正文栏中心与页心线是否重合；注文栏左沿离窗口左边还有多少；页脚那条横线是不是还贴着正文栏。
+  想拿真窗口试也行：直接开 <code>center-content-column-frame.html</code>（它就是标本本身），或用 F12 里的设备工具栏（Ctrl+Shift+M）输入宽度。
+</p>
+
+<h2 class="notes-h">三案的分别 —— 只差「不够宽的时候怎么办」</h2>
+<p class="cap">
+  <strong>甲 · 断点左移</strong>（已选定并落地，2026-10-10）：<code>@media (min-width: 80rem) { .row { translate: calc((var(--margin) + var(--gutter)) / -2); } }</code>。
+  1280px 起正文居中、注文栏左移；更窄的窗口一字不动（与现状同）。一条规则、零副作用；
+  代价是跨过 1280px 时正文横跳 128px。把滑杆拖到 1280px 两侧看这一下。
+</p>
+<p class="cap">
+  <strong>乙 · 全宽左移</strong>：同一条左移，不设断点。用它看窄窗口的代价 —— 视口窄于 1248px 起注文栏左沿出屏被切，
+  1088px 以下连正文栏本身也开始跟着偏左。
+</p>
+<p class="cap">
+  <strong>丙 · 连续左移</strong>：左移量取「半栏」与「页边富余」的较小者，视口越宽移得越多，77rem 处正好移满；
+  67rem 以下与现状完全一致。没有跳变，代价是 67–77rem 这一段正文只是偏得少一点、并未居中。
+</p>
+
+<h2 class="notes-h">逐档实测（CDP 探针直接开标本页逐档量，2026-10-10）</h2>
+<table class="grid">
+  <thead>
+    <tr><th>视口</th><th>现状</th><th>甲</th><th>乙</th><th>丙</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>2560</td><td>128（785）</td><td><b>0</b>（657）</td><td><b>0</b>（657）</td><td><b>0</b>（657）</td></tr>
+    <tr><td>1512</td><td>128（261）</td><td><b>0</b>（133）</td><td><b>0</b>（133）</td><td><b>0</b>（133）</td></tr>
+    <tr><td>1280</td><td>128（145）</td><td><b>0</b>（17）</td><td><b>0</b>（17）</td><td><b>0</b>（17）</td></tr>
+    <tr><td>1248</td><td>128（129）</td><td>128（129）</td><td><b>0</b>（1）</td><td>7.5（8）</td></tr>
+    <tr><td>1200</td><td>128（105）</td><td>128（105）</td><td><b>0</b>（<em>−23</em>）</td><td>31.5（8）</td></tr>
+    <tr><td>1100</td><td>128（55）</td><td>128（55）</td><td><b>0</b>（<em>−73</em>）</td><td>81.5（8）</td></tr>
+    <tr><td>900</td><td>128（48）</td><td>128（48）</td><td><b>0</b>（<em>−80</em>）</td><td>128（48）</td></tr>
+    <tr><td>700</td><td><b>0</b>（20）</td><td><b>0</b>（20）</td><td><b>0</b>（20）</td><td><b>0</b>（20）</td></tr>
+  </tbody>
+</table>
+<p class="cap">
+  每格：正文栏中心与页心之差（px），括号里是注文栏左沿距窗口左边（px）—— 负数即出屏被切，标灰斜体。
+  700px 档是单栏，四案全同。八档下滚动宽都等于 clientWidth，三案都不产生横向滚动条。
+</p>
+<p class="cap">
+  页脚那条横线本来就比正文栏左右各宽 3rem（页脚自身带 3rem 内边距，而线的左右是按内边距盒算的）；
+  现状即如此，四案都不动它。
+</p>
+
+</main>
+
+<script>
+/* 对照台脚手架：滑杆改框宽，单选取方案，标本页把实测几何报回来（产品里没有这一段）。 */
+const frame = document.getElementById('stage');
+const slider = document.getElementById('w');
+const widthLabel = document.getElementById('wv');
+const readout = document.getElementById('readout');
+let plan = 'now';
+let guide = true;
+
+function push() {
+  if (!frame.contentWindow) return;
+  frame.contentWindow.postMessage({ type: 'control', plan, guide }, '*');
+}
+function setWidth(w) {
+  slider.value = w;
+  widthLabel.textContent = w + 'px';
+  frame.style.width = w + 'px';
+}
+/* 判定这句话由实测数字反推，不复述三案各自的公式——量到什么就说什么。 */
+function verdict(m) {
+  if (plan === 'now') return '现状：居中的是整块，正文栏偏右 8rem';
+  if (m.factsLeft < 0) return `注文栏出屏被切 ${(-m.factsLeft).toFixed(0)}px`;
+  if (Math.abs(m.off) < .75) return '正文栏居中';
+  if (m.off > 127.25) return '与现状相同 —— 这个宽度下左移不生效';
+  return `部分居中（还差 ${m.off.toFixed(1)}px，页边不够移不满）`;
+}
+function render(m) {
+  readout.innerHTML =
+    `框内实测 · 模拟窗口 <b>${m.viewport}</b>px（clientWidth ${m.client}）` +
+    ` · 正文栏 <b>${m.textLeft.toFixed(0)}–${m.textRight.toFixed(0)}</b>，宽 ${m.textWidth.toFixed(0)}px` +
+    ` · 中心与页心差 <b>${m.off.toFixed(1)}</b>px` +
+    ` · 注文栏左沿 <b>${m.factsLeft.toFixed(0)}</b>px<br>` +
+    `判定：<b>${verdict(m)}</b>`;
+}
+
+frame.addEventListener('load', push);
+addEventListener('message', event => {
+  const m = event.data;
+  if (m && m.type === 'measure') render(m);
+});
+for (const input of document.querySelectorAll('input[name="plan"]')) {
+  input.addEventListener('change', () => { plan = input.value; push(); });
+}
+document.getElementById('guide').addEventListener('change', event => {
+  guide = event.target.checked;
+  push();
+});
+slider.addEventListener('input', () => setWidth(+slider.value));
+for (const button of document.querySelectorAll('.ctl button[data-w]')) {
+  button.addEventListener('click', () => setWidth(+button.dataset.w));
+}
+setWidth(+slider.value);
+</script>
+
+</body>
+</html>
