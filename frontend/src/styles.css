@@ -94,13 +94,16 @@ html { scrollbar-gutter: stable; }
    排版——粘性、锚点让位、断行都还是老样子。
    门槛 80rem：左移的钱只能从页边拿，解 8rem ≤ (视口 − 67rem) / 2 + 3rem 得视口 ≥ 77rem，
    取 80rem 留一口气；更窄的窗口一字不动，代价是跨过 1280px 那一下正文横跳 128px。
-   .md 与 .shell > .banner 不是 .row 但今天与整块共用同一条左沿，必须一起走——不然
-   编辑台上正文框会与它上面那张表单差出整整 8rem；带 .shell 子代前缀是避开长在 .row
-   里的那些 .banner（登录、注册、账号、编辑台都有），免得移两回。 */
+   .md 与 .banner 不是 .row 但今天与整块共用同一条左沿，必须一起走——不然编辑台上
+   正文框会与它上面那张表单差出整整 8rem。这两条只挑类名、不挑位置：视图的根节点在
+   真 DOM 里不是 .shell 的孩子——App.vue 在中间垫着一层 .page（过渡用的包装 div），
+   任何「.shell > 某视图根节点」都是空选择器，2026-10-13 线上编辑页正文框没跟着走
+   就是这么来的。.md 全站只此一处，直接写；.banner 用 :not(.row .banner) 挡掉长在
+   行里的那些（登录、注册、账号、编辑台都有）——它们已经随自己的行走过一次。 */
 @media (min-width: 80rem) {
   .row,
-  .shell > .md,
-  .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2); }
+  .md,
+  .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2); }
 }
 
 /* 分隔线只横跨正文栏，注文栏因此是一整条连续的批注。 */

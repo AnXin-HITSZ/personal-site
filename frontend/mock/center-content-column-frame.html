@@ -37,11 +37,13 @@
    center-content-column.html 把它嵌进一个滑杆可改宽度的框里，并由它遥控
    data-plan / data-guide。
 
-   产品已落地（2026-10-10），只有一条规则（甲案），在 src/styles.css 的 .row 骨架规则
-   近旁：
-     @media (min-width: 80rem) { .row, .shell > .md, .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2); } }
-   （.md 是编辑台那一栏、.banner 是写作-分类页顶上的横幅：不是 .row 但共用同一条左沿，
-   一起走。）为什么用 translate 不用 margin-left：页脚是 .row.shell 一体的（margin-inline:
+   产品已落地（2026-10-10；两条选择器 2026-10-13 线上修正），只有一条规则（甲案），
+   在 src/styles.css 的 .row 骨架规则近旁：
+     @media (min-width: 80rem) { .row, .md, .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2); } }
+   （.md 是编辑台那一栏、.banner 是页面顶上的横幅：不是 .row 但共用同一条左沿，一起走；
+   长在 .row 里的 .banner 不走——它们随自己的行。原写作 .shell > .md / .shell > .banner，
+   而真 DOM 里视图根节点上面还垫着 App.vue 的一层 .page，子代选择器落空；改后只挑类名，
+   与位置无关。）为什么用 translate 不用 margin-left：页脚是 .row.shell 一体的（margin-inline:
    auto 在居中），负 margin-left 会顶掉 auto 居中，把整块推到视口外；translate 只挪画出
    来的位置，不动排版。写编辑页那条钉底的保存条同样跟着走 —— 它也是 .row。 */
 </style>

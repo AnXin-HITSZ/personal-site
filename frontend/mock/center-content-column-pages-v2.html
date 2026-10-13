@@ -26,7 +26,7 @@
    center-content-column-frame.html。
 
    ＊已落地（2026-10-10）：甲案那条 media 规则原文进了 src/styles.css，就写在 .row 骨架
-   规则的近旁（连同 .shell > .md / .shell > .banner 两条顺带）；编辑台的两处（归栏、
+   规则的近旁（连同 .md / .banner 两条顺带）；编辑台的两处（归栏、
    预览面补高）也分别并进了 .md 与 .md-pane[data-pane="preview"]。本页不再自带副本，
    头里只剩那个开关——它比样式表里那条更具体，仍然压得住。为什么用 translate 不用负
    margin-left 的账，现在记在 styles.css 那一段注释里。
@@ -34,8 +34,15 @@
    ＊两条「顺带」不是新决定，是同一次左移的机械后果：.md（编辑台的 Markdown 一栏）与
    写作-分类页顶上那条 .banner 都不是 .row，但它们今天就和整块共用同一条左沿（.shell
    内容框的左沿），三样必须一起走——不然在编辑台上，正文框会与它上面那张表单差出整整
-   8rem。带 .shell 直接子代前缀，是为了避开长在 .row 里面的那些 .banner（登录、注册、
-   账号、编辑台里都有）：那些跟着外层的 .row 走，再移一次就成了移两回。
+   8rem。选择器只挑类名、不挑位置：.md 全站只此一处，直接写；.banner 用
+   :not(.row .banner) 隔开长在 .row 里面的那些（登录、注册、账号、编辑台里都有）——
+   它们的行已经移过一次，免得移两回。
+
+   ＊2026-10-13 线上修正：这两条原来写作 .shell > .md / .shell > .banner，而真 DOM 里
+   视图的根节点不是 .shell 的孩子——App.vue 在中间垫着一层 .page（过渡用的包装 div），
+   子代选择器永远落空：线上编辑页的正文框没跟着走，与表单差出整整 8rem。选择器改成
+   上面那样（只挑类名）后与位置无关；本页每页 .shell 里也补上了这层 .page——这一册
+   从此与真站同层次，旧写法若回来，探针在本页立刻会红。
 
    ＊第二处改动（随甲一起看）：编辑台的正文框与预览不再占满整幅，改为按到正文栏那一格
    上——.md { margin-inline-start: var(--text-start) }。--text-start 就是 .ruled 起笔
@@ -96,8 +103,8 @@
 /* 稿样开关。切回现状时把样式表里那条甲案规则整个抵消——选择器更具体。
    产品里没有这一段。 */
 html[data-plan="now"] .row,
-html[data-plan="now"] .shell > .md,
-html[data-plan="now"] .shell > .banner { translate: none; }
+html[data-plan="now"] .md,
+html[data-plan="now"] .banner:not(.row .banner) { translate: none; }
 
 /* 开关本身。 */
 .planbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem 1.5rem; margin-top: 1.5rem; font-size: var(--facts-size); color: var(--muted); }
@@ -159,6 +166,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="statement row">
       <p class="statement-fact">2026</p>
       <div class="statement-body">
@@ -291,6 +299,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </nav>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -314,6 +323,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <article class="piece">
       <header class="piece-head row ruled">
         <div class="facts facts-stamp">
@@ -352,6 +362,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </nav>
     </article>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -375,6 +386,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <div class="cat-body">
       <section class="piece row ruled" aria-labelledby="cat-title">
         <div class="facts">
@@ -445,6 +457,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </section>
     </div>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -468,6 +481,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <article class="piece">
       <header class="piece-head row ruled">
         <div class="facts">
@@ -486,6 +500,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </nav>
     </article>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -509,6 +524,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">会话</span><br>登录后 30 天内免登录，可以随时在账号页撤销</p>
@@ -536,6 +552,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         <p class="form-alt"><span>还没有账号？</span><a href="#p-register">注册</a></p>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -559,6 +576,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">下一步</span><br>会收到一封验证信，点里面的链接才算注册完</p>
@@ -590,6 +608,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         <p class="form-alt"><span>已经有账号？</span><a href="#p-login">登录</a></p>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -613,6 +632,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">会话</span><br>登录后 30 天内免登录</p>
@@ -626,6 +646,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -649,6 +670,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">有效期</span><br>重置链接 30 分钟</p>
@@ -670,6 +692,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         <p class="form-alt"><span>想起来了？</span><a href="#p-login">去登录</a></p>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -693,6 +716,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">有效期</span><br>这条链接 30 分钟</p>
@@ -718,6 +742,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </form>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -742,6 +767,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">改口令</span><br>改完其它设备全部登出，当前这台留着</p>
@@ -816,6 +842,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         </div>
       </article>
     </div>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -839,6 +866,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="main notice">
         <h1>页面不存在</h1>
@@ -846,6 +874,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         <a class="pager-btn" href="#p-articles">返回文章列表</a>
       </div>
     </section>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -870,6 +899,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">11 篇</span><br>其中 2 篇还是草稿</p>
@@ -990,6 +1020,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
         <button class="pager-btn pager-next" type="button">下一页</button>
       </div>
     </nav>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -1014,6 +1045,7 @@ html[data-plan="now"] .shell > .banner { translate: none; }
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p><span class="key">地址</span><br>9k2m4p7r</p>
@@ -1160,6 +1192,7 @@ func (h *Handler) List(c *gin.Context) {
         <button class="act-danger act-away" type="button">删除这一篇</button>
       </div>
     </div>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -1184,6 +1217,7 @@ func (h *Handler) List(c *gin.Context) {
     </nav>
   </header>
   <div class="shell">
+    <div class="page">
     <section class="piece row ruled">
       <div class="facts">
         <p class="piece-return"><a class="piece-back" href="#p-admin-list">返回写作</a></p>
@@ -1307,6 +1341,7 @@ func (h *Handler) List(c *gin.Context) {
         <a class="piece-back" href="#p-admin-list">返回写作</a>
       </div>
     </nav>
+    </div>
   </div>
   <footer class="footer row shell ruled">
     <p class="footer-made">© 2026 Anxin</p>
@@ -1319,12 +1354,12 @@ func (h *Handler) List(c *gin.Context) {
 
 <!-- ══════════ 落地改动一览（不是页面） ══════════ -->
 <section class="pg" id="p-notes">
-  <p class="pgcap"><b>落地改动一览</b><span>这一节不是页面，是这次改动与不动的清单（三处条文 2026-10-10 已进 src/styles.css）。</span></p>
+  <p class="pgcap"><b>落地改动一览</b><span>这一节不是页面，是这次改动与不动的清单（三处条文 2026-10-10 已进 src/styles.css；其中两条的选择器 2026-10-13 线上修正）。</span></p>
   <div class="shell">
     <div class="doc">
       <h2>甲：两条规则 ＋ 一笔旧账</h2>
       <ul>
-        <li><b>规则</b>：<code>@media (min-width: 80rem) { .row, .shell > .md, .shell > .banner { translate: calc((var(--margin) + var(--gutter)) / -2) } }</code>
+        <li><b>规则</b>：<code>@media (min-width: 80rem) { .row, .md, .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2) } }</code>
           ——整块左移 8rem（半个两栏），正文栏的中线落到页心上。已原文进 <code>src/styles.css</code>，就写在 <code>.row</code> 那条骨架规则的近旁。</li>
         <li><b>第二条：编辑台归栏</b>：<code>.md { margin-inline-start: var(--text-start) }</code>
           ——正文框与预览按到正文栏那一格上：左沿从 <code>--text-start</code> 起（就是 <code>.ruled</code> 起笔的那条算式），宽由壳里余下的一截给出——正是 <code>--measure</code> 45rem，没有新立一个数字。它与 80rem 门槛无关：任何宽度、开关两态都生效。已并进 <code>.md</code> 原有的规则；同处把「占满整幅」「预览宽出 148–176px」两条旧注释改写成了新事实。</li>
@@ -1334,7 +1369,8 @@ func (h *Handler) List(c *gin.Context) {
           <code>translate</code> 只挪画出来的位置，不动排版——粘性、锚点让位、断行都还是老样子。</li>
         <li><b>门槛 80rem 的来路</b>：左移的钱只能从页边拿，8rem ≤ (视口 − 67rem) / 2 + 3rem，解出视口 ≥ 77rem；甲案取 80rem（1280px）留一口气。比它窄的窗口一字不动。</li>
         <li><b>两条顺带</b>：<code>.md</code>（编辑台的 Markdown 一栏）与写作-分类页顶上的 <code>.banner</code> 不是 <code>.row</code>，但今天与整块共用同一条左沿，必须一起走——不然编辑台上正文框差出整整 8rem。
-          带 <code>.shell</code> 直接子代前缀，是为了避开长在 <code>.row</code> 里的那些 <code>.banner</code>（登录、注册、账号、编辑台里都有），免得移两回。顶层的那种这一册里没有摆（它是「这一下没做成」的错误态）。</li>
+          选择器只挑类名、不挑位置：<code>.md</code> 全站只此一处，直接写；<code>.banner</code> 用 <code>:not(.row .banner)</code> 隔开长在 <code>.row</code> 里的那些（登录、注册、账号、编辑台里都有）——它们的行已经移过一次，免得移两回。顶层的那种这一册里没有摆（它是「这一下没做成」的错误态）。
+          2026-10-13 线上修正：原来写作 <code>.shell &gt; .md</code> / <code>.shell &gt; .banner</code>，而真 DOM 里视图根节点上面垫着 App.vue 的一层 <code>.page</code>，子代选择器落空——线上编辑页正文框就是这么差出的 8rem。本页每页 <code>.shell</code> 里也补上了这层 <code>.page</code>。</li>
       </ul>
       <h2>不动</h2>
       <ul>
@@ -1356,6 +1392,7 @@ func (h *Handler) List(c *gin.Context) {
       <ul>
         <li>逐页量（CDP 探针 <code>center-content-column-pages-probe.mjs</code>）：逐页读正文栏左沿与页心，1512 / 1280 / 1200 三档 × 开关两态——
           1512 与 1280 下两态互差应为 128px（<code>min-width</code> 含等号，1280 正是规则生效的最紧一档），1200 下应为 0；编辑台另量 <code>.md</code> 与正文栏的重合——左右差都应为 0、原文框与预览的宽都应为 720px，三档两态皆然（它不随门槛走）；
+          编辑台再临时插两条 <code>.banner</code> 试两条顺带的分家——顶层的应跟着整块走、长在行里的应一步不动（插完即撤）；并核对 <code>.md</code> 的祖先里确实有 <code>.page</code> 与 <code>.shell</code> 两层（2026-10-13 加：这一册的层次从此与真站相同，选择器若再写成依赖位置的样子，这里就会红）；
           编辑台还量两面盒子的高：原文面与预览面应相等（改正算式前差 11.5px）。同时核对滚动宽恒等于 clientWidth（不出横向滚动条），并逐页出整页图。</li>
         <li>对照着看：四案 × 八档的实测表在 <a href="center-content-column.html">对照台</a> 底部，那是选定甲时的读数出处。</li>
       </ul>
