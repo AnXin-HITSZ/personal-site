@@ -18,11 +18,21 @@
    （.md-head::after），不是 border-bottom：这一行的高度是量过的，加 1px 边框会把
    正文框顶端推下去 1px。乙、丙两张样片已按选择删除。
 
+   ＊2026-10-13 补记（线上）：甲案的左移当时挂在 .md 的 translate 上，而 translate 会
+   给 .md 造一个层叠上下文，把这一行的 z 6 关进 .md 里面——报头（5）连同它的淡出反压
+   上来，吸住时整行被 99%→35% 的纸色罩糊。线上编辑台就是这样。.md 的左移已改成相对
+   定位（position: relative; left: …），同样只挪画出来的位置、不动排版。经过见文末
+   「落地记录」的这一条；本页底下滚的就是真报头与真淡出，正是量这一条的场合——2026-10-06
+   定案时样式表里还没有甲案那条规则，这里量不出差别。
+
    样片里「看原文 / 看预览」真能点——页尾那一小段脚本照抄产品的行为（两根 radio +
    v-show、字跟着换），正式那套在 AdminArticleEditView.vue 里。正文是示意文字，
    为了滚得动，不是要发表的内容。 */
 
 /* —— 稿样脚手架（不属产品）—— */
+/* .shell 与内容之间垫一层 .page：真 DOM 是 main.shell > div.page > 视图根节点（App.vue
+   的 transition 包装）。与真站同层次，选择器才量得准——2026-10-13 线上修正的教训，
+   见 center-content-column-pages-v2.html 头注。 */
 .intro, p.why { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
 .intro { margin-top: 2rem; }
 .variant { margin-top: 4.5rem; }
@@ -62,6 +72,7 @@
 </header>
 
 <main class="shell">
+<div class="page">
 
 <!-- ═══════════════ 甲 细线收口 ═══════════════ -->
 
@@ -236,7 +247,10 @@ POST /auth/login    邮箱 + 密码
   <ul>
     <li><b>规则落点</b>：styles.css「写作台」一节、<code>.md-head .md-label</code> 与 <code>.md-switch</code> 之间加两条——<code>.md-head</code>（<code>position: sticky</code>、<code>top: var(--masthead-h)</code>、<code>z-index: 6</code>、<code>background: var(--paper)</code>）与画那条线的 <code>.md-head::after</code>（left / right / bottom 全 0，高 1px，<code>--rule</code>）。线用画的不用 <code>border-bottom</code>：这一行的高度是量过的（<code>.md-switch</code> 那条注释，25.9px 是照着原来那行标签调的），1px 边框会把正文框顶端推下去 1px；站里 <code>.ruled</code> 的线也是这么画的。</li>
     <li><b>为什么是甲</b>：这一行上面永远有正文在滑过，位置与保存条同类——淡出只能是常驻的，会把滑过去的头几行一直压暗（保存条当时就没选它）；丙的硬边让正文贴着一条看不见的线被切掉。乙的暗，是把三案钉住状态的同一段标题裁出来对过的。</li>
-    <li><b>与报头怎么分工</b>：吸点 <code>var(--masthead-h)</code>（桌面 89.6px / 窄屏 73.6px）就是锚点让位那条线，报头实际高 77.9px，差值那一段由报头淡出的不透明段盖着。z 6 只压报头那道从 77.9 伸到 129.9 的淡出——两个盒子永远不碰面（89.6 &gt; 77.9）；保存条仍在底下（4），一上一下互不相干。吸程是 <code>.md</code> 这一段自身的高度：滚过段尾，这一行被推出去，行下那点间隙（sticky 约束的是 margin box）跟着留在段里。切面、换字的行为一个字没动。</li>
+    <li><b>与报头怎么分工</b>：吸点 <code>var(--masthead-h)</code>（桌面 89.6px / 窄屏 73.6px）就是锚点让位那条线，报头实际高 77.9px，差值那一段由报头淡出的不透明段盖着。z 6 只压报头那道从 77.9 伸到 129.9 的淡出——两个盒子永远不碰面（89.6 &gt; 77.9）；保存条仍在底下（4），一上一下互不相干。（这条有个前提：<code>.md</code> 与根之间不能有层叠上下文——2026-10-13 补记。）吸程是 <code>.md</code> 这一段自身的高度：滚过段尾，这一行被推出去，行下那点间隙（sticky 约束的是 margin box）跟着留在段里。切面、换字的行为一个字没动。</li>
+    <li><b>2026-10-13 补记 · 前提被甲案碰掉了</b>：线上编辑台里「Markdown 原文／看预览」吸住时发糊。根因：甲案（版心左移）当时把 <code>.md</code> 的左移挂在 <code>translate</code> 上，而 translate 会给 <code>.md</code> 造一个层叠上下文——这一行的 z 6 被关进 <code>.md</code> 里面，报头（5）连同淡出反压上来，吸点 89.6px 整段落在淡出带里，字被 99%→35% 的纸色罩住。
+          样式表已把 <code>.md</code> 的左移改成相对定位（<code>position: relative; left: calc(…)</code>）——同样只挪画出来的位置、不动排版，但不创建层叠上下文；<code>.row</code> / <code>.banner</code> 里没有这种要靠 z 穿出上下文的盒子，照旧 translate。
+          量法：无头探针量同一行文字最暗处的亮度（p5，纸 245、墨 22），三个状态——产品态 / <code>translate: none</code>（无上下文）/ <code>translate: 0px</code>（零位移、纯加一个上下文）：94.8 / 94.8 / 204.8。挂上上下文就糊、摘掉就回墨，与线上所见互为印证。</li>
     <li><b>这一页上还有另一处（不属于这一问）</b>：正文框「跟随」——框跟着内容长、整页只有一处滚动，2026-10-06 定的是乙，已落地；它的最终稿与记录在 <code>editor-autogrow.html</code>。两份样片现在都是两处落地后的样子：往下翻，这一行钉住，正文框不再自己滚。</li>
     <li><b>验证</b>：无头逐条对 18 项全过——钉点 89.6（窄屏 73.6）且与报头底不相碰、sticky + z 6 + 纸色、细线 1px <code>--rule</code> 画在行底、行上没有边框、静息与原文那一面到正文框的间隙都还是 .45rem（线没占布局）、报头 0 / 切换行 89.6 / 保存条 900（z 4）三层同框、切面脚本翻字翻面、矮窗口里滚到段尾它跟着出去；1600×900 与 560×800 两档截图看过；<code>npm run check</code>、84 项测试、<code>npm run build</code> 全绿。</li>
   </ul>

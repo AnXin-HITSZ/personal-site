@@ -115,7 +115,9 @@ body { margin: 0; }
 
 <h2 class="notes-h">三案的分别 —— 只差「不够宽的时候怎么办」</h2>
 <p class="cap">
-  <strong>甲 · 断点左移</strong>（已选定并落地，2026-10-10）：<code>@media (min-width: 80rem) { .row { translate: calc((var(--margin) + var(--gutter)) / -2); } }</code>。
+  <strong>甲 · 断点左移</strong>（已选定并落地，2026-10-10；选择器与 .md 的实现 2026-10-13 线上修正）：
+  <code>@media (min-width: 80rem) { .row, .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2); } }</code>，
+  另 <code>.md</code> 单列一条同量的相对定位（<code>position: relative; left: …</code>）——translate 会给它造层叠上下文，把编辑台吸顶行的 z 6 关进 .md 里，报头淡出反压上来。
   1280px 起正文居中、注文栏左移；更窄的窗口一字不动（与现状同）。一条规则、零副作用；
   代价是跨过 1280px 时正文横跳 128px。把滑杆拖到 1280px 两侧看这一下。
 </p>

@@ -44,6 +44,15 @@
    上面那样（只挑类名）后与位置无关；本页每页 .shell 里也补上了这层 .page——这一册
    从此与真站同层次，旧写法若回来，探针在本页立刻会红。
 
+   ＊2026-10-13 再修一处（同一次线上核对的另一半）：.md 的左移原与 .row 共用一条
+   translate，而 translate 会给 .md 造一个层叠上下文，把里面那枚吸顶行（.md-head，
+   z-index 6）关进去——它取 6 的全部理由就是盖过报头那道淡出，关进去之后报头（5）
+   连同淡出反压上来，吸住时「Markdown 原文／看预览」一行被纸色罩糊（线上编辑台实际
+   如此）。.md 的左移因此改成相对定位（position: relative; left: …）——同样只挪画出
+   来的位置、不动排版，但不创建层叠上下文；.row 与 .banner 里没有靠 z 穿出上下文的
+   盒子，照旧 translate。这一册里三处粘性都放平了，量不出这个差别——条款由
+   editor-sticky.html 的探针把关（那一页底下滚的就是真报头与真淡出）。
+
    ＊第二处改动（随甲一起看）：编辑台的正文框与预览不再占满整幅，改为按到正文栏那一格
    上——.md { margin-inline-start: var(--text-start) }。--text-start 就是 .ruled 起笔
    那条算式（--margin + --gutter），窄屏两道断点改写变量时它自己跟上；壳的内容框
@@ -100,11 +109,11 @@
 /* ════════ 甲案与编辑台的两处都已在 src/styles.css（.row 骨架规则近旁、.md、════════
    .md-pane[data-pane="preview"]）——本页不再自带副本，量的就是产品样式表本身。 */
 
-/* 稿样开关。切回现状时把样式表里那条甲案规则整个抵消——选择器更具体。
+/* 稿样开关。切回现状时把样式表里甲案的两条规则整个抵消——选择器更具体。
    产品里没有这一段。 */
 html[data-plan="now"] .row,
-html[data-plan="now"] .md,
 html[data-plan="now"] .banner:not(.row .banner) { translate: none; }
+html[data-plan="now"] .md { position: static; left: auto; }
 
 /* 开关本身。 */
 .planbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem 1.5rem; margin-top: 1.5rem; font-size: var(--facts-size); color: var(--muted); }
@@ -1354,13 +1363,13 @@ func (h *Handler) List(c *gin.Context) {
 
 <!-- ══════════ 落地改动一览（不是页面） ══════════ -->
 <section class="pg" id="p-notes">
-  <p class="pgcap"><b>落地改动一览</b><span>这一节不是页面，是这次改动与不动的清单（三处条文 2026-10-10 已进 src/styles.css；其中两条的选择器 2026-10-13 线上修正）。</span></p>
+  <p class="pgcap"><b>落地改动一览</b><span>这一节不是页面，是这次改动与不动的清单（三处条文 2026-10-10 已进 src/styles.css；选择器与 .md 的实现 2026-10-13 线上修正）。</span></p>
   <div class="shell">
     <div class="doc">
       <h2>甲：两条规则 ＋ 一笔旧账</h2>
       <ul>
-        <li><b>规则</b>：<code>@media (min-width: 80rem) { .row, .md, .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2) } }</code>
-          ——整块左移 8rem（半个两栏），正文栏的中线落到页心上。已原文进 <code>src/styles.css</code>，就写在 <code>.row</code> 那条骨架规则的近旁。</li>
+        <li><b>规则</b>：<code>@media (min-width: 80rem) { .row, .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2) } }</code> 与 <code>.md { position: relative; left: calc((var(--margin) + var(--gutter)) / -2) }</code>
+          ——整块左移 8rem（半个两栏），正文栏的中线落到页心上。已原文进 <code>src/styles.css</code>，就写在 <code>.row</code> 那条骨架规则的近旁；<code>.md</code> 单独走相对定位的来路见「两条顺带」条末。</li>
         <li><b>第二条：编辑台归栏</b>：<code>.md { margin-inline-start: var(--text-start) }</code>
           ——正文框与预览按到正文栏那一格上：左沿从 <code>--text-start</code> 起（就是 <code>.ruled</code> 起笔的那条算式），宽由壳里余下的一截给出——正是 <code>--measure</code> 45rem，没有新立一个数字。它与 80rem 门槛无关：任何宽度、开关两态都生效。已并进 <code>.md</code> 原有的规则；同处把「占满整幅」「预览宽出 148–176px」两条旧注释改写成了新事实。</li>
         <li><b>外带一笔旧账</b>：预览面补高那条 <code>min-height</code> 的算式按「2.5rem 的按钮」扣，而「插入图片」如今是一条灰字细线——一行字（.875rem × 1.85）+ .1rem 内边距 + 1px 下线，共 28.5px。
@@ -1370,7 +1379,8 @@ func (h *Handler) List(c *gin.Context) {
         <li><b>门槛 80rem 的来路</b>：左移的钱只能从页边拿，8rem ≤ (视口 − 67rem) / 2 + 3rem，解出视口 ≥ 77rem；甲案取 80rem（1280px）留一口气。比它窄的窗口一字不动。</li>
         <li><b>两条顺带</b>：<code>.md</code>（编辑台的 Markdown 一栏）与写作-分类页顶上的 <code>.banner</code> 不是 <code>.row</code>，但今天与整块共用同一条左沿，必须一起走——不然编辑台上正文框差出整整 8rem。
           选择器只挑类名、不挑位置：<code>.md</code> 全站只此一处，直接写；<code>.banner</code> 用 <code>:not(.row .banner)</code> 隔开长在 <code>.row</code> 里的那些（登录、注册、账号、编辑台里都有）——它们的行已经移过一次，免得移两回。顶层的那种这一册里没有摆（它是「这一下没做成」的错误态）。
-          2026-10-13 线上修正：原来写作 <code>.shell &gt; .md</code> / <code>.shell &gt; .banner</code>，而真 DOM 里视图根节点上面垫着 App.vue 的一层 <code>.page</code>，子代选择器落空——线上编辑页正文框就是这么差出的 8rem。本页每页 <code>.shell</code> 里也补上了这层 <code>.page</code>。</li>
+          2026-10-13 线上修正：原来写作 <code>.shell &gt; .md</code> / <code>.shell &gt; .banner</code>，而真 DOM 里视图根节点上面垫着 App.vue 的一层 <code>.page</code>，子代选择器落空——线上编辑页正文框就是这么差出的 8rem。本页每页 <code>.shell</code> 里也补上了这层 <code>.page</code>。
+          同一次核对里，<code>.md</code> 的实现也换了一处：左移原挂在 <code>translate</code> 上，而 translate 会给 <code>.md</code> 造一个层叠上下文，把 <code>.md-head</code>（z-index 6）关进 <code>.md</code> 里面——报头（5）连同它的淡出反压上来，编辑台吸顶行吸住时被纸色罩糊（线上实际如此）。改成相对定位后不再创建层叠上下文，同样只挪画出来的位置、不动排版。</li>
       </ul>
       <h2>不动</h2>
       <ul>

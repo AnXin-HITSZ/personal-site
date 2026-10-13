@@ -99,11 +99,18 @@ html { scrollbar-gutter: stable; }
    真 DOM 里不是 .shell 的孩子——App.vue 在中间垫着一层 .page（过渡用的包装 div），
    任何「.shell > 某视图根节点」都是空选择器，2026-10-13 线上编辑页正文框没跟着走
    就是这么来的。.md 全站只此一处，直接写；.banner 用 :not(.row .banner) 挡掉长在
-   行里的那些（登录、注册、账号、编辑台都有）——它们已经随自己的行走过一次。 */
+   行里的那些（登录、注册、账号、编辑台都有）——它们已经随自己的行走过一次。
+   .md 除外：它走相对定位，不走 translate——理由在它自己那一条上。 */
 @media (min-width: 80rem) {
   .row,
-  .md,
   .banner:not(.row .banner) { translate: calc((var(--margin) + var(--gutter)) / -2); }
+  /* .md 用相对定位挪，不用 translate：translate（以及一切 transform 类的属性）会给
+     .md 造一个层叠上下文，把里面那枚吸顶行（.md-head，z-index 6）关进去。它取 6 的
+     全部理由就是盖过报头那道淡出（见「写作台」一节），被关进去之后报头（z-index 5）
+     反压上来，吸住时整行被淡出的纸色罩住——2026-10-13 线上编辑台「Markdown 原文／
+     看预览」一行发糊就是这个。相对定位与 translate 一样只挪画出来的位置、不动排版
+     （粘性、锚点让位、断行照旧），但它不创建层叠上下文。 */
+  .md { position: relative; left: calc((var(--margin) + var(--gutter)) / -2); }
 }
 
 /* 分隔线只横跨正文栏，注文栏因此是一整条连续的批注。 */
@@ -897,7 +904,12 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
    收口用细线不用报头那样的淡出：这一行上面永远有正文，而淡出只能是常驻的，会把
    滑过去的头几行一直压暗——保存条当时就是这么选的。线是画出来的，不是 border：
    这一行的高度量过（见下面 .md-switch 那条注释），加 1px 边框会把正文框顶端推下去
-   1px，线用画的就不占位置；.ruled 的线也是这么画的。 */
+   1px，线用画的就不占位置；.ruled 的线也是这么画的。
+
+   这个 6 成立有个前提：.md 里不许出现层叠上下文——transform / translate / opacity
+   之类挂在 .md 上，这一行就被关进 .md 里面，报头（5）连同它的淡出反压上来，吸住
+   时整行被纸色罩糊。2026-10-13 线上就是这样：甲案的左移当时挂在 translate 上。版心
+   那条规则为此改成相对定位。 */
 .md-head { position: sticky; top: var(--masthead-h); z-index: 6; background: var(--paper); }
 .md-head::after {
   content: "";
