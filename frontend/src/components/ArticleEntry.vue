@@ -1,14 +1,16 @@
 <script setup>
 import { formatDate } from '../format.js';
-/* 列表里的一行。latest 是由列表页算好传进来的：判断「这一篇是不是全站最新」得先知道
-   当前的筛选和页码，而那件事只有列表页知道。 */
-defineProps({ article: { type: Object, required: true }, latest: { type: Boolean, default: false } });
+/* 列表里的一行。lead 是由列表页算好传进来的：判断「这一篇是不是头条」得先知道当前的筛选
+   和页码，而那件事只有列表页知道。
+   头条按定义就是全站最新的一篇（未被筛选的第 1 页，首条即最新），所以那一枚「最新」徽章
+   和头条的体量由同一条 prop 出——两者不会有走岔的机会。 */
+defineProps({ article: { type: Object, required: true }, lead: { type: Boolean, default: false } });
 </script>
 
 <template>
-  <article class="entry row ruled">
+  <article class="entry row ruled" :class="{ 'entry-lead': lead }">
     <div class="facts facts-stamp">
-      <p v-if="latest" class="mark">最新</p>
+      <p v-if="lead" class="mark">最新</p>
       <!-- 名字跟着文章一起回来的，不是从分类表里现查的：分类那一行读不出来的时候，
            这一行照旧要写得出落款。 -->
       <p class="key">{{ article.categoryName }}</p>

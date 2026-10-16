@@ -324,8 +324,10 @@ html { scroll-padding-top: var(--masthead-h); }
 }
 .search input:hover::-webkit-search-cancel-button { background-color: var(--seal); }
 
-/* 头条与其余条目共用一套 DOM，只靠 :first-child 分两档：
-   头条用标题的体量立起来，其余压成索引，两者的注文栏始终对齐同一列。 */
+/* 头条与其余条目共用一套 DOM，只靠一个类名分两档：头条用标题的体量立起来，其余压成索引，
+   两者的注文栏始终对齐同一列。
+   挂 .entry-lead 的只有全站最新那一篇（判据见 ArticleList.vue 的 leadOn）。按位置写的
+   :first-child 会把第 2 页、搜索页、分类页的首条一起放大，而那几处的首条并不是最新。 */
 .entries { margin-top: 2.75rem; }
 .entry { padding-top: 2.25rem; }
 .entry + .entry { margin-top: 1.75rem; padding-top: 1.5rem; }
@@ -334,19 +336,19 @@ html { scroll-padding-top: var(--masthead-h); }
 .entry-summary { margin-top: .35rem; color: var(--muted); font-size: .9375rem; line-height: 1.75; text-wrap: pretty; }
 .entry-tags { margin-top: .4rem; color: var(--muted); font-size: var(--facts-size); }
 
-.entry:first-child .entry-title {
+.entry-lead .entry-title {
   font-family: var(--stack-display);
   font-weight: 400;
   font-size: clamp(1.75rem, 3.2vw, 2.375rem);
   line-height: 1.3;
   letter-spacing: .01em;
 }
-.entry:first-child .entry-summary {
+.entry-lead .entry-summary {
   margin-top: 1rem;
   font-size: calc(var(--body-size) + 1px);
   line-height: 1.85;
 }
-.entry:first-child .entry-tags { margin-top: .9rem; }
+.entry-lead .entry-tags { margin-top: .9rem; }
 
 .entry-title a { transition: color .18s ease; }
 .entry-title a:hover { color: var(--seal); }
@@ -479,8 +481,9 @@ html { scroll-padding-top: var(--masthead-h); }
 .sk-fact { width: 3.5rem; height: .6rem; }
 .sk-fact-sm { width: 2.5rem; margin-top: .55rem; }
 .sk-title { width: 68%; height: .95rem; }
-/* 首条的骨架要按头条的体量撑住，否则数据回来时版面会跳一下 */
-.entry:first-child .sk-title { width: 78%; height: 1.5rem; margin-top: .55rem; }
+/* 骨架要按会来的那一档撑住，否则数据回来时版面会跳一下。头条那一格的条件与正文同一个
+   leadOn，取数之前就成立，所以这一格不会先撑大再缩回、也不会先压平再撑开。 */
+.entry-lead .sk-title { width: 78%; height: 1.5rem; margin-top: .55rem; }
 .sk-line { width: 100%; height: .6rem; margin-top: .9rem; }
 .sk-line-short { width: 54%; }
 
@@ -615,18 +618,9 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 .device-actions { margin-top: 1rem; }
 
 /* ---------- 写作：列表 ---------- */
-
-/* 列表是索引，不是读物：首条不放大。选择器要压过 .entry:first-child 那一组，
-   所以写足 .entry 这一层，不靠源码顺序取胜。 */
-.entries-ledger > .entry:first-child .entry-title {
-  font-family: inherit;
-  font-size: 1.0625rem;
-  font-weight: 600;
-  line-height: 1.55;
-  letter-spacing: 0;
-}
-.entries-ledger > .entry:first-child .entry-summary { margin-top: .35rem; font-size: .9375rem; line-height: 1.75; }
-.entries-ledger > .entry:first-child .entry-tags { margin-top: .4rem; }
+/* 这里原先有一组「列表是索引，不是读物：首条不放大」的覆盖，用来压过按位置写的
+   .entry:first-child。头条改成按类名挂之后，这一页的 DOM 里不会有 .entry-lead，
+   本来就没有东西可压，所以整组删掉了。 */
 
 /* 条目上的动作写成安静的文字，不排成一列按钮——这一页要读的是文章，不是控件。 */
 .entry-acts { margin-top: .9rem; display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; }
@@ -1102,7 +1096,7 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
   /* 保存条那两行也并进这一行。它在外面的 display:grid 比上面这条 .facts 更具体，
      得在这里让回 flex，间距才跟着换到 gap 上。 */
   .save .facts { display: flex; }
-  .entry:first-child .entry-title { font-size: 1.6rem; }
+  .entry-lead .entry-title { font-size: 1.6rem; }
 
   /* 分类页：标题和日期并排只剩一拃宽，日期落到标题下一行。 */
   .cat-list li { grid-template-columns: minmax(0, 1fr); }

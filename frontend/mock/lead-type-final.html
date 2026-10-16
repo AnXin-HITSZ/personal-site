@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>列表首条的字号 · 定稿（乙：字号与「最新」同源）· 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 定稿（2026-10-16 选定）：首条不再按位置放大，只有「确实是全站最新」的那一条才放大——
+   与那一枚「最新」徽章同一个条件、同一个开关。
+
+   这一页要给你看的是：定稿长什么样、落地要动哪几行、哪几个数这一刻不该变。
+
+   结构取自真站：main.shell > div.page > section.archive。样式表就是产品那份。
+
+   —— 下面第一组是稿样脚手架，落地时要删掉 ——
+   今天那个「首条放大」是产品里一条按位置写的规则（.entry:first-child，挂在 .entries 的第一个
+   孩子上）。它在这一页里会照样命中，定稿的样子摆不出来，所以先把那一组按回索引档。
+   值照抄产品的索引档（.entry-title 那三行），只有选择器是脚手架。
+
+   —— 下面第二组就是落地后要进 styles.css 的那几行 ——
+   除了多写一个 .entry（不这样写就与上面那条脚手架同具体度，要靠源码顺序取胜），
+   选择器与值都会原样搬进产品。 */
+
+/* ---------- 脚手架一：把按位置的那一组按掉（落地后删） ---------- */
+.entries > .entry:first-child .entry-title {
+  font-family: inherit; font-weight: 600; font-size: 1.0625rem; line-height: 1.55; letter-spacing: 0;
+}
+.entries > .entry:first-child .entry-summary { margin-top: .35rem; font-size: .9375rem; line-height: 1.75; }
+.entries > .entry:first-child .entry-tags { margin-top: .4rem; }
+.entries > .entry:first-child .sk-title { width: 68%; height: .95rem; margin-top: 0; }
+
+/* ---------- 脚手架二：落地后的 .entry-lead 那一组（值照抄 styles.css:337-349 与 483） ---------- */
+.entries > .entry.entry-lead .entry-title {
+  font-family: var(--stack-display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
+  line-height: 1.3;
+  letter-spacing: .01em;
+}
+.entries > .entry.entry-lead .entry-summary {
+  margin-top: 1rem;
+  font-size: calc(var(--body-size) + 1px);
+  line-height: 1.85;
+}
+.entries > .entry.entry-lead .entry-tags { margin-top: .9rem; }
+.entries > .entry.entry-lead .sk-title { width: 78%; height: 1.5rem; margin-top: .55rem; }
+@media (max-width: 44rem) {
+  /* 与 styles.css:1105 那一条同一个数 */
+  .entries > .entry.entry-lead .entry-title { font-size: 1.6rem; }
+}
+
+/* ---------- 稿样脚手架（不属产品） ---------- */
+body { margin: 0; }
+/* 横切不是整页：列表离上面那一段的 6.5rem（styles.css:258）在这里只是死白，抹掉。
+   其余几何一律照产品，不覆写。 */
+.case .archive { margin-top: 0; }
+
+.case-bar { background: var(--fill); border-block: 1px solid var(--rule); }
+.case-bar-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem;
+  padding-block: .7rem; font-size: var(--facts-size);
+}
+.case-bar .no { font-family: var(--stack-mono); color: var(--muted); }
+.case-bar strong { font-weight: 600; }
+.case-bar .what { color: var(--muted); }
+.read {
+  flex-basis: 100%; margin: 0; max-width: none; color: var(--muted);
+  font-family: var(--stack-mono); font-size: .75rem; line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.intro { margin-top: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--rule); }
+.intro, .notes-h { font-family: inherit; }
+.intro, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro strong, .note strong, .notes-h strong { color: var(--ink); font-weight: 600; }
+.intro + .intro { margin-top: 1rem; padding-bottom: 0; border-bottom: 0; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.note { margin-top: 1rem; }
+.note + .note { margin-top: .85rem; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+/* 一小段 <code> 能长过窄屏的栏宽，让它自己断，别把整页顶宽。 */
+.note code, .intro code { overflow-wrap: anywhere; }
+.note ol, .note ul { padding-left: 1.2rem; }
+.note li + li { margin-top: .35rem; }
+/* 落地清单：左边是「改哪一处」，右边是「改成什么」。 */
+.diff { border-collapse: collapse; margin-top: .75rem; font-size: var(--facts-size); width: 100%; }
+.diff th, .diff td { text-align: left; vertical-align: top; padding: .4rem .9rem .4rem 0; border-bottom: 1px solid var(--rule); }
+.diff th { color: var(--ink); font-weight: 600; }
+.diff td:first-child { font-family: var(--stack-mono); font-size: .75rem; color: var(--ink); }
+/* 窄屏下两列压成上下两段——13rem 的栏宽里再分两列，右边的字会挤成一条竖线。 */
+@media (max-width: 44rem) {
+  .diff, .diff tbody, .diff tr, .diff th, .diff td { display: block; }
+  .diff thead { display: none; }
+  .diff th { padding-bottom: 0; border-bottom: 0; }
+  .diff td { padding: .2rem 0 0; border-bottom: 0; }
+  .diff tr { border-bottom: 1px solid var(--rule); padding-bottom: .5rem; }
+  .diff tr + tr { margin-top: .5rem; }
+  .diff tr:last-child { border-bottom: 0; }
+}
+</style>
+</head>
+<body>
+
+<section class="shell">
+<p class="intro">
+  <strong>定稿：乙——首条的字号改用「确实是全站最新」这个条件，不再按位置。</strong>2026-10-16 定。
+  判据与那一枚「最新」徽章完全同一个：<code>无搜索 &amp;&amp; 分类全部 &amp;&amp; 第 1 页</code>，
+  所以两处由同一个表达式 <code>article.id === latestId</code> 驱动，永远同进同出。
+</p>
+<p class="intro">
+  底下六份横切，自上而下：<strong>① 第 1 页 · 没有搜索</strong>（定稿在这里一个字没动）、
+  <strong>② 第 2 页 · 没有搜索</strong>（你截图那一屏，定稿要解决的就是它）、
+  <strong>③ 第 1 页 · 搜索「的」</strong>、<strong>④ 第 1 页 · 分类「学习随笔」</strong>、
+  <strong>⑤⑥ 加载中</strong>（骨架那一格跟不跟得上）。
+  每一份里真站上有几条就摆几条，其中①③④只留前三条——档位看头两条就够，没必要把整页摊开。
+  灰带里那行数字是当场量的，窗口一动就重量。
+</p>
+<p class="intro">
+  对比的底子是线上此刻那一版：改前 ②③④ 三案的首条都是 38px。要看改前改后并排，
+  说一声我另出一页；你那张截图就是②的改前。
+</p>
+</section>
+
+<!-- ===================== ① 第 1 页 · 没有搜索 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">①</span>
+    <strong>第 1 页 · 没有搜索</strong>
+    <span class="what">定稿在这里一个字没动：首条仍是头条，「最新」仍在（真站这页 6 条，这里留前 3 条）</span>
+    <p class="read" data-read="p1">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="p1">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry entry-lead row ruled">
+      <div class="facts facts-stamp">
+        <p class="mark">最新</p>
+        <p class="key">后端开发</p>
+        <p><time class="date" datetime="2026-09-21T08:00:00Z">2026.09.21</time></p>
+        <p>8 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">从一个接口开始，搭建自己的 Go 服务</a></h3>
+        <p class="entry-summary">把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。</p>
+        <p class="entry-tags">Go / HTTP</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">AI 探索</p>
+        <p><time class="date" datetime="2026-09-18T08:00:00Z">2026.09.18</time></p>
+        <p>6 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一个好问题，需要多少上下文？</a></h3>
+        <p class="entry-summary">在问答应用中，问题并不是全部。整理上下文、拆解意图，观察答案如何随输入而改变。</p>
+        <p class="entry-tags">AI / QA-Agent</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">前端实践</p>
+        <p><time class="date" datetime="2026-09-14T08:00:00Z">2026.09.14</time></p>
+        <p>7 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">让页面与数据各自做好一件事</a></h3>
+        <p class="entry-summary">从模拟数据开始，给接口留出边界。页面负责呈现，适配器负责数据，让后续联调变得自然。</p>
+        <p class="entry-tags">JavaScript / 工程实践</p>
+      </div>
+    </article>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<!-- ===================== ② 第 2 页 · 没有搜索 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">②</span>
+    <strong>第 2 页 · 没有搜索</strong>
+    <span class="what">你截图那一屏。改前首条 38px 且没有徽章；定稿起三档齐平（真站这页 3 条，全在）</span>
+    <p class="read" data-read="p2">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="p2">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">AI 探索</p>
+        <p><time class="date" datetime="2026-08-28T08:00:00Z">2026.08.28</time></p>
+        <p>9 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">先找到，再回答：检索过程的学习笔记</a></h3>
+        <p class="entry-summary">从资料切分到相关内容选择，梳理一个问答系统背后的基本步骤与需要验证的问题。</p>
+        <p class="entry-tags">检索 / 学习笔记</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端开发</p>
+        <p><time class="date" datetime="2026-08-23T08:00:00Z">2026.08.23</time></p>
+        <p>5 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">把错误当作接口的一部分</a></h3>
+        <p class="entry-summary">错误码服务于程序，错误信息服务于使用者。为失败设计稳定、可理解的表达方式。</p>
+        <p class="entry-tags">Go / 错误处理</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">学习随笔</p>
+        <p><time class="date" datetime="2026-08-20T08:00:00Z">2026.08.20</time></p>
+        <p>3 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">给想法留一个地方</a></h3>
+        <p class="entry-summary">从这本小小的数字笔记本开始，收集问题、记录尝试，也保存那些尚未完成的想法。</p>
+        <p class="entry-tags">随笔</p>
+      </div>
+    </article>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<!-- ===================== ③ 第 1 页 · 搜索「的」 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">③</span>
+    <strong>第 1 页 · 搜索「的」</strong>
+    <span class="what">7 篇 / 2 页。改前首条 38px 无徽章；定稿起齐平（这里留前 3 条）</span>
+    <p class="read" data-read="search">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="search">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端开发</p>
+        <p><time class="date" datetime="2026-09-21T08:00:00Z">2026.09.21</time></p>
+        <p>8 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">从一个接口开始，搭建自己的 Go 服务</a></h3>
+        <p class="entry-summary">把一个想法变成可访问的接口：从请求参数、数据结构到清晰的响应约定，走完服务端开发的第一步。</p>
+        <p class="entry-tags">Go / HTTP</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">学习随笔</p>
+        <p><time class="date" datetime="2026-09-10T08:00:00Z">2026.09.10</time></p>
+        <p>4 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">边做边学：给学习留下一个可运行的结果</a></h3>
+        <p class="entry-summary">把大目标拆成一次次可以验证的小练习，用真实的问题推动下一步，而不是等待准备充分。</p>
+        <p class="entry-tags">学习 / 记录</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端开发</p>
+        <p><time class="date" datetime="2026-09-06T08:00:00Z">2026.09.06</time></p>
+        <p>5 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">文章列表里的分页，究竟约定了什么</a></h3>
+        <p class="entry-summary">页码、总数和边界条件看似简单，却决定了前后端是否真的理解彼此。从一个列表梳理接口契约。</p>
+        <p class="entry-tags">Go / API 设计</p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn" type="button">下一页</button>
+    </div>
+  </nav>
+
+  <div class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button">返回</button>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<!-- ===================== ④ 第 1 页 · 分类「学习随笔」 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">④</span>
+    <strong>第 1 页 · 分类「学习随笔」</strong>
+    <span class="what">2 篇 / 1 页。改前两行里有一行是另一行的 2.2 倍；定稿起齐平（两篇全在）</span>
+    <p class="read" data-read="cat">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="cat">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">学习随笔</p>
+        <p><time class="date" datetime="2026-09-10T08:00:00Z">2026.09.10</time></p>
+        <p>4 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">边做边学：给学习留下一个可运行的结果</a></h3>
+        <p class="entry-summary">把大目标拆成一次次可以验证的小练习，用真实的问题推动下一步，而不是等待准备充分。</p>
+        <p class="entry-tags">学习 / 记录</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">学习随笔</p>
+        <p><time class="date" datetime="2026-08-20T08:00:00Z">2026.08.20</time></p>
+        <p>3 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">给想法留一个地方</a></h3>
+        <p class="entry-summary">从这本小小的数字笔记本开始，收集问题、记录尝试，也保存那些尚未完成的想法。</p>
+        <p class="entry-tags">随笔</p>
+      </div>
+    </article>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<!-- ===================== ⑤ 加载中 · 第 1 页没有搜索 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">⑤</span>
+    <strong>加载中 · 第 1 页 · 没有搜索</strong>
+    <span class="what">接下来会出头条，所以第一格骨架照样撑住</span>
+    <p class="read" data-read="sk1">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="sk1">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries" aria-busy="true">
+    <div class="entry entry-lead row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+    <div class="entry row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+    <div class="entry row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<!-- ===================== ⑥ 加载中 · 第 2 页 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">⑥</span>
+    <strong>加载中 · 第 2 页</strong>
+    <span class="what">接下来不会有头条，第一格骨架要跟其余两格同档——改前它是撑大的那种</span>
+    <p class="read" data-read="sk2">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="sk2">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries" aria-busy="true">
+    <div class="entry row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+    <div class="entry row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+    <div class="entry row ruled" aria-hidden="true">
+      <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
+      <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+</div>
+
+<section class="shell">
+
+<h2 class="notes-h">一、定稿长什么样</h2>
+<p class="note">
+  只有一件事变了：<strong>「首条放大」的判据从「它是这一页的第一个」换成「它确实是全站最新」</strong>。
+  后者今天已经在产品里了——就是那一枚「最新」徽章，条件写在
+  <code>ArticleList.vue:34</code>：<code>!q &amp;&amp; category === ALL &amp;&amp; page === 1</code>。
+  所以定稿不是新定一条规矩，是<strong>让字号去认那条已经定好的规矩</strong>，两处合成一个开关。
+</p>
+<p class="note">
+  于是变成：<strong>①</strong>一个字没动——首条仍是 38px、仍是宋字、徽章仍在；
+  <strong>②③④</strong>三个状态齐平，全站只剩一档 17px / 600 / 黑字。
+  ②是你截图的那一屏；③里最大的那条是搜索命中的第七条里恰好排第一的那条；④更直白，
+  两行的列表改前是一行压一行。
+</p>
+<p class="note">
+  <strong>翻页与撤词那两下也顺过来了</strong>：从第 1 页翻到第 2 页，版面平下来的同时，
+  「最新」也不会在场——两件事一起消失。搜索时点「返回」回到第 1 页，涨起来的那一下
+  与徽章出现是同一下。改前是「字号自己在变，徽章不理它」，改后是两处永远同进同出。
+</p>
+<p class="note">
+  <strong>为什么不是「只在第 1 页放大」（丙）</strong>：那等于承认这组字号是「本页从头读」的版式入口，
+  不是「标最新」。可首页只有一处，它把「大 = 最新（还带徽章）」教给了读者；之后任何
+  「大但不带徽章」的条目都成了要人猜的字号——它到底是全站最新，还是本分类最新？含糊比任何一边都差。
+  真要让分类页也有入口，正路是丙<strong>再加一枚</strong>「本分类最新」的徽章让两个信号在那一页也同源，
+  那是新做一枚徽章，不是这一次的事。
+</p>
+
+<h2 class="notes-h">二、要动产品的就这几处</h2>
+<table class="diff">
+  <thead>
+    <tr><th>改哪儿</th><th>改成什么</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>ArticleList.vue<br>34</td>
+    <td>那一行拆成两条：<code>leadOn</code>（那条判断）与 <code>latestId</code>（用它取 id）。
+      条件一个字不变，只是给同一个判断起个名字，好让字号也能用上它。</td>
+  </tr>
+  <tr>
+    <td>ArticleList.vue<br>172</td>
+    <td>条目上补一个 <code>:lead="article.id === latestId"</code>。
+      <strong>与徽章是同一个表达式</strong>——不另写一份条件，就不会有第二次机会把两处搞岔。</td>
+  </tr>
+  <tr>
+    <td>ArticleList.vue<br>146</td>
+    <td>骨架那三个 <code>div.entry</code> 加 <code>:class="{ 'entry-lead': leadOn &amp;&amp; n === 1 }"</code>。
+      骨架不是 <code>ArticleEntry</code> 渲染的，所以这一处要单独写（见注记四）。</td>
+  </tr>
+  <tr>
+    <td>ArticleEntry.vue<br>3-5 · 9</td>
+    <td>加一个 <code>lead</code> prop，根元素上 <code>:class="{ 'entry-lead': lead }"</code>。
+      组件只负责把类名画出来；「哪一条是头条」仍归列表页判——和 <code>latest</code> 一个分工。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>337-343 · 344-348 · 349</td>
+    <td>三处选择器 <code>.entry:first-child</code> → <code>.entry-lead</code>，<strong>值一个都不动</strong>。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>482-483</td>
+    <td>骨架那一条同改选择器。上面那句注释（「首条的骨架要按头条的体量撑住」）跟着改成
+      「会有头条的那一页，第一格骨架才撑住」。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>1105</td>
+    <td>窄屏那一条同改选择器：<code>.entry-lead .entry-title { font-size: 1.6rem }</code>。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>619-629</td>
+    <td><strong>写作台那六行覆盖删掉。</strong>那是为「按位置」打的补丁——它的注释自己写着
+      「选择器要压过 .entry:first-child 那一组」。改成按类名之后写作台的 DOM 里根本不会有
+      <code>.entry-lead</code>，留着只会让人以为那里还在打一场已经不存在的仗。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>327-328</td>
+    <td>那一组上面那句注释（「只靠 <code>:first-child</code> 分两档」）改写：
+      分档的依据是类名，而类名由「是不是全站最新」决定。</td>
+  </tr>
+  </tbody>
+</table>
+<p class="note">
+  <strong>被否掉的三条路</strong>：留在原地（甲）——就是这个 bug；
+  只按第 1 页判（丙）——搜索页留下来了没理由，分类页留下一组读不出来的字号；
+  全站齐平（丁）——首页失去唯一的落点，而且要把首条那 2.25rem 的上边距也一起定一遍。
+</p>
+
+<h2 class="notes-h">三、这一刻不该变的几个数</h2>
+<p class="note">
+  稿样自带量测（每案灰带里那一行）。落地只该动「哪一条吃头条那一档」，不该动任何一个值：
+</p>
+<ul class="note">
+  <li><strong>头条那一档</strong>（①）：38px / 400 / 宋字 / 行高 1.3，窄屏 25.6px——
+    与线上此刻一字不差。</li>
+  <li><strong>索引那一档</strong>（其余每一格）：17px / 600 / 黑字 / 行高 1.55，
+    窄屏也不变（窄屏只改头条那一档）。</li>
+  <li><strong>两档之间的间距</strong>（<code>.entry</code> 的 <code>padding-top</code> 2.25rem / 1.5rem、
+    <code>.entry + .entry</code> 的 1.75rem）全部不碰——②③④变的是字的大小，
+    行与行之间那口气照旧。</li>
+  <li><strong>注文栏</strong>仍在同一列：<code>.row</code> 那套格位一个值没动，
+    ①的第一条与其余条目的落款、日期始终对齐同一条线。</li>
+</ul>
+<p class="note">
+  <strong>还有一格不受影响，顺便确认一下</strong>：空结果与出错那一格也是
+  <code>.entry.row.ruled</code>、也是 <code>.entries</code> 的第一个孩子，但它里面用的是
+  <code>.main.notice &gt; h3</code>，没有 <code>.entry-title</code> 那三个类名，
+  所以今天就没吃到这一组，改前改后都不是头条。不单开一案画它，是因为它无从变起。
+</p>
+
+<h2 class="notes-h">四、加载中那两格（⑤⑥）</h2>
+<p class="note">
+  骨架不是 <code>ArticleEntry</code> 渲的，是列表页自己写的三个 <code>div.entry</code>
+  （<code>ArticleList.vue:146</code>）。今天它靠同一条按位置写的规则，于是
+  <strong>每一页的第一格骨架都是撑大的那种</strong>：78% 宽、1.5rem 高、带 .55rem 上边距。
+  在②那种页上这就是个现成的跳版——骨架比最后一格高出一截，数据回来又缩回去。
+</p>
+<p class="note">
+  定稿把这一格并进同一个开关，所以 <code>leadOn</code> 得是能<strong>在取数之前</strong>算出来的判断
+  ——它正好是：只用地址里的 <code>q</code>、<code>category</code>、<code>page</code>，
+  不碰任何一个接口返回值。于是⑤里第一格照旧撑住（接下来那条真的是头条），
+  ⑥里三格齐平，两边都不跳。
+</p>
+
+<p class="note">
+  产品代码在你点头之前一行没动。
+</p>
+
+</section>
+
+<script>
+/* 灰带里那行数字是当场量的：宽度一动就重量一次，窄屏那一档的字号与桌面不是一回事，
+   数字留在这儿会骗人。 */
+(function () {
+  const px = (n) => `${n.toFixed(1)}px`;
+
+  /* 字号那一档是不是宋字——两个字体栈的头一个族名都是 Charter，比前面比不出来；
+     整串比一遍。两个栈都是从根上的自定义属性里取的，所以归一化引号与空格之后应当全等；
+     不等就报「?」，别悄悄报成黑字。 */
+  function face(cs) {
+    const root = getComputedStyle(document.documentElement);
+    const norm = (s) => s.replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+    const got = norm(cs.fontFamily);
+    if (got === norm(root.getPropertyValue('--stack-display'))) return '宋字';
+    if (got === norm(root.getPropertyValue('--stack-body'))) return '黑字';
+    return '?字';
+  }
+
+  function measure() {
+    document.querySelectorAll('.case[data-case]').forEach((root) => {
+      const read = document.querySelector(`[data-read="${root.dataset.case}"]`);
+      if (!read) return;
+
+      const rows = [...root.querySelectorAll('.entries > .entry')];
+      if (!rows.length) return;
+      const parts = [];
+
+      /* 骨架那两案量的是骨架块本身：首格与第二格的高、宽、上边距。 */
+      const firstSk = rows[0].querySelector('.sk-title');
+      if (firstSk) {
+        const g = (el) => {
+          const cs = getComputedStyle(el);
+          const b = el.getBoundingClientRect();
+          return `${px(b.width)} × ${px(b.height)} · 上边距 ${px(parseFloat(cs.marginTop))}`;
+        };
+        parts.push(`首格骨架 ${g(firstSk)}`);
+        const secondSk = rows[1]?.querySelector('.sk-title');
+        if (secondSk) parts.push(`第二格 ${g(secondSk)}`);
+        parts.push(`共 ${rows.length} 格`);
+        read.textContent = parts.join(' · ');
+        return;
+      }
+
+      const desc = (el) => {
+        const t = el.querySelector('.entry-title');
+        const cs = getComputedStyle(t);
+        return `${cs.fontSize} · ${cs.fontWeight} · ${face(cs)}`;
+      };
+      const lead = rows[0].classList.contains('entry-lead');
+      parts.push(`首条 ${desc(rows[0])}${lead ? '（头条）' : ''}`);
+      parts.push(rows[0].querySelector('.mark') ? '徽章在' : '没有徽章');
+      if (rows[1]) parts.push(`第二条 ${desc(rows[1])}`);
+      parts.push(`共 ${rows.length} 条`);
+      read.textContent = parts.join(' · ');
+    });
+  }
+
+  let queued = false;
+  const onResize = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; measure(); });
+  };
+  window.addEventListener('resize', onResize);
+  if (document.fonts) document.fonts.ready.then(measure);
+  measure();
+})();
+</script>
+</body>
+</html>

@@ -29,9 +29,12 @@ let catsController;
 /* 带着 #articles 进来的那一次导航，等第一次取数落地后替它滚到列表头（见 load 尾注）。 */
 let hashPending = route.hash === '#articles';
 const status = computed(() => loading.value ? '正在整理文章…' : error.value ? '加载失败' : `${pagination.value.total} 篇文章${query.q ? ` · 搜索“${query.q}”` : ''}`);
-/* 「最新」标的是全站最新的一篇，不是「本页第一条」：列表未被筛选且停在第一页时，
-   首条即最新（仓储层按 published_at desc, id asc 排序），其余情况无从判断，就不标。 */
-const latestId = computed(() => !query.q && query.category === ALL && query.page === 1 ? items.value[0]?.id : undefined);
+/* 头条与「最新」是同一条判断：未被筛选的第 1 页，首条即全站最新（仓储层按
+   published_at desc, id asc 排序）；其余情况两件事都无从判断，就都不做。字号与徽章共用
+   这一个开关，才不会有各说各话的机会。
+   它只看地址、不碰接口返回值，所以取数之前就成立——加载中的骨架也靠它摆对。 */
+const leadOn = computed(() => !query.q && query.category === ALL && query.page === 1);
+const latestId = computed(() => leadOn.value ? items.value[0]?.id : undefined);
 
 /* 地址一变就取数：进来那一次、每次筛、每次翻页都从这儿走——加载只有一条路，
    「地址是筛选的家」才不是一句空话。离开这一页时地址也会变（点进一篇文章），
@@ -143,7 +146,9 @@ onUnmounted(() => { controller?.abort(); catsController?.abort(); });
 
     <div class="entries" :aria-busy="loading">
       <template v-if="loading">
-        <div v-for="n in 3" :key="n" class="entry row ruled" aria-hidden="true">
+        <!-- 骨架不是 ArticleEntry 渲的，这一格的头条身份要单独给：第一格跟不跟得上，
+             看的就是 leadOn——取数之前就成立的那个判断。 -->
+        <div v-for="n in 3" :key="n" class="entry row ruled" :class="{ 'entry-lead': leadOn && n === 1 }" aria-hidden="true">
           <div class="facts"><span class="sk sk-fact"></span><span class="sk sk-fact sk-fact-sm"></span></div>
           <div class="main"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line sk-line-short"></span></div>
         </div>
@@ -169,7 +174,7 @@ onUnmounted(() => { controller?.abort(); catsController?.abort(); });
         </div>
       </div>
       <template v-else>
-        <ArticleEntry v-for="article in items" :key="article.id" :article="article" :latest="article.id === latestId" />
+        <ArticleEntry v-for="article in items" :key="article.id" :article="article" :lead="article.id === latestId" />
       </template>
     </div>
 
