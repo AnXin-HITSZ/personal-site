@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文章列表末尾 · 定稿（乙：返回挪到分页之下）· 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 定稿（2026-10-16 选定）：列表末尾那一枚「返回」排在分页那一行的下面。
+   三案摆开那一页是 foot-order.html，留着没动；这一页只有定下来的那一个摆法，
+   外加它旁边两个必须一起看的状态。
+
+   这一页要给你看的是：定稿长什么样、落地要动哪几行、哪几个数这一刻不该变。
+
+   结构取自真站：main.shell > div.page > section.archive，页脚是与 main 平级的
+   .row.shell。样式表就是产品那份——乙一个值都不用改，所以这一页里一条产品规则
+   都没覆写（下面那一条脚手架除外）。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+body { margin: 0; }
+/* 横切不是整页：列表离上面那一段的 6.5rem（styles.css:258）在这里只是死白，抹掉。
+   其余几何一律照产品，不覆写。 */
+.case .archive { margin-top: 0; }
+
+.case-bar { background: var(--fill); border-block: 1px solid var(--rule); }
+.case-bar-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem;
+  padding-block: .7rem; font-size: var(--facts-size);
+}
+.case-bar .no { font-family: var(--stack-mono); color: var(--muted); }
+.case-bar strong { font-weight: 600; }
+.case-bar .what { color: var(--muted); }
+.read {
+  flex-basis: 100%; margin: 0; max-width: none; color: var(--muted);
+  font-family: var(--stack-mono); font-size: .75rem; line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.intro { margin-top: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--rule); }
+.intro, .notes-h { font-family: inherit; }
+.intro, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro strong, .note strong, .notes-h strong { color: var(--ink); font-weight: 600; }
+.intro + .intro { margin-top: 1rem; padding-bottom: 0; border-bottom: 0; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.note { margin-top: 1rem; }
+.note + .note { margin-top: .85rem; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+/* 一小段 <code> 能长过窄屏的栏宽（那个 v-if 的条件就是一例），让它自己断，别把整页顶宽。 */
+.note code, .intro code { overflow-wrap: anywhere; }
+.note ol, .note ul { padding-left: 1.2rem; }
+.note li + li { margin-top: .35rem; }
+/* 落地清单：左边的行号是「改哪一处」，右边的字是「改成什么」。
+   窄屏下两列压成上下两段——13rem 的栏宽里再分两列，右边的字会挤成一条竖线。 */
+.diff { border-collapse: collapse; margin-top: .75rem; font-size: var(--facts-size); width: 100%; }
+.diff th, .diff td { text-align: left; vertical-align: top; padding: .4rem .9rem .4rem 0; border-bottom: 1px solid var(--rule); }
+.diff th { color: var(--ink); font-weight: 600; }
+.diff td:first-child { font-family: var(--stack-mono); font-size: .75rem; color: var(--ink); }
+@media (max-width: 44rem) {
+  .diff, .diff tbody, .diff tr, .diff th, .diff td { display: block; }
+  .diff thead { display: none; }
+  .diff th { padding-bottom: 0; border-bottom: 0; }
+  .diff td { padding: .2rem 0 0; border-bottom: 0; }
+  .diff tr { border-bottom: 1px solid var(--rule); padding-bottom: .5rem; }
+  .diff tr + tr { margin-top: .5rem; }
+  .diff tr:last-child { border-bottom: 0; }
+}
+</style>
+</head>
+<body>
+
+<section class="shell">
+<p class="intro">
+  <strong>定稿：乙——「返回」排在分页那一行的下面。</strong>2026-10-16 定。三案摆开那一页是
+  <code>foot-order.html</code>，留着没改；这一页只有定下来的这一个摆法，以及它旁边两个
+  必须一起看的状态。
+</p>
+<p class="intro">
+  底下三份横切，自上而下：<strong>① 有搜索词、结果跨两页</strong>（你截图里那一屏，定稿真正要解决的就是它）、
+  <strong>② 有搜索词、结果只有一页</strong>、<strong>③ 没有搜索词</strong>。每一份都是一整段
+  末尾——末两条、那一枚去路、分页那一行、页脚。灰带里那行数字是当场量的，滚到哪儿都在。
+  窗口拉窄到 44rem 以下再看一遍：乙在窄屏与宽屏是同一个摆法，只是分页自己会收成两行。
+</p>
+</section>
+
+<!-- ===================== ① 有搜索 · 跨两页 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">①</span>
+    <strong>有搜索词 · 结果跨两页</strong>
+    <span class="what">定稿要解决的那一屏：末条 → 分页 → 返回 → 页脚</span>
+    <p class="read" data-read="multi">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="multi">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn" type="button">下一页</button>
+    </div>
+  </nav>
+
+  <div class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button">返回</button>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<!-- ===================== ② 有搜索 · 只有一页 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">②</span>
+    <strong>有搜索词 · 结果只有一页</strong>
+    <span class="what">分页那一行整条不在；这里有今天多出来的一条空线，见底下注记二</span>
+    <p class="read" data-read="single">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="single">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button">返回</button>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<!-- ===================== ③ 没有搜索 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">③</span>
+    <strong>没有搜索词 · 跨两页</strong>
+    <span class="what">末尾什么都不加，与今天一模一样</span>
+    <p class="read" data-read="plain">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="plain">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn" type="button">下一页</button>
+    </div>
+  </nav>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<!-- ===================== 注记 ===================== -->
+<section class="shell">
+
+<h2 class="notes-h">一、定稿长什么样</h2>
+<p class="note">
+  只有一件事变了：<strong>.archive-foot 那一段从分页那一行<em>上面</em>挪到<em>下面</em></strong>。
+  其余一个值都没动——返回仍在正文栏左沿（与条目标题同一条起笔线），页码仍钉在栏心中线，
+  两条带子之间仍是同一个 1.75rem，窄屏仍是同一个摆法。
+</p>
+<p class="note">
+  理由是「留在这一批 → 离开这一批」这一步递进：末条之后第一件能做的事是<strong>在这一批里
+  继续走</strong>（下一页），走出去（撤掉搜索）排在它后面。代价是「返回」落进页脚上沿那一带，
+  读起来离内容远了一格——这一条你认了。
+</p>
+<p class="note">
+  <strong>顺带说一句顺序变了的地方</strong>：Tab 键与读屏的走法跟着变成「上一页 / 下一页 → 返回」。
+  手上这是变顺的（近的先走），但如果哪天「返回」被读成页面级的「回上一页」，就是这一处引起的。
+</p>
+<p class="note">
+  <strong>还有一处只有点下去才看得见</strong>：点「返回」之后搜索词撤了，分页那一行会跟着少一页、
+  整条消失。甲里它在「返回」的<em>下面</em>，撤词时会被往上拽 80px（返回带的高度 52 + 它上面那条 28）；
+  乙里分页在「返回」<em>上面</em>，拽不动——撤词那一下版面上只有底下少了一块，没有东西横移。
+  这一条是选乙顺带得到的，摆静态稿样看不出来。
+</p>
+
+<h2 class="notes-h">二、要动产品的就这几行</h2>
+<table class="diff">
+  <thead>
+    <tr><th>改哪儿</th><th>改成什么</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>ArticleList.vue<br>179-183 · 185-191</td>
+    <td>两块对调：<code>.archive-foot</code> 那一段挪到 <code>&lt;nav class="pager"&gt;</code> 之后。
+      <strong>同时把 <code>v-if="!loading &amp;&amp; !error &amp;&amp; pagination.totalPages &gt; 1"</code>
+      从里面的 <code>.pager-nav</code> 提到 <code>&lt;nav&gt;</code> 上</strong>（见下一条）。</td>
+  </tr>
+  <tr>
+    <td>AdminArticleListView.vue<br>285-289 · 291-297</td>
+    <td>同样两块对调。这一页的 <code>v-if</code> 本来就在 <code>&lt;nav&gt;</code> 上，不必搬。</td>
+  </tr>
+  <tr>
+    <td>styles.css<br>490-491 · 495-497</td>
+    <td>注释跟着改。今天 <code>.archive-foot</code> 那条写的是「.entries 与 .pager 之间的一个 .row」，
+      对调之后它在 <code>.pager</code> 与页脚之间；两个 1.75rem 仍是同一个数，理由一字不变。</td>
+  </tr>
+  <tr>
+    <td>search-revert.html<br>205-207</td>
+    <td>规矩②里「它排在分页那一行的<strong>上面</strong>」半句改成「下面」。规矩①③一字不动。</td>
+  </tr>
+  </tbody>
+</table>
+<p class="note">
+  被否掉的两条路：<strong>返回留在上面</strong>（甲，现状）——两条各装一枚字的窄带子叠在一起，
+  末条之后先撞见「返回」再撞见分页，去路喧宾夺主；<strong>两行并成一条带子</strong>（丙）——
+  两个位置都保得住，但要改分页那两条按格位写的选择器、两个模板补类名、
+  <code>prefers-reduced-motion</code> 那段同两条一起改，窄屏还多一行结构。为了这一个按钮不值。
+</p>
+
+<h2 class="notes-h">三、②那一案里今天多出来的一条空线</h2>
+<p class="note">
+  分页那一行是常驻的，只有里面那颗 <code>.pager-nav</code> 带 <code>v-if</code>。
+  <code>.pager.row.ruled</code> 自己有 <code>padding-top: 1.5rem</code>，而 <code>.ruled::before</code>
+  那条细线不看有没有子节点——2026-10-16 在 127.0.0.1:5199 的真页面上量过：把 <code>.pager-nav</code>
+  藏掉，<code>.pager</code> 的高度从 52.5px 变成 <strong>24px，细线照画</strong>。
+</p>
+<p class="note">
+  所以<strong>只有一页时，末尾今天本来就多出一条 24px 的空带子带着一条细线</strong>。甲里它落在最底下，
+  读起来像页脚的上沿，不容易看出来；对调到乙之后，它正好卡在末条与「返回」之间，
+  成了一条没有下文的横线。
+</p>
+<p class="note">
+  所以上面那张表里的<strong>第二件事</strong>不是顺手清洁，是这一案的必需品：把
+  <code>v-if</code> 提到 <code>&lt;nav&gt;</code> 上，整条带子跟着一起消失。写作台列表页
+  （<code>AdminArticleListView.vue:291</code>）本来就是这么写的，只有公开列表页不是——
+  对调之后两边就同款了。②那一案画的就是改完之后的样子（分页那一行整条不在）。
+  <strong>你可以在 review 时单否这一条</strong>，否掉的话②那一案里末条与「返回」之间会多一条空线。
+</p>
+
+<h2 class="notes-h">四、这一刻不该变的几个数</h2>
+<p class="note">
+  稿样自带量测（每案灰带里那一行），三档视口各量一遍。对调只该动「谁在前」：
+</p>
+<ul class="note">
+  <li><strong>返回的左沿</strong>与条目标题始终差 0.0——两栏骨架没动，去路仍从正文栏起笔。</li>
+  <li><strong>页码中心</strong>与栏心中线始终差 0.0——分页那一行一个值没动。</li>
+  <li><strong>两条细线相距</strong>①案 80.5px（28 的 margin + 52.5 的分页带高），
+    与甲案的 84.5px 相差 4px——那 4px 是两种结构固有的（<code>.archive-foot-main</code> 包一层 div
+    对 <code>.pager-nav</code> 网格），不是摆歪。</li>
+  <li><strong>窄屏（≤44rem）</strong>不动：分页自己仍是两行（页码一行居中、两只手一行），
+    返回仍是单占一条带子、压在它下面。乙不需要为窄屏写任何新规则——这正是它比丙省事的地方。</li>
+  <li><strong>≥80rem 的整块左移</strong>仍照常生效（量到 <code>.row</code> 上是 −128px），
+    对调不碰它。</li>
+</ul>
+
+<p class="note">
+  产品代码在你点头之前一行没动。<code>foot-order.html</code>（三案那一页）也原样留着。
+</p>
+
+</section>
+
+<script>
+/* 灰带里那行数字是当场量的：宽度一动就重量一次，窄屏那一档的摆法与桌面不是一回事，
+   数字留在这儿会骗人。 */
+(function () {
+  const px = (n) => `${n.toFixed(1)}px`;
+  const box = (el) => el.getBoundingClientRect();
+
+  function measure() {
+    document.querySelectorAll('.case[data-case]').forEach((root) => {
+      const read = document.querySelector(`[data-read="${root.dataset.case}"]`);
+      if (!read) return;
+
+      const archive = root.querySelector('.archive');
+      const title = archive.querySelector('.entry-title');
+      const foot = archive.querySelector('.archive-foot');
+      const back = foot?.querySelector('.pager-btn');
+      const pager = archive.querySelector('.pager');
+      const nav = archive.querySelector('.pager-nav');
+      const lastEntry = archive.querySelector('.entries .entry:last-child');
+      const print = root.querySelector('footer');
+      if (!title || !lastEntry || !print) return;
+
+      const parts = [];
+      /* 窄屏分页自己就是两行，横向的先后排不出来，只报摆法。 */
+      const narrow = window.matchMedia('(max-width: 44rem)').matches;
+
+      /* 三案各缺一块：②没有分页那一行，③没有返回那一块。缺哪块就说哪块不在，不是量不出来。 */
+      if (nav && foot) {
+        parts.push(foot.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_PRECEDING
+          ? '先后 分页在前' : '先后 分页在后');
+        parts.push(`两带细线相距 ${px(Math.abs(box(pager).top - box(foot).top))}`);
+      } else if (nav) {
+        parts.push('末尾什么都不加');
+        parts.push(`分页紧接末条 ${px(box(pager).top - box(lastEntry).bottom)}`);
+      } else {
+        parts.push('分页那一行整条不在');
+        parts.push(`末条到返回带 ${px(box(foot).top - box(lastEntry).bottom)}`);
+      }
+      if (back) parts.push(`返回左沿差 ${px(box(back).left - box(title).left)}`);
+      if (back && narrow) parts.push('窄屏：分页自己两行，返回仍单占一条带子');
+      if (foot) parts.push(`页脚上沿距返回带 ${px(box(print).top - box(foot).bottom)}`);
+
+      read.textContent = parts.join(' · ');
+    });
+  }
+
+  let queued = false;
+  const onResize = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; measure(); });
+  };
+  window.addEventListener('resize', onResize);
+  if (document.fonts) document.fonts.ready.then(measure);
+  measure();
+})();
+</script>
+</body>
+</html>

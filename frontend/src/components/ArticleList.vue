@@ -173,21 +173,24 @@ onUnmounted(() => { controller?.abort(); catsController?.abort(); });
       </template>
     </div>
 
-    <!-- 搜过的词还在生效、这一页又有条目时才在：没有搜索（或这一页空着）时列表末尾什么
-         都不加。用 items.length 不用 pagination.total——页码超出时接口不夹取，这时这一页
-         是空的、上面那格正摆着它自己的两枚，两处都会站出来。 -->
-    <div v-if="query.q && !loading && !error && items.length" class="archive-foot row ruled">
-      <div class="archive-foot-main">
-        <button class="pager-btn" type="button" @click="clearSearch">返回</button>
-      </div>
-    </div>
-
-    <nav class="pager row ruled" aria-label="文章分页">
-      <div v-if="!loading && !error && pagination.totalPages > 1" class="pager-nav">
+    <!-- 整条一起在才在，条件从前挂在里面的 .pager-nav 上：分页那一行自己带 padding-top 与
+         一条细线，不看里面有没有东西，只有一页时末尾会多出一条没有下文的横线。 -->
+    <nav v-if="!loading && !error && pagination.totalPages > 1" class="pager row ruled" aria-label="文章分页">
+      <div class="pager-nav">
         <button class="pager-btn" :disabled="query.page <= 1" @click="turnPage(query.page - 1)">上一页</button>
         <span class="pager-count">{{ query.page }} / {{ pagination.totalPages }}</span>
         <button class="pager-btn" :disabled="query.page >= pagination.totalPages" @click="turnPage(query.page + 1)">下一页</button>
       </div>
     </nav>
+
+    <!-- 搜过的词还在生效、这一页又有条目时才在：没有搜索（或这一页空着）时列表末尾什么
+         都不加。用 items.length 不用 pagination.total——页码超出时接口不夹取，这时这一页
+         是空的、上面那格正摆着它自己的两枚，两处都会站出来。
+         排在分页那一行的下面：末条之后第一件能做的事是留在这一批里继续走，走出去排在它后面。 -->
+    <div v-if="query.q && !loading && !error && items.length" class="archive-foot row ruled">
+      <div class="archive-foot-main">
+        <button class="pager-btn" type="button" @click="clearSearch">返回</button>
+      </div>
+    </div>
   </section>
 </template>

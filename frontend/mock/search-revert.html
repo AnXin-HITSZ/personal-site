@@ -17,7 +17,7 @@
    定下的三条（2026-10-16 你看过三案之后定的，这一页就是它）：
      ① 没有搜索（生效的词是空的）：列表末尾什么都不加，一切照原样。
      ② 有搜索、结果非空：列表末尾加一行，一枚去路，站在正文栏左沿、与条目标题同一条
-        起笔线（.ruled 的横线也从那儿起）。它排在分页那一行的上面。
+        起笔线（.ruled 的横线也从那儿起）。它排在分页那一行的下面。
      ③ 有搜索、结果为空：「还没有找到这样的文章」那一格里，两枚去路并排一行——
         「返回」与「查看全部文章」。分类停在「全部」时这两枚是同一件事，只留一枚。
      甲（清空即回退）照旧在里面：框一空，生效的词跟着撤，分类不动。✕、Esc、退格删空是
@@ -82,7 +82,7 @@ body { margin: 0; }
 .note li + li { margin-top: .35rem; }
 
 /* —— 要进 src/styles.css 的两条（候选规则，产品里只留第二条）——
-   .archive-foot 是 .entries 与 .pager 之间的一个 .row：左栏空着，那一枚站在正文栏左沿。
+   .archive-foot 是 .pager 与页脚之间的一个 .row：左栏空着，那一枚站在正文栏左沿。
    .pager 自己那条 margin-top 是 1.75rem（styles.css:474），照抄同一个值——两处的处境
    一样，都是「上一块与这一块之间空一行」。 */
 .archive-foot { margin-top: 1.75rem; }
@@ -122,7 +122,7 @@ body { margin: 0; }
 <p class="intro">
   底下就是文章列表页，真能操作。三条规矩各走一遍最快——
   <strong>①没搜索</strong>：什么都不加，末尾空着；<strong>②搜到了</strong>：末尾多一枚去路，
-  在分页那一行上面；<strong>③搜不到</strong>：空结果那一格里两枚并排一行。第一栏换数量能看出
+  在分页那一行下面；<strong>③搜不到</strong>：空结果那一格里两枚并排一行。第一栏换数量能看出
   三档的差别：0 篇是空库，6 篇一页装得下，14 篇出分页。每一步都会在地址栏留下真的痕迹
   （<code>?q=…&amp;category=…&amp;page=…</code>），浏览器后退键能一步步退回上一次筛选。
 </p>
@@ -164,13 +164,7 @@ body { margin: 0; }
 
   <div class="entries" id="entries"></div>
 
-  <!-- ②那一枚。真页面里它排在分页那一行上面（见 ArticleList.vue 的 .entries 与 .pager 之间）。 -->
-  <div class="archive-foot row ruled" id="foot" hidden>
-    <div class="archive-foot-main">
-      <button class="pager-btn" type="button" id="foot-btn">返回</button>
-    </div>
-  </div>
-
+  <!-- 分页那一行整条一起在才在：它自己带一条细线，里面空着也照样画。 -->
   <nav class="pager row ruled" aria-label="文章分页" id="pager" hidden>
     <div class="pager-nav">
       <button class="pager-btn" type="button" id="prev">上一页</button>
@@ -178,6 +172,13 @@ body { margin: 0; }
       <button class="pager-btn" type="button" id="next">下一页</button>
     </div>
   </nav>
+
+  <!-- ②那一枚。真页面里它排在分页那一行的下面（见 ArticleList.vue 的 .pager 之后）。 -->
+  <div class="archive-foot row ruled" id="foot" hidden>
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button" id="foot-btn">返回</button>
+    </div>
+  </div>
 </section>
 
 </div>
@@ -202,9 +203,10 @@ body { margin: 0; }
 <p class="note">
   <strong>② 有搜索、结果非空，末尾一枚去路。</strong>它站在正文栏左沿，与条目标题、摘要同一条
   起笔线，横线（<code>.ruled</code>）也从那儿起——这与空结果那一格的「查看全部文章」是一个
-  位置、一个长相（都是 <code>.pager-btn</code>）。排在<strong>分页那一行的上面</strong>：
-  两条去路说的是两件事（离开这次搜索 / 在这一批里挪一页），各自有横线隔着，读起来不打架。
-  觉得挤的话也可以挪到分页下面，代价是离「读完这几篇」那一步远一点。
+  位置、一个长相（都是 <code>.pager-btn</code>）。排在<strong>分页那一行的下面</strong>：
+  末条之后第一件能做的事是留在这一批里继续走（下一页），走出去（撤掉这次搜索）排在它后面。
+  两条去路各自有横线隔着，仍读得开；代价是它离内容远了一格、落进页脚上沿那一带。
+  （2026-10-16 改定，原先在分页上面；摆法与量测见稿样 <code>foot-order-final.html</code>。）
 </p>
 <p class="note">
   <strong>③ 有搜索、结果为空，那一格里两枚并排。</strong>空结果那一格自带一条出路，所以这一枚
@@ -253,8 +255,8 @@ body { margin: 0; }
 </p>
 <p class="note">
   <strong>14 篇（多于每页 6 篇）</strong>——第一栏点它。分页那行出现（上一页 / 1 / 3 / 下一页，
-  真的能翻，地址里带 <code>?page=</code>）。这时搜一个词，末尾那一枚正好落在最后一条与分页行
-  之间，两条去路上下叠着——就是上面规矩②说的那件事。
+  真的能翻，地址里带 <code>?page=</code>）。这时搜一个词，末尾那一枚正好落在分页行与页脚
+  之间，两条去路上下相邻、各有一条横线隔着——就是上面规矩②说的那件事。
 </p>
 <p class="note">
   <strong>翻页时它跟着走</strong>：翻到第 2 页，那一枚照旧在最后一条底下（它是列表末尾，不是
@@ -272,8 +274,8 @@ body { margin: 0; }
   （<code>go</code> 只并进 <code>{ q: '', page: 1 }</code>，其余照旧）。
 </p>
 <p class="note">
-  <strong>②末尾那一枚</strong>——在 <code>&lt;div class="entries"&gt;</code> 与
-  <code>&lt;nav class="pager"&gt;</code> 之间插一个 <code>.row</code>：
+  <strong>②末尾那一枚</strong>——在 <code>&lt;nav class="pager"&gt;</code> 之后插一个
+  <code>.row</code>（2026-10-16 从分页上面挪下来，见 <code>foot-order-final.html</code>）：
 </p>
 <p class="note">
   <code>&lt;div v-if="query.q &amp;&amp; !loading &amp;&amp; !error &amp;&amp; items.length" class="archive-foot row ruled"&gt;</code><br>

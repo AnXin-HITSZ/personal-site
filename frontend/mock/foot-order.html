@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文章列表 · 末尾那一枚与分页那一行的先后 · 三案 · 稿样 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：搜索生效之后，列表末尾那一枚「返回」与分页那一行，谁在上、谁在下。
+   2026-10-16 摆三案，未定。
+
+     甲（现状）＝ 返回在分页之上。search-revert.html 的规矩②写的就是它，产品现在也是它。
+     乙        ＝ 返回挪到分页之下，紧挨着页脚。
+     丙        ＝ 两行并成一条带子：返回仍在正文栏左沿，页码仍钉在栏心中线，同一条细线之内。
+
+   这一页是三份「同一个列表末尾」的横切，从上到下依次摆开。结构与层次取自真站
+   （main.shell > div.page > section.archive，页脚是与 main 平级的 .row.shell），
+   样式表就是产品那份，一个值都没改。横切而不摆三个整页：整页各配一份报头页脚，只是把
+   三案隔开一屏多，比不了。
+
+   每一案顶上的灰带（.case-bar）是稿样的尺子，不属产品；它底下那行数字是当场量的。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+body { margin: 0; }
+/* 横切不是整页：列表离上面那一段的 6.5rem（styles.css:258）在这里只是死白，抹掉。
+   其余几何一律照产品，不覆写。 */
+.case .archive { margin-top: 0; }
+
+.case-bar { background: var(--fill); border-block: 1px solid var(--rule); }
+.case-bar-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem;
+  padding-block: .7rem; font-size: var(--facts-size);
+}
+.case-bar .no { font-family: var(--stack-mono); color: var(--muted); }
+.case-bar strong { font-weight: 600; }
+.case-bar .what { color: var(--muted); }
+.read {
+  flex-basis: 100%; margin: 0; max-width: none; color: var(--muted);
+  font-family: var(--stack-mono); font-size: .75rem; line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.intro, .notes-h { font-family: inherit; }
+.intro {
+  margin-top: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--rule);
+  max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7;
+}
+.intro strong, .note strong, .notes-h strong { color: var(--ink); font-weight: 600; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; margin-top: 1rem; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+.note ol, .note ul { padding-left: 1.2rem; }
+.note li + li { margin-top: .35rem; }
+
+/* —— 丙（候选规则）——
+   把「返回」放进分页第一格：它与「上一页」同居那个 1fr，各贴一边。1fr auto 1fr 不动，
+   所以页码仍钉在栏心中线——这是丙的整个理由，也是它比「返回另起一格」强的地方。
+
+   产品里落地时这几条要替掉现在那两条按格位写的（styles.css:505-506）：
+     .pager-nav > .pager-btn:first-child { justify-self: end; }
+     .pager-nav > .pager-btn:last-child  { justify-self: start; }
+   改成按名写（.pager-back / .pager-prev / .pager-next）。公开列表那两个按钮今天没有
+   类名（写作台那两个本来就有），要一起补上——不补的话「返回」也是 :first-child，
+   会被推到那一格的右缘去，与「上一页」叠在一起。
+
+   这一页里产品那两条还在，只能靠权重压过：`>` 右边多带一枚类名，凑到与它们同权重
+   （都是三枚），再靠本段在产品样式表之后取胜。产品里落地时不必这么写——按名写就没有
+   这场架。 */
+.pager-nav-merged > .pager-btn.pager-back { grid-area: 1 / 1; justify-self: start; }
+.pager-nav-merged > .pager-btn.pager-prev { grid-area: 1 / 1; justify-self: end; }
+.pager-nav-merged > .pager-count          { grid-area: 1 / 2; }
+.pager-nav-merged > .pager-btn.pager-next { grid-area: 1 / 3; justify-self: start; }
+
+/* 窄屏（≤44rem）：分页本来就不止一行——页码单独占一行居中，两只手在它下面各守一边
+   （styles.css:1139-1145）。三格并排都挤不下，更没有地方让「返回」与「上一页」同居一
+   格。所以丙在这一档多给「返回」一行，放在最上面：去路仍紧贴内容、仍在正文栏左沿，
+   页码仍居中，两只手照旧一左一右。整条带子于是是三行——
+      返回
+              1 / 2
+      上一页            下一页
+   「丙在窄屏是不是就该长这样」是这一案要你顺手定的事：另一种是丙只在宽屏生效，
+   窄屏退回甲（返回单占一条带子，在分页之上）。 */
+@media (max-width: 44rem) {
+  .pager-nav-merged > .pager-btn.pager-back { grid-column: 1 / -1; grid-row: 1; justify-self: start; }
+  .pager-nav-merged > .pager-count          { grid-column: 1 / -1; grid-row: 2; }
+  .pager-nav-merged > .pager-btn.pager-prev { grid-column: 1; grid-row: 3; justify-self: start; }
+  .pager-nav-merged > .pager-btn.pager-next { grid-column: 2; grid-row: 3; justify-self: end; }
+}
+</style>
+</head>
+<body>
+
+<section class="shell">
+<p class="intro">
+  底下是<strong>文章列表页末尾那一段</strong>——最后两篇、那一枚去路、分页那一行、页脚，
+  一段摆三遍，从上到下依次是<strong>甲（现状）</strong>、<strong>乙</strong>、<strong>丙</strong>。
+  三案的差别只有一件事：那一枚「返回」站在哪儿。每一案顶上的灰带里有一行当场量的数字
+  （左沿、先后、两带之间隔多少），滚到哪儿都在。
+</p>
+<p class="intro">
+  比的时候看三件事：<strong>①</strong> 读完最后一条，去路离眼睛有多远；
+  <strong>②</strong> 它挨着谁（挨着内容，还是挨着页脚）；<strong>③</strong> 它跟条目标题
+  是不是还同一条起笔线——三案里这一条都不该变，谁变了就是摆歪了。窄屏（&lt;44rem）
+  这一页照旧能看，三案会依次收成单列。
+</p>
+</section>
+
+<!-- ===================== 甲 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">甲</span>
+    <strong>现状 · 返回在分页之上</strong>
+    <span class="what">产品现在就是这个，search-revert.html 规矩②写的也是它</span>
+    <p class="read" data-read="jia">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="jia">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button">返回</button>
+    </div>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn" type="button">下一页</button>
+    </div>
+  </nav>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<!-- ===================== 乙 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">乙</span>
+    <strong>返回挪到分页之下</strong>
+    <span class="what">按「留在这一批 → 离开这一批」递进；代价是它落进页脚上沿那一带</span>
+    <p class="read" data-read="yi">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="yi">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn" type="button">下一页</button>
+    </div>
+  </nav>
+
+  <div class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button">返回</button>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<!-- ===================== 丙 ===================== -->
+<div class="case-bar">
+  <div class="case-bar-in shell">
+    <span class="no">丙</span>
+    <strong>并成一条带子</strong>
+    <span class="what">返回贴正文栏左沿、页码仍钉在栏心中线，同一条细线之内（窄屏多一行，见底下注记）</span>
+    <p class="read" data-read="bing">量一量…</p>
+  </div>
+</div>
+
+<div class="case" data-case="bing">
+<div class="shell">
+<div class="page">
+<section class="archive">
+  <div class="entries">
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-08-12">2026.08.12</time></p>
+        <p>21 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">一次线上慢查询的复盘：从 3 秒到 80 毫秒</a></h3>
+        <p class="entry-summary">同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。</p>
+        <p class="entry-tags">MySQL / 慢查询 / 执行计划</p>
+      </div>
+    </article>
+    <article class="entry row ruled">
+      <div class="facts facts-stamp">
+        <p class="key">后端</p>
+        <p><time class="date" datetime="2026-07-30">2026.07.30</time></p>
+        <p>16 分钟阅读</p>
+      </div>
+      <div class="main">
+        <h3 class="entry-title"><a href="#">幂等这件事：为什么重试比你想的难</a></h3>
+        <p class="entry-summary">重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。</p>
+        <p class="entry-tags">幂等 / 重试 / 服务可靠性</p>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页">
+    <div class="pager-nav pager-nav-merged">
+      <button class="pager-btn pager-back" type="button">返回</button>
+      <button class="pager-btn pager-prev" type="button" disabled>上一页</button>
+      <span class="pager-count">1 / 2</span>
+      <button class="pager-btn pager-next" type="button">下一页</button>
+    </div>
+  </nav>
+</section>
+</div>
+</div>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+</div>
+
+<section class="shell">
+
+<h2 class="notes-h">三案各读成什么</h2>
+<p class="note">
+  <strong>甲（现状）：去路紧贴内容，分页留在页面级的位置。</strong>读完最后一条，紧接着的
+  下一段就是去路，不用先过一眼分页、再做一次「要不要翻页」的决定；分页是常驻控件
+  （不搜索时也在），挨着页脚正合适——页面级的东西归页面级那一带。
+  代价就是你在截图里看到的那一眼：末尾连着两条各只装一枚字的窄带子。
+</p>
+<p class="note">
+  <strong>乙：从「留在这一批」到「离开这一批」，递进是对的。</strong>翻页还在集合里，去路在
+  集合外，先里后外，逻辑顺。代价有两处：① 去路掉进分页与页脚之间那一带，一枚小字按钮
+  贴着页脚，读起来像页面级的「回上一页」，而它实际撤的是这次搜索；② 读完最后一条要先
+  看分页、决定不翻，才轮到去路。
+</p>
+<p class="note">
+  <strong>丙：一条带子装两件事。</strong>去路贴正文栏左沿（与条目标题同一条起笔线，
+  <code>.ruled</code> 的横线也从那儿起），页码仍钉在栏心中线——两个位置都保住，碎感没有了。
+  它就是甲去掉那条多余横线的样子。代价写在下面「丙要动产品哪几行」里。
+</p>
+
+<h2 class="notes-h">丙要动产品哪几行</h2>
+<p class="note">
+  分页那三枚现在是<strong>按格位</strong>认人的（<code>styles.css:505-506</code>）：
+</p>
+<p class="note">
+  <code>.pager-nav &gt; .pager-btn:first-child { justify-self: end; }</code><br>
+  <code>.pager-nav &gt; .pager-btn:last-child { justify-self: start; }</code>
+</p>
+<p class="note">
+  丙要在第一格里放两样东西（返回贴左、上一页贴右），按格位写就认不出谁是谁了——「返回」
+  也是 <code>:first-child</code>，会被推到那一格的右缘、与「上一页」叠在一起（第一版稿样
+  就是这么错的，探针当场量出来 Δ −42px）。所以这几条改成按名写
+  （<code>.pager-prev</code> / <code>.pager-next</code> / 新的 <code>.pager-back</code>），
+  两个模板一起补类名。写作台列表页那两个按钮本来就有类名，公开列表页那两个没有，要添。
+</p>
+<p class="note">
+  <strong>还有一处同一条改动要带上</strong>：「少动的人」那一段（<code>styles.css:1157</code>）
+  也列着同样两条按格位的选择器，改按名写时一起改——不然那两只手的过渡会在关掉动画的人
+  那里留着。
+</p>
+<p class="note">
+  <strong>窄屏要顺手定一件事</strong>：窄屏（≤44rem）分页本来就不止一行——页码单独占一行居中，
+  两只手在它下面各守一边（<code>styles.css:1139-1145</code>）。三格并排都挤不下，更没有地方
+  让「返回」与「上一页」同居一格。这一页里丙在那一档多给「返回」一行、放在最上面（见上面
+  那条 media 规则），整条带子变成三行。另一种做法是<strong>丙只在宽屏生效，窄屏退回甲</strong>
+  （返回单占一条带子，在分页之上，与今天一样）。这一条不定，丙在手机上就是另一副面孔。
+</p>
+
+<h2 class="notes-h">这一条与那三条规矩的关系</h2>
+<p class="note">
+  取乙或丙，改的是 <code>search-revert.html</code> 规矩②里的半句话——「它排在分页那一行的
+  上面」。规矩①（没搜索什么都不加）与规矩③（空结果那一格里两枚并排）一个字都不动：
+  那一格是自带去路的内容块，和分页那一行本来就不挨着。
+</p>
+<p class="note">
+  写作台列表页（<code>AdminArticleListView.vue</code>）是同一套结构，定了哪一案两处一起走，
+  不留两样。这一页只摆公开列表页：那两处的差别只有栏里的字，档位一样。
+</p>
+<p class="note">
+  产品代码（<code>ArticleList.vue</code> / <code>AdminArticleListView.vue</code> /
+  <code>styles.css</code>）在这一页定下来之前一行不动。你说哪一案，我再落。
+</p>
+
+</section>
+
+<script>
+/* 当场量三件事，摆在每一案的灰带里。量的都是位置差，不写死数字——
+   视口宽窄（甲案 ≥80rem 那次左移、分页自己换行那一档）与字体回退都会让绝对值变，差不会。
+   宽度一动就重量一次：窄屏那一档的摆法与桌面不是一回事，数字留在这儿会骗人。 */
+(function () {
+  const px = (n) => n.toFixed(1);
+  const box = (el) => el.getBoundingClientRect();
+
+  function measure() {
+    document.querySelectorAll('.case[data-case]').forEach((root) => {
+      const read = document.querySelector(`[data-read="${root.dataset.case}"]`);
+      if (!read) return;
+
+      const title = root.querySelector('.entry-title');
+      const back = root.querySelector('.pager-back') || root.querySelector('.archive-foot .pager-btn');
+      const nav = root.querySelector('.pager-nav');
+      const count = root.querySelector('.pager-count');
+      const band = root.querySelector('.archive-foot') || nav.closest('.pager');
+      const pagerBand = nav.closest('.pager');
+      if (!title || !back || !nav || !count || !band) return;
+
+      const parts = [`左沿差 ${px(box(back).left - box(title).left)}`];
+
+      if (band === pagerBand) {
+        /* 同一条带子：报页码离栏心中线多远——丙的全部理由就是它不动。 */
+        const c = box(count), n = box(nav);
+        parts.push('先后 同一条带子');
+        parts.push(`页码中心 − 栏心中线 ${px((c.left + c.right) / 2 - (n.left + n.right) / 2)}`);
+        /* 宽屏两枚同居一格，报它们之间还剩多少；窄屏那一档「返回」另起一行（分页自己就是
+           两行），横向的差没有意义，改成报这一带子里有几行。 */
+        const prev = root.querySelector('.pager-prev');
+        if (prev) {
+          parts.push(Math.abs(box(prev).top - box(back).top) < 1
+            ? `返回→上一页 ${px(box(prev).left - box(back).right)}`
+            : '窄屏：带子里三行（返回 / 页码 / 两只手）');
+        }
+      } else {
+        const b = box(band), p = box(pagerBand);
+        parts.push(b.top < p.top ? '先后 返回在前' : '先后 分页在前');
+        parts.push(`两带细线相距 ${px(Math.abs(p.top - b.top))}`);
+      }
+
+      read.textContent = parts.join(' · ');
+    });
+  }
+
+  measure();
+  let queued = false;
+  window.addEventListener('resize', () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; measure(); });
+  });
+})();
+</script>
+
+</body>
+</html>

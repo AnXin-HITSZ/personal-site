@@ -484,9 +484,9 @@ html { scroll-padding-top: var(--masthead-h); }
 .sk-line { width: 100%; height: .6rem; margin-top: .9rem; }
 .sk-line-short { width: 54%; }
 
-/* 列表末尾那一枚去路（有搜索且这一页有结果时才在）：.entries 与 .pager 之间的一个 .row，
-   左栏空着，按钮站在正文栏左沿——与条目标题、摘要同一条起笔线。上面那条间距与 .pager
-   取同一个数（见下一条）：两处都是「上一块与这一块之间空一行」。 */
+/* 列表末尾那一枚去路（有搜索且这一页有结果时才在）：排在分页那一行与页脚之间的一个 .row，
+   左栏空着，按钮站在正文栏左沿——与条目标题、摘要同一条起笔线。这条间距与 .pager 那一条
+   （见下一条）取同一个数：两处都是「上一块与这一块之间空一行」。 */
 .archive-foot { margin-top: 1.75rem; }
 .archive-foot-main { grid-column: 2; }
 
