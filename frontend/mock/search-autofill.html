@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>搜索框被浏览器填过之后的那层底色 · 定稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：搜索框里点了一条浏览器记住的搜索历史之后，那一层底色是谁画的、要不要管它。
+   2026-10-16 定稿。
+
+   先回答你的问题：是浏览器自带的，不是站里的样式。Chromium/Edge/Safari 对「被自动填充过的」
+   输入行自己铺一层底色（浅色主题下是 #e8f0fe——这个值是从你那张截图上取样量出来的，搜索框
+   那一带 14395 个像素正好是这个颜色），而且它在你改动这一格之前一直留着，失焦也不散。这是
+   它有意为之的提示：「这个值是我替你填的，不是你敲的。」
+
+   为什么改不掉：那条规则在浏览器自己的样式表里，压过站里的样式，用 background-color 抢不过
+   它。治得住的是内阴影——把画在底色之上、字之下的那一层（inset）铺满这格：底色照样在，看不
+   见了而已。下面「现状」与「甲」两格就是这么画的（这一页里真能验：两格的底色都是 #e8f0fe，
+   甲那格多一条内阴影）。
+
+   定下的（甲，2026-10-16）：只治搜索框。搜索框里那条填充来自浏览历史，没有任何安全含义，
+   而那层蓝在纸色页面上是一块外来色，又正好出现在读者盯着的那一行上。两处搜索框（文章列表页、
+   写作台列表页）都被这一条覆盖。
+
+   不取的那一案（乙：全站一起治，含登录、账号那几格的邮箱与口令）不摆在这一页了。它当年的
+   结论留着：好处是站里同一种东西只有一个长相；代价是把浏览器在凭据框上的那条提示也抹掉了
+   ——那里那层底色是有信息量的（提醒你这一格是浏览器替你填的），而且大家从小看到大，不像坏
+   样式。
+
+   不去动的：搜索框的那个历史下拉（autocomplete）。它有用——你刚就是从里面点的「跳表」。
+
+   这一条没法无头自检：自动填充要真有一份保存过的历史加上真手势，探针造不出来。所以验收是
+   手工的（下面「怎么手验」那一段）。稿样里那层蓝是按你截图量出来的颜色画的。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+body { margin: 0; }
+.intro, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 1.75rem; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule); max-width: var(--measure);
+}
+.note { margin-top: 1rem; }
+.note strong, .intro strong { color: var(--ink); font-weight: 600; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+.note ol { padding-left: 1.2rem; }
+.note li + li { margin-top: .35rem; }
+
+.fam { margin-top: 3.5rem; }
+.fam > h3 { font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600; }
+.fam > p { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; margin: .5rem 0 0; }
+.demo { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 24rem)); gap: 2.5rem 4rem; align-items: start; justify-content: start; }
+.cell > * + * { margin-top: 1rem; }
+.cap { margin: 0; color: var(--muted); font-size: .8125rem; }
+
+/* —— 那层底色，与盖住它的那条规则 ——
+   浏览器自己那条画不到稿样里来（要真有一个被填充过的输入行），所以这两条是它的替身：
+   .demo-ua 铺浏览器那层底（颜色取自你的截图），.demo-fix 叠上那层内阴影。
+   画出来与真站上两态一模一样：底下都是 #e8f0fe，甲那一格多一条内阴影。
+   .demo-fix 与产品里那条（2026-10-16 已落进 src/styles.css）是一模一样的两句，留在这里
+   只为让这一页单独看得懂；真站上起作用的是伪类那条，替身不参与。 */
+.demo-ua input { background-color: #e8f0fe; color: #000; }
+.demo-fix input {
+  -webkit-box-shadow: 0 0 0 100px #fff inset;
+  box-shadow: 0 0 0 100px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+}
+</style>
+</head>
+<body>
+
+<section class="shell">
+<p class="intro">
+  搜索框里点了一条浏览器记住的搜索历史，那一格就染上一层浅蓝，失焦也不散。那是<strong>浏览器自己
+  画的</strong>，不是站里的样式：Chromium / Edge / Safari 对被自动填充过的输入行都会铺这么一层
+  （<code>#e8f0fe</code>，这个值是从你那张截图上取样量出来的），在你改动这一格之前一直留着
+  ——它是在说「这个值是我替你填的」。下面两格把「长什么样」和「治了之后长什么样」摆在一起。
+</p>
+</section>
+
+<main class="shell">
+
+<section class="fam">
+  <h3>两格对照</h3>
+  <p>左格是没治的搜索框，右格是治了之后的。都是真控件，可以点进去打字。</p>
+  <div class="demo">
+    <div class="cell demo-ua">
+      <p class="cap">现状 · 搜索框（浏览器铺的那层底）</p>
+      <form class="search" role="search" onsubmit="return false">
+        <label class="sr-only" for="ua-search">搜索文章标题与摘要</label>
+        <input id="ua-search" type="search" value="跳表" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+    <div class="cell demo-ua demo-fix">
+      <p class="cap">甲（定稿）· 同一条底色，加了那条内阴影之后</p>
+      <form class="search" role="search" onsubmit="return false">
+        <label class="sr-only" for="fix-search">搜索文章标题与摘要</label>
+        <input id="fix-search" type="search" value="跳表" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="fam">
+  <h3>对照 · 没被填过的样子</h3>
+  <p>站里的输入行就是这个长相：白底、一像素 <code>--control</code> 描边、两像素圆角。那层蓝和它不搭。</p>
+  <div class="demo">
+    <div class="cell">
+      <p class="cap">搜索框（平时）</p>
+      <form class="search" role="search" onsubmit="return false">
+        <label class="sr-only" for="plain-search">搜索文章标题与摘要</label>
+        <input id="plain-search" type="search" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<h2 class="notes-h">为什么 background-color 治不住它</h2>
+<p class="note">
+  那条规则在浏览器自己的样式表里，优先级压过站里的样式——你在站里给这格写
+  <code>background: #fff</code> 也没用。治得住的是画在<strong>它上面</strong>的那一层：内阴影
+  （<code>inset</code>）画在底色之上、字之下，把整格铺满就把它盖住了。这一页里的「甲」那格就是
+  这么画的——底色一模一样，只是多了一条内阴影，眼睛看到的是白的。
+</p>
+<p class="note">
+  两条规则——<strong>已落（2026-10-16）</strong>，在 <code>src/styles.css</code> 里挨着
+  <code>.search</code> 那几条：</p>
+<p class="note">
+  <code>.search input:-webkit-autofill { box-shadow: 0 0 0 100px #fff inset; -webkit-text-fill-color: var(--ink); caret-color: var(--ink); }</code><br>
+  <code>.search input:autofill { box-shadow: 0 0 0 100px #fff inset; -webkit-text-fill-color: var(--ink); caret-color: var(--ink); }</code>
+</p>
+<p class="note">
+  第一条给 Chromium / WebKit——那层蓝就长在这两家（和那颗 ✕ 换皮是同一批浏览器，见
+  <code>search-clear.html</code>）；第二条是标准那一份，认它的浏览器也能吃到。<code>-webkit-text-fill-color</code>
+  收的是浏览器顺手改掉的字色（它那边是纯黑，站里是 <code>--ink</code>）——不写这一句，只有字色
+  差一点点，写了才是一个站里的一种墨。
+</p>
+<p class="note">
+  100px 那一下是保险：内阴影的模糊半径 0、扩散铺满整格，多高多宽都盖得住，不必跟着输入框尺寸改。
+</p>
+<p class="note">
+  选择器只写 <code>.search input</code>，不写裸的 <code>input:-webkit-autofill</code>：那会连
+  登录、注册、账号那几格的邮箱与口令一起治，把浏览器在凭据框上的那条提示也抹掉——那里那层
+  底色是有信息量的。要治的就是这两处搜索框（文章列表页、写作台列表页），它们共用 <code>.search</code>。
+</p>
+
+<h2 class="notes-h">怎么手验</h2>
+<p class="note">
+  这一条探针验不了：自动填充要真有一份保存过的历史加上真的手势，无头浏览器造不出那个状态
+  （所以这一页里那层蓝是照你截图量出来的颜色画的，不是浏览器当场画的）。手工这一遍这样走：
+  <ol>
+    <li>在搜索框里打一个以前搜过的词，让下拉出来，<strong>从下拉里点一条</strong>——底色上来。</li>
+    <li>点空白处失焦：底色还在（这是浏览器自己的规矩，不是站里的问题）。</li>
+    <li>改动这一格（敲一个空格再删掉）：底色散去——浏览器就是靠「值被动过」来判断的。</li>
+    <li>改了样式之后重来一遍第 1 步：底色照旧由浏览器铺上，但眼睛看到的是白底、站里的墨字。</li>
+    <li>顺手看一眼登录页那几格：还是浏览器原来的样子（这一条只挑了 <code>.search input</code>）。</li>
+  </ol>
+</p>
+
+</main>
+
+</body>
+</html>

@@ -99,6 +99,14 @@ function go(change) {
 function filter(category) { go({ category, page: 1 }); focusHeading(); }
 function submitSearch() { go({ q: search.value.trim(), page: 1 }); focusHeading(); }
 function reset() { search.value = ''; go({ q: '', category: ALL, page: 1 }); focusHeading(); }
+/* 「返回」：撤掉这次搜索，分类与页码回默认——分类留在哪一个不动，因为它撤的不是筛选。
+   点它的两处（列表末尾、空结果那一格）都会让它自己消失，所以焦点要送回标题，不能悬在空处。 */
+function clearSearch() { search.value = ''; go({ q: '', page: 1 }); focusHeading(); }
+/* 框里那串字清空了，已经生效的词跟着撤：✕、Esc、退格删空是同一个手势的三种按法，三种都
+   发 input 事件（2026-10-16 用真鼠标真键盘点过：✕ 与 Esc 另发 search，退格只发 input）。
+   条件里那个 query.q 是「本来就有词」——本来没有就别动，否则每一次清空都往历史里推一条
+   空记录。不调 focusHeading：焦点本来就在框里，别把人赶走。 */
+function onSearchInput() { if (search.value.trim() === '' && query.q) go({ q: '', page: 1 }); }
 /* 换过页或筛过之后把焦点送回标题：读屏会念出新的一段，键盘用户的下一次 Tab 也从这里
    重新走。preventScroll 是因为滚动位置由调用方另外决定（见 turnPage）。 */
 async function focusHeading() { await nextTick(); heading.value?.focus({ preventScroll: true }); }
@@ -127,7 +135,7 @@ onUnmounted(() => { controller?.abort(); catsController?.abort(); });
         </div>
         <form class="search" role="search" @submit.prevent="submitSearch">
           <label class="sr-only" for="search">搜索文章标题与摘要</label>
-          <input id="search" v-model="search" type="search" placeholder="搜索标题或摘要" maxlength="100">
+          <input id="search" v-model="search" type="search" placeholder="搜索标题或摘要" maxlength="100" @input="onSearchInput">
           <button type="submit">搜索</button>
         </form>
       </div>
@@ -147,16 +155,31 @@ onUnmounted(() => { controller?.abort(); catsController?.abort(); });
           <button class="pager-btn" @click="retry">重新加载</button>
         </div>
       </div>
+      <!-- 空结果这一格自带去路，所以下面那一行不在（两处都摆就成了「上下两层返回」）。
+           两枚并排时：一枚撤词、留在同一个分类；一枚连分类一起放开。分类本来就停在
+           「全部」时这两枚是同一件事，只留一枚。 -->
       <div v-else-if="!items.length" class="entry row ruled">
         <div class="main notice">
           <h3>还没有找到这样的文章</h3>
           <p>试试其他关键词，或回到全部文章。</p>
-          <button class="pager-btn" @click="reset">查看全部文章</button>
+          <div class="notice-acts">
+            <button v-if="query.q && query.category !== ALL" class="pager-btn" @click="clearSearch">返回</button>
+            <button class="pager-btn" @click="reset">查看全部文章</button>
+          </div>
         </div>
       </div>
       <template v-else>
         <ArticleEntry v-for="article in items" :key="article.id" :article="article" :latest="article.id === latestId" />
       </template>
+    </div>
+
+    <!-- 搜过的词还在生效、这一页又有条目时才在：没有搜索（或这一页空着）时列表末尾什么
+         都不加。用 items.length 不用 pagination.total——页码超出时接口不夹取，这时这一页
+         是空的、上面那格正摆着它自己的两枚，两处都会站出来。 -->
+    <div v-if="query.q && !loading && !error && items.length" class="archive-foot row ruled">
+      <div class="archive-foot-main">
+        <button class="pager-btn" type="button" @click="clearSearch">返回</button>
+      </div>
     </div>
 
     <nav class="pager row ruled" aria-label="文章分页">

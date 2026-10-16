@@ -294,6 +294,19 @@ html { scroll-padding-top: var(--masthead-h); }
 .search input::placeholder { color: var(--muted); }
 .search button { border: 0; background: none; padding: .7rem .9rem; font-size: .875rem; color: var(--seal); transition: color .18s ease; }
 .search button:hover { color: var(--ink); }
+/* 搜索框里点了一条浏览器记住的搜索历史之后，那一格会被浏览器自己铺上一层浅蓝
+   （#e8f0fe），失焦也不散——它是在说「这个值是我替你填的」。那条规则在浏览器自己的
+   样式表里，background-color 抢不过它；治得住的是画在它上面、字下面的那层内阴影，
+   铺满整格就把它盖住了（模糊半径 0、扩散 100px，多高多宽都盖得住，不必跟尺寸走）。
+   -webkit-text-fill-color 收的是浏览器顺手改掉的字色（它那边是纯黑，站里是 --ink）。
+   只写 .search input，不写裸的 input:-webkit-autofill：登录、账号那几格的邮箱与口令
+   该留着浏览器那条提示（那层底色在那里是有信息量的）。 */
+.search input:-webkit-autofill,
+.search input:autofill {
+  box-shadow: 0 0 0 100px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+}
 /* 搜索框里那颗清除钮是浏览器自带的（Chromium/Edge 上是粗蓝 ✕），站里从没管过它。
    和 .select 一个做法：留行为、换皮——点击清空与 Esc 清空都还是原样，只换长相
    （灰字，悬停整个输入行时转印色，照标签的 ×）。只对 Chromium/WebKit 系生效；
@@ -457,6 +470,10 @@ html { scroll-padding-top: var(--masthead-h); }
 .notice h1, .notice h3 { font-size: 1.1875rem; font-weight: 600; }
 .notice p { margin-top: .6rem; color: var(--muted); font-size: .9375rem; }
 .notice button, .notice .pager-btn { margin-top: 1.4rem; }
+/* 一条提示底下要摆两枚时（列表页空结果那一格），间距归这一层管：上面那条 1.4rem 是给
+   「一枚按钮」的，两枚各带一份就不在同一行了，所以这里把它收回来、里面的两枚归零。 */
+.notice-acts { margin-top: 1.4rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.5rem; }
+.notice-acts .pager-btn { margin-top: 0; }
 
 .sk { display: block; background: var(--fill); border-radius: 2px; }
 .sk-fact { width: 3.5rem; height: .6rem; }
@@ -466,6 +483,12 @@ html { scroll-padding-top: var(--masthead-h); }
 .entry:first-child .sk-title { width: 78%; height: 1.5rem; margin-top: .55rem; }
 .sk-line { width: 100%; height: .6rem; margin-top: .9rem; }
 .sk-line-short { width: 54%; }
+
+/* 列表末尾那一枚去路（有搜索且这一页有结果时才在）：.entries 与 .pager 之间的一个 .row，
+   左栏空着，按钮站在正文栏左沿——与条目标题、摘要同一条起笔线。上面那条间距与 .pager
+   取同一个数（见下一条）：两处都是「上一块与这一块之间空一行」。 */
+.archive-foot { margin-top: 1.75rem; }
+.archive-foot-main { grid-column: 2; }
 
 /* ---------- 分页 ---------- */
 
@@ -923,7 +946,13 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
 /* 这一层的字号要跟着里面那枚字走：它默认继承正文的 17px，比那枚字（14px）大，
    空行按大的那一行算，整行因此比原来那行标签高 5.5px（31.45 vs 25.9）。定成同一个
    字号，正文框顶端就回到原来那个位置。 */
-.md-switch { margin-left: auto; cursor: pointer; font-size: var(--facts-size); }
+.md-switch { margin-left: auto; font-size: var(--facts-size); }
+/* 手要落在那枚 label 上，不能写在外层这个盒子上：label 从浏览器内置样式表里带着一条
+   cursor: default，元素自己有一条就不继承外层的 pointer——于是「手」画在字上下那两条
+   空白里，而那两条点下去什么也不会发生。站里另两处 label（插入图片、.segmented）都把
+   cursor 写在自己身上，只有这里是写在外层的。只挑 .md-switch label，不写宽泛的
+   label { cursor: pointer }：站里还有别的 label，它们该是箭头。 */
+.md-switch label { cursor: pointer; }
 /* 那两根单选是 sr-only：键盘走上去确实聚焦了，但盒子只有 1×1 且被 clip 裁掉，
    环画上去也看不见——屏幕上什么都不亮。聚焦交给整圈交代，照 .segmented 那套。
    外扩 3px：围的是那一枚字，和全站链接/按钮同档（.segmented 围的是块，才是 2px）。 */
@@ -1055,7 +1084,7 @@ button.link-quiet { border: 0; border-bottom: 1px solid currentColor; background
   }
 
   .row { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
-  .statement-body, .archive-main, .archive-tools-main, .main, .piece-main, .device-main, .pager-nav, .composer-form, .footer-main, .project-body { grid-column: 1; }
+  .statement-body, .archive-main, .archive-tools-main, .archive-foot-main, .main, .piece-main, .device-main, .pager-nav, .composer-form, .footer-main, .project-body { grid-column: 1; }
   .statement-fact, .archive-count, .footer-made, .project-fact { grid-column: 1; margin-bottom: .55rem; }
 
   .masthead { padding-top: 1.5rem; }

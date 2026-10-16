@@ -109,6 +109,20 @@ function clearFilters() {
   load();
 }
 
+/* 「返回」：撤掉这次搜索，状态筛选留在哪一个不动——它撤的不是筛选。与公开列表页那一枚
+   同一件事。 */
+function clearSearch() {
+  search.value = '';
+  Object.assign(query, { q: '', page: 1 });
+  load();
+}
+
+/* 框里那串字清空了，已经生效的词跟着撤（✕、Esc、退格删空都发 input）。条件里那个
+   query.q 是「本来就有词」——本来没有就别动，否则每一次清空都白拉一次列表。 */
+function onSearchInput() {
+  if (search.value.trim() === '' && query.q) clearSearch();
+}
+
 function turnPage(page) {
   query.page = page;
   load();
@@ -185,7 +199,7 @@ onMounted(() => {
           </div>
           <form class="search" role="search" @submit.prevent="submitSearch">
             <label class="sr-only" for="admin-search">搜索文章标题和摘要</label>
-            <input id="admin-search" v-model="search" type="search" placeholder="搜标题和摘要" maxlength="100">
+            <input id="admin-search" v-model="search" type="search" placeholder="搜标题和摘要" maxlength="100" @input="onSearchInput">
             <button type="submit">搜索</button>
           </form>
         </div>
@@ -207,11 +221,16 @@ onMounted(() => {
       </div>
     </template>
 
+    <!-- 空结果这一格自带去路，所以下面那一行不在（两处都摆就成了「上下两层返回」）。
+         状态停在「全部」时两枚是同一件事（都撤词、都留在全部），只留一枚。 -->
     <div v-else-if="filteredEmpty" class="entry row ruled">
       <div class="main notice">
         <h3>没有符合条件的文章</h3>
         <p>换个状态，或者清掉搜索词。</p>
-        <button class="pager-btn" type="button" @click="clearFilters">查看全部文章</button>
+        <div class="notice-acts">
+          <button v-if="query.q && query.status !== 'all'" class="pager-btn" type="button" @click="clearSearch">返回</button>
+          <button class="pager-btn" type="button" @click="clearFilters">查看全部文章</button>
+        </div>
       </div>
     </div>
 
@@ -260,6 +279,13 @@ onMounted(() => {
         </div>
       </article>
     </template>
+  </div>
+
+  <!-- 搜过的词还在生效、这一页又有条目时才在：没有搜索（或这一页空着）时列表末尾什么都不加。 -->
+  <div v-if="state === 'ready' && !empty && query.q && items.length" class="archive-foot row ruled">
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button" @click="clearSearch">返回</button>
+    </div>
   </div>
 
   <nav v-if="state === 'ready' && !empty && pagination.totalPages > 1" class="pager row ruled" aria-label="翻页">

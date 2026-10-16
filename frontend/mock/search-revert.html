@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="zh-CN" data-data="one" data-label="back">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文章列表 · 搜索的回退 · 定稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 只问一件事：搜索生效之后，读者怎么退回去。2026-10-16 定稿。
+
+   你报的两个毛病（图 1：没搜索也冒出那一枚；图 2：搜不出结果时上下两层返回），根因是一个：
+   稿样里用 hidden 属性藏那一枚，而它是 .row（display: grid）——作者样式里的 display 压过
+   浏览器内置的 [hidden] { display: none }，属性挂上去了、盒子照旧画着。产品里用 v-if，
+   节点根本不存在，不会有这一条；是稿样自己的假象。这一版的稿样补了下面那条
+   [hidden] { display: none !important }（脚手架，不进产品），三档就都对了。
+
+   定下的三条（2026-10-16 你看过三案之后定的，这一页就是它）：
+     ① 没有搜索（生效的词是空的）：列表末尾什么都不加，一切照原样。
+     ② 有搜索、结果非空：列表末尾加一行，一枚去路，站在正文栏左沿、与条目标题同一条
+        起笔线（.ruled 的横线也从那儿起）。它排在分页那一行的上面。
+     ③ 有搜索、结果为空：「还没有找到这样的文章」那一格里，两枚去路并排一行——
+        「返回」与「查看全部文章」。分类停在「全部」时这两枚是同一件事，只留一枚。
+     甲（清空即回退）照旧在里面：框一空，生效的词跟着撤，分类不动。✕、Esc、退格删空是
+     同一个手势的三种按法，三种都发 input 事件（2026-10-16 用真鼠标真键盘点过：✕ 与 Esc
+     另发 search，退格只发 input），所以挂在 input 上一条就够。
+
+   那一枚写什么：2026-10-16 你定的「返回」（第二栏可以切回另一句看对照）。两句话都在
+     下面「那一枚写什么」那一节里留着：为什么另一句没被取、它当年好在哪儿。
+
+   三档文章数量就是你说的三种：0 篇、6 篇（一页装得下）、14 篇（多于每页 6 篇，出分页）。
+   真实列表页的每页上限是 6（ArticleList.vue:16 的 pageSize）。
+
+   这一页是真能操作的：地址栏跟着真变（pushState），浏览器后退键能一步步退回上一次筛选。
+   样片里的文章是示意数据，不是要发表的内容。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+/* .shell 与内容之间垫一层 .page：真 DOM 是 main.shell > div.page > 视图根节点（App.vue 的
+   transition 包装）。与真站同层次，选择器才量得准。 */
+body { margin: 0; }
+
+/* 就是它：稿样用 hidden 属性藏那一枚，而它带着 .row（display: grid）——作者样式压过
+   浏览器内置的 [hidden] { display: none }，藏不住。产品用 v-if，节点不存在，没这一条。
+   2026-10-16 你图 1 里「没搜索也冒出那一枚」、图 2 里「上下两层返回」都是它。 */
+[hidden] { display: none !important; }
+
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+}
+/* 标本页的报头也钉在顶上（产品里 top: 0）。这一页顶上多了一条控制栏，不挪它就钻到栏
+   底下去了——脚手架替它让开，量的几何与真站一致（它只在滚起来时才钉住）。 */
+.masthead { top: var(--bar-h, 0px); }
+.bar-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .55rem 1.75rem;
+  padding-block: .7rem; font-size: var(--facts-size);
+}
+.ctl { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .8rem; }
+.ctl .lbl { color: var(--muted); }
+.ctl label { cursor: pointer; white-space: nowrap; }
+.ctl label input { cursor: pointer; }
+.readout {
+  flex-basis: 100%; margin: 0; max-width: none;
+  font-family: var(--stack-mono); font-size: .75rem; color: var(--muted);
+  line-height: 1.65; font-variant-numeric: tabular-nums;
+}
+.readout b { color: var(--ink); font-weight: 400; }
+
+.intro, .notes-h { font-family: inherit; }
+.intro {
+  margin-top: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--rule);
+  max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7;
+}
+.intro strong, .note strong, .notes-h strong { color: var(--ink); font-weight: 600; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; margin-top: 1rem; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+.note ol, .note ul { padding-left: 1.2rem; }
+.note li + li { margin-top: .35rem; }
+
+/* —— 要进 src/styles.css 的两条（候选规则，产品里只留第二条）——
+   .archive-foot 是 .entries 与 .pager 之间的一个 .row：左栏空着，那一枚站在正文栏左沿。
+   .pager 自己那条 margin-top 是 1.75rem（styles.css:474），照抄同一个值——两处的处境
+   一样，都是「上一块与这一块之间空一行」。 */
+.archive-foot { margin-top: 1.75rem; }
+.archive-foot-main { grid-column: 2; }
+/* 44rem 那一档 .row 只剩一列（styles.css:1057），第二列不存在——不收回来的话网格会替它
+   生一条隐式的第二轨，那一枚就靠到右缘去了。与 .archive-main / .archive-tools-main 同一条
+   待遇（styles.css:1058 那一列名单里要添上 .archive-foot-main）。 */
+@media (max-width: 44rem) { .archive-foot-main { grid-column: 1; } }
+
+/* 空结果那一格里的两枚并排。.notice 自己那条规则是 `.notice button, .notice .pager-btn
+   { margin-top: 1.4rem }`（styles.css:459）——那 1.4rem 归到这一层上，里面的两枚归零，
+   否则每枚各带一份。 */
+.notice-acts { margin-top: 1.4rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.5rem; }
+.notice-acts .pager-btn { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in shell">
+    <div class="ctl">
+      <span class="lbl">文章数量</span>
+      <label><input type="radio" name="data" value="zero"> 0 篇（空库）</label>
+      <label><input type="radio" name="data" value="one" checked> 6 篇（一页装得下）</label>
+      <label><input type="radio" name="data" value="many"> 14 篇（多于每页 6 篇，出分页）</label>
+    </div>
+    <div class="ctl">
+      <span class="lbl">那一枚写什么</span>
+      <label><input type="radio" name="label" value="back" checked> 返回</label>
+      <label><input type="radio" name="label" value="dest"> 查看全部后端文章</label>
+    </div>
+    <p class="readout" id="readout">量一量…</p>
+  </div>
+</header>
+
+<section class="shell">
+<p class="intro">
+  底下就是文章列表页，真能操作。三条规矩各走一遍最快——
+  <strong>①没搜索</strong>：什么都不加，末尾空着；<strong>②搜到了</strong>：末尾多一枚去路，
+  在分页那一行上面；<strong>③搜不到</strong>：空结果那一格里两枚并排一行。第一栏换数量能看出
+  三档的差别：0 篇是空库，6 篇一页装得下，14 篇出分页。每一步都会在地址栏留下真的痕迹
+  （<code>?q=…&amp;category=…&amp;page=…</code>），浏览器后退键能一步步退回上一次筛选。
+</p>
+</section>
+
+<header class="masthead shell">
+  <a class="brand" href="#">Anxin</a>
+  <nav class="nav" aria-label="主导航">
+    <a class="nav-here" href="#" aria-current="page">文章</a>
+    <a href="#">分类</a>
+    <a href="#">QA-Agent</a>
+    <a href="#">写作</a>
+    <a href="#">账号</a>
+  </nav>
+</header>
+
+<main class="shell">
+<div class="page">
+
+<section id="articles" class="archive" aria-labelledby="archive-title">
+  <div class="archive-head row ruled">
+    <p class="archive-count" role="status" aria-live="polite" id="count">6 篇文章</p>
+    <div class="archive-main">
+      <h2 id="archive-title" tabindex="-1">文章</h2>
+      <span class="archive-sample">示例内容</span>
+    </div>
+  </div>
+
+  <div class="archive-tools row">
+    <div class="archive-tools-main">
+      <div class="filters" role="group" aria-label="文章分类" id="filters"></div>
+      <form class="search" role="search" id="search-form">
+        <label class="sr-only" for="search">搜索文章标题与摘要</label>
+        <input id="search" type="search" placeholder="搜索标题或摘要" maxlength="100">
+        <button type="submit">搜索</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="entries" id="entries"></div>
+
+  <!-- ②那一枚。真页面里它排在分页那一行上面（见 ArticleList.vue 的 .entries 与 .pager 之间）。 -->
+  <div class="archive-foot row ruled" id="foot" hidden>
+    <div class="archive-foot-main">
+      <button class="pager-btn" type="button" id="foot-btn">返回</button>
+    </div>
+  </div>
+
+  <nav class="pager row ruled" aria-label="文章分页" id="pager" hidden>
+    <div class="pager-nav">
+      <button class="pager-btn" type="button" id="prev">上一页</button>
+      <span class="pager-count" id="pager-count">1 / 3</span>
+      <button class="pager-btn" type="button" id="next">下一页</button>
+    </div>
+  </nav>
+</section>
+
+</div>
+</main>
+
+<footer class="footer row shell ruled">
+  <p class="footer-made">© 2026 Anxin</p>
+  <div class="footer-main">
+    <p>记录，是为了走得更远。</p>
+    <a href="#">anxin-hitsz.com</a>
+  </div>
+</footer>
+
+<section class="shell">
+
+<h2 class="notes-h">三条规矩</h2>
+<p class="note">
+  <strong>① 没有搜索，末尾什么都不加。</strong>前面点「现状」那一栏里没有这一项了——这一页
+  就是定稿，不摆改之前的对照。想看改之前的样子，线上那一页还在：在搜索框里打一个词、回车、
+  再点掉右端那颗 ✕，列表照旧只给那一条，页上也没有别的路。
+</p>
+<p class="note">
+  <strong>② 有搜索、结果非空，末尾一枚去路。</strong>它站在正文栏左沿，与条目标题、摘要同一条
+  起笔线，横线（<code>.ruled</code>）也从那儿起——这与空结果那一格的「查看全部文章」是一个
+  位置、一个长相（都是 <code>.pager-btn</code>）。排在<strong>分页那一行的上面</strong>：
+  两条去路说的是两件事（离开这次搜索 / 在这一批里挪一页），各自有横线隔着，读起来不打架。
+  觉得挤的话也可以挪到分页下面，代价是离「读完这几篇」那一步远一点。
+</p>
+<p class="note">
+  <strong>③ 有搜索、结果为空，那一格里两枚并排。</strong>空结果那一格自带一条出路，所以这一枚
+  不再单占一行——两枚同在一行里：<strong>「返回」</strong>（撤词、留分类）与
+  <strong>「查看全部文章」</strong>（撤词也撤分类，就是现在那一格里的 <code>reset()</code>）。
+  顺序按你说的：返回那一枚在前。分类停在「全部」时这两枚是同一件事（都撤词、都留在全部），
+  只留一枚。
+</p>
+<p class="note">
+  <strong>两枚怎么排的</strong>：它们装在一层 <code>.notice-acts</code> 里。<code>.notice</code>
+  自己那条 <code>.notice button, .notice .pager-btn { margin-top: 1.4rem }</code>
+  （<code>styles.css:459</code>）得让给这一层——不然两枚各带一份 1.4rem，第二枚就不在同一行了。
+</p>
+
+<h2 class="notes-h">那一枚写什么</h2>
+<p class="note">
+  <strong>定下的（2026-10-16）：写「返回」。</strong>第二栏可以切到另一句看对照，两边的落法一样。
+  这一栏就是定稿的样子。
+</p>
+<p class="note">
+  <strong>没取的那一句</strong>——「查看全部后端文章」（说要去的地方，分类名跟着走）。它当年
+  好在：这个位置在列表末尾，读者站在这儿问的是「还有别的吗」，说<strong>会看到什么</strong>
+  比说<strong>会撤掉什么</strong>更直接；而且它说的那句话在筛了分类时是真话（点下去留下的
+  就是那个分类的几篇，写「全部文章」才是假话）。
+</p>
+<p class="note">
+  <strong>「返回」的代价，留着备查</strong>：① 这一页里「上一页」已经占住了「退」这个意思
+  （<code>ArticleList.vue:164</code>），两枚并排时读起来有点撞；② 它不是浏览器的后退，是本页内
+  的一次筛选变更。真要收这两条时，改的是这一枚的文案，别处一行不动。
+</p>
+<p class="note">
+  顺带一句：定了「返回」之后，那一句里的分类名不用拼了——<code>catName</code> 那个 computed
+  不必写（空结果那一格里第二枚是固定句「查看全部文章」）。
+</p>
+
+<h2 class="notes-h">三档数量各是什么样</h2>
+<p class="note">
+  <strong>0 篇（空库）</strong>——第一栏点它。这时没有搜索，所以末尾什么都不加（规矩①）；
+  列表里那一格是<strong>原来就有的样子</strong>：「还没有找到这样的文章」加一枚「查看全部文章」。
+  顺带记一笔：库是空的时候那一枚点下去不发生什么（本来就是全部、也没有词），要不要给空库另写
+  一句话，是另一件事，这一轮没动它。
+</p>
+<p class="note">
+  <strong>6 篇（一页装得下）</strong>——第一栏点它。分页那一行不出现。搜一个词：搜到就末尾一枚，
+  搜不到就那一格两枚。
+</p>
+<p class="note">
+  <strong>14 篇（多于每页 6 篇）</strong>——第一栏点它。分页那行出现（上一页 / 1 / 3 / 下一页，
+  真的能翻，地址里带 <code>?page=</code>）。这时搜一个词，末尾那一枚正好落在最后一条与分页行
+  之间，两条去路上下叠着——就是上面规矩②说的那件事。
+</p>
+<p class="note">
+  <strong>翻页时它跟着走</strong>：翻到第 2 页，那一枚照旧在最后一条底下（它是列表末尾，不是
+  第一页末尾）；从第 2 页点它，回到这个分类的第 1 页、词撤掉。
+</p>
+
+<h2 class="notes-h">落到产品里改哪几行</h2>
+<p class="note">
+  <strong>甲（手势）</strong>——<code>ArticleList.vue</code> 的输入框上加一条 <code>@input</code>，
+  函数只有一句：
+</p>
+<p class="note"><code>if (search.value.trim() === '' &amp;&amp; query.q) go({ q: '', page: 1 });</code></p>
+<p class="note">
+  条件是「本来就有词」：没有就别动，否则每次清空都往历史里推一条空记录。分类不进这次变更
+  （<code>go</code> 只并进 <code>{ q: '', page: 1 }</code>，其余照旧）。
+</p>
+<p class="note">
+  <strong>②末尾那一枚</strong>——在 <code>&lt;div class="entries"&gt;</code> 与
+  <code>&lt;nav class="pager"&gt;</code> 之间插一个 <code>.row</code>：
+</p>
+<p class="note">
+  <code>&lt;div v-if="query.q &amp;&amp; !loading &amp;&amp; !error &amp;&amp; items.length" class="archive-foot row ruled"&gt;</code><br>
+  <code>&nbsp;&nbsp;&lt;div class="archive-foot-main"&gt;</code><br>
+  <code>&nbsp;&nbsp;&nbsp;&nbsp;&lt;button class="pager-btn" type="button" @click="clearSearch"&gt;返回&lt;/button&gt;</code><br>
+  <code>&nbsp;&nbsp;&lt;/div&gt;</code><br>
+  <code>&lt;/div&gt;</code>
+</p>
+<p class="note">
+  <code>clearSearch()</code> 是 <code>reset()</code> 收窄成一句：<code>search.value = ''</code>
+  （免得框里留着旧词）、<code>go({ q: '', page: 1 })</code>、<code>focusHeading()</code>——这枚
+  按钮点完就没了，焦点不能悬在空处。分类不进这次变更。
+</p>
+<p class="note">
+  条件里的 <code>items.length</code> 不是 <code>pagination.total</code>：页码超出时接口不夹取，
+  这一页会是空的（总数却大于 0），那时空结果那一格正在摆它自己的两枚——用总数当条件会两处
+  同时站出来，就是你图 2 那个毛病。用「这一页有条目」两处互斥。
+</p>
+<p class="note">
+  <code>styles.css</code> 两条：<code>.archive-foot { margin-top: 1.75rem }</code>（与
+  <code>.pager</code> 同值）与 <code>.archive-foot-main { grid-column: 2 }</code>（站进正文栏）；
+  窄屏再加一条：44rem 那一档 <code>.row</code> 只剩一列（<code>styles.css:1057</code>），
+  <code>.archive-foot-main</code> 要跟着 <code>.archive-main</code>、
+  <code>.archive-tools-main</code> 一起收回 <code>grid-column: 1</code>（添进
+  <code>:1058</code> 那一行名单）。用 <code>.pager-btn</code> 那枚现成的字，不必新写样式。
+</p>
+<p class="note">
+  <strong>③空结果那一格</strong>——把现在那一枚换成一排：
+</p>
+<p class="note">
+  <code>&lt;div class="notice-acts"&gt;</code><br>
+  <code>&nbsp;&nbsp;&lt;button v-if="query.q &amp;&amp; query.category !== ALL" class="pager-btn" @click="clearSearch"&gt;返回&lt;/button&gt;</code><br>
+  <code>&nbsp;&nbsp;&lt;button class="pager-btn" @click="reset"&gt;查看全部文章&lt;/button&gt;</code><br>
+  <code>&lt;/div&gt;</code>
+</p>
+<p class="note">
+  第一条 <code>v-if</code> 里两个条件各管一头：<code>query.category !== ALL</code> 是「分类停在
+  全部时只留一枚」——那时两枚是同一件事（都撤词、都留在全部）；<code>query.q</code> 是「本来
+  就没搜，就没有词可撤」——没有搜索时那两枚摆不出两件不同的事。<code>styles.css</code> 再加两条：<code>.notice-acts { margin-top: 1.4rem;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.5rem }</code> 与
+  <code>.notice-acts .pager-btn { margin-top: 0 }</code>——那 1.4rem 是
+  <code>styles.css:459</code> 给 <code>.notice</code> 里每一枚按钮的，得让给这一层。
+</p>
+<p class="note">
+  <strong>没跟着改的</strong>：①出错那一格（<code>暂时无法读取文章</code>）只有「重新加载」一枚
+  ——取数没成功，读者要先把数据拿到手，去路先不摆；②加载骨架里什么都不摆。
+</p>
+<p class="note">
+  <strong>两处搜索框</strong>：写作台列表页（<code>AdminArticleListView.vue</code>）也是同一个毛病
+  （清了框、列表还筛着）。甲照抄，只把条件换成它本地的 <code>query.q</code>（那边不进地址）；
+  ②③也照抄——它那儿同样有 <code>.entries</code> 与 <code>.pager</code>
+  （<code>:202</code>、<code>:265</code>），条件里再多一条 <code>state === 'ready'</code>
+  （那边的加载态是这么叫的）。「撤词」那一头只撤 <code>q</code>：那边的状态筛选（草稿／已发布）
+  与分类是同一个东西的两副样子，都照旧留着。
+</p>
+
+</section>
+
+<script>
+/* 样片脚手架：把列表页那套状态机（输入框 / 生效的条件 / 地址 / 分页）照搬一小份。产品里没有
+   这一段。 */
+const PAGE_SIZE = 6;                    /* 真站是 6（ArticleList.vue:16 的 pageSize） */
+const CATS = [
+  { id: 'backend', name: '后端' },
+  { id: 'agent', name: 'Agent' },
+];
+const ARTICLES = [
+  {
+    id: 'bz83bys3', cat: 'backend', date: '2026.10.15', minutes: 35,
+    title: '常用限流算法详解：工作原理、实现逻辑与适用场景',
+    summary: '系统介绍固定窗口、精确滑动窗口、分桶滑动窗口、漏桶、令牌桶、GCRA、并发限流和自适应限流，结合公式、示例与伪代码分析各类方法的实现逻辑、优缺点和适用场景，并讨论并发安全、时间处理与分布式状态管理等工程问题。',
+    tags: '限流算法 / 系统设计 / 分布式系统 / 高并发',
+  },
+  {
+    id: 'bu0gytqx', cat: 'backend', date: '2026.10.04', minutes: 12,
+    title: 'Go 切片作为函数参数：为什么 append 后调用方看不到变化？',
+    summary: 'Go 切片包含对底层数组的引用，但函数内执行 append，并不意味着调用方的切片也会更新。本文从一段二叉树中序遍历代码出发，解释切片的按值传递、长度与容量，以及正确传回追加结果的方法。',
+    tags: 'Go / 切片 / 值传递 / append',
+  },
+  {
+    id: 'c1k4m9pe', cat: 'backend', date: '2026.09.22', minutes: 18,
+    title: 'MySQL 索引的最左前缀：为什么这条索引会「失效」',
+    summary: '联合索引 (a, b, c) 能用在哪些条件上、不能用在哪些条件上。从 B+ 树的查找路径说起，顺带说清范围查询之后为什么断档，以及索引覆盖什么时候救得回来。',
+    tags: 'MySQL / 索引 / 查询优化',
+  },
+  {
+    id: 'as7v2n6w', cat: 'agent', date: '2026.09.18', minutes: 15,
+    title: 'QA-Agent 的检索链路：从问题到答案的四步',
+    summary: '把一个问题变成一段有出处的话，中间经过改写、召回、重排与生成四步。这里记录每一步的选择、它的失败长相，以及为什么没有把四步合成一次调用。',
+    tags: 'QA-Agent / RAG / 检索 / 重排',
+  },
+  {
+    id: 'd9r4hs2k', cat: 'agent', date: '2026.09.06', minutes: 11,
+    title: 'Agent 的工具调用：什么时候该让模型自己决定',
+    summary: '让模型自选工具与把流程写死在代码里，是两种把不确定性放在不同地方的写法。什么时候前者值得，什么时候它只是把一次调试变成十次调试。',
+    tags: 'Agent / 工具调用 / 流程编排',
+  },
+  {
+    id: 'eq6p3zt5', cat: 'agent', date: '2026.08.30', minutes: 9,
+    title: '提示词里的上下文预算：把有限的窗口花在刀刃上',
+    summary: '窗口是这一整套东西里最硬的一堵墙。哪些内容值得常驻、哪些按需取、哪些干脆别放，以及怎么量出「这一篇到底吃掉了多少」。',
+    tags: '提示词 / 上下文 / 工程化',
+  },
+  /* 下面几条只为把「多于每页」那一档撑出来，全是示意。 */
+  {
+    id: 'f2h7kd91', cat: 'backend', date: '2026.08.21', minutes: 14,
+    title: 'Redis 分布式锁的三个坑：超时、续期与主从切换',
+    summary: '锁的持有时间比临界区长、续期线程自己掉线、主库换了之后锁还在——这三个坑各有各的触发条件，也各有各的兜底办法。',
+    tags: 'Redis / 分布式锁 / 并发',
+  },
+  {
+    id: 'g4m8np2x', cat: 'backend', date: '2026.08.12', minutes: 21,
+    title: '一次线上慢查询的复盘：从 3 秒到 80 毫秒',
+    summary: '同一条 SQL 在测试库上跑得好好的，到了线上就慢四十倍。记录从看执行计划、比对数据分布，到最后把统计信息刷新的整个过程。',
+    tags: 'MySQL / 慢查询 / 执行计划',
+  },
+  {
+    id: 'h6q9rw3t', cat: 'backend', date: '2026.07.30', minutes: 16,
+    title: '幂等这件事：为什么重试比你想的难',
+    summary: '重试本身只是一行代码，难的是让同一次请求被打两遍之后结果一样。业务键、唯一约束、状态机，三种做法各挡得住哪一类。',
+    tags: '幂等 / 重试 / 服务可靠性',
+  },
+  {
+    id: 'j8s2ty4m', cat: 'backend', date: '2026.07.18', minutes: 10,
+    title: '单测写到什么程度算够：三条能用的尺子',
+    summary: '覆盖率是一个数字，不是一个目标。换成「这条分支出错时，页面上会多出什么」来问，边界就清楚多了。',
+    tags: '测试 / 单测 / 工程实践',
+  },
+  {
+    id: 'k0u3vz5n', cat: 'agent', date: '2026.07.05', minutes: 13,
+    title: '向量召回之后的重排：小模型为什么常常赢',
+    summary: '召回要的是不漏，重排要的是排得准，两件事对模型的要求不一样。小模型在重排这一步上常常比大模型更划算。',
+    tags: 'RAG / 重排 / 向量检索',
+  },
+  {
+    id: 'm2w4xa6p', cat: 'agent', date: '2026.06.24', minutes: 8,
+    title: '把一次对话拆成十次：多轮编排的取舍',
+    summary: '一次调用做完所有事、还是拆成十次互相看得见的调用？拆开的代价是多十倍的失败点，换来的是每一步都能单独评。',
+    tags: 'Agent / 多轮 / 流程编排',
+  },
+  {
+    id: 'n4y5zb7q', cat: 'agent', date: '2026.06.11', minutes: 17,
+    title: '评测集怎么造：从真实问题里取样',
+    summary: '自己造的问题总带着自己的假设。回到真实的提问记录里分层取样，再让不知道答案的人标一遍，是费劲但少走弯路的做法。',
+    tags: '评测 / 数据集 / RAG',
+  },
+  {
+    id: 'p6z7ac8r', cat: 'backend', date: '2026.05.29', minutes: 19,
+    title: '数据库连接池调小了之后，为什么反而更快',
+    summary: '连接池开大是本能，但每个连接都占着数据库的内存与线程。把并发压回数据库真正吃得消的那一档，排队时间反而短了。',
+    tags: '连接池 / 性能 / MySQL',
+  },
+];
+const DATA = {
+  zero: [],
+  one: ARTICLES.slice(0, 6),
+  many: ARTICLES,
+};
+
+const doc = document.documentElement;
+const boxEl = document.getElementById('search');
+const formEl = document.getElementById('search-form');
+const filtersEl = document.getElementById('filters');
+const countEl = document.getElementById('count');
+const entriesEl = document.getElementById('entries');
+const readoutEl = document.getElementById('readout');
+const footEl = document.getElementById('foot');
+const footBtn = document.getElementById('foot-btn');
+const pagerEl = document.getElementById('pager');
+const pagerCountEl = document.getElementById('pager-count');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+
+/* 生效的那份条件（家是地址栏）与输入框里那串字，是两个值——产品的规矩。 */
+const state = { cat: 'all', q: '', page: 1 };
+let typed = '';
+const pool = () => DATA[doc.dataset.data].filter(matches);
+const catName = (id) => CATS.find(c => c.id === id)?.name ?? '';
+/* 那一枚写什么（控制栏第二栏）。定稿是 back（「返回」）；dest 那一句留着看对照——它跟着
+   分类走，说的是去看什么（筛着分类还写「全部文章」就是假话，你只会看到那个分类里的几篇）。 */
+function wayOutLabel() {
+  if (doc.dataset.label === 'dest') return state.cat === 'all' ? '查看全部文章' : `查看全部${catName(state.cat)}文章`;
+  return '返回';
+}
+
+function readAddr() {
+  const p = new URLSearchParams(location.search);
+  const cat = p.get('category');
+  state.cat = CATS.some(c => c.id === cat) ? cat : 'all';
+  state.q = (p.get('q') || '').trim();
+  const page = Number.parseInt(p.get('page') || '1', 10);
+  state.page = Number.isFinite(page) && page > 0 ? page : 1;
+}
+function writeAddr(push) {
+  const p = new URLSearchParams();
+  if (state.q) p.set('q', state.q);
+  if (state.cat !== 'all') p.set('category', state.cat);
+  if (state.page > 1) p.set('page', String(state.page));
+  const url = location.pathname + (p.toString() ? '?' + p : '');
+  if (push) history.pushState(null, '', url);
+  else history.replaceState(null, '', url);
+}
+
+function matches(a) {
+  if (state.cat !== 'all' && a.cat !== state.cat) return false;
+  if (state.q && !(a.title.includes(state.q) || a.summary.includes(state.q))) return false;
+  return true;
+}
+function entryHTML(a, latest) {
+  const name = catName(a.cat);
+  return `<article class="entry row ruled">
+    <div class="facts facts-stamp">
+      ${latest ? '<p class="mark">最新</p>' : ''}
+      <p class="key">${name}</p>
+      <p><time class="date" datetime="${a.date.replace(/\./g, '-')}">${a.date}</time></p>
+      <p>${a.minutes} 分钟阅读</p>
+    </div>
+    <div class="main">
+      <h3 class="entry-title"><a href="#">${a.title}</a></h3>
+      <p class="entry-summary">${a.summary}</p>
+      <p class="entry-tags">${a.tags}</p>
+    </div>
+  </article>`;
+}
+/* 空结果那一格。两枚并排：①撤词、留分类（分类停在全部时与②是同一件事，不摆）；
+   ②撤词也撤分类——原来那一格里的 reset()。顺序按定稿的：去路那一枚在前。 */
+function noticeHTML() {
+  const back = `<button class="pager-btn" type="button" data-act="back">${wayOutLabel()}</button>`;
+  const all = `<button class="pager-btn" type="button" data-act="all">查看全部文章</button>`;
+  return `<div class="entry row ruled"><div class="main notice">
+    <h3>还没有找到这样的文章</h3>
+    <p>试试其他关键词，或回到全部文章。</p>
+    <div class="notice-acts">${state.q && state.cat !== 'all' ? back : ''}${all}</div>
+  </div></div>`;
+}
+
+function render() {
+  const all = pool();
+  const total = all.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const clamped = Math.min(state.page, pages);
+  if (clamped !== state.page) { state.page = clamped; writeAddr(false); }
+  const items = all.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
+  /* 「最新」只标全站最新那一条，而且只在没筛、停在第一页时标——产品的规矩。 */
+  const latestId = !state.q && state.cat === 'all' && state.page === 1 ? DATA[doc.dataset.data][0]?.id : undefined;
+
+  filtersEl.innerHTML = [{ id: 'all', name: '全部' }, ...CATS].map(c =>
+    `<button class="filter" type="button" aria-pressed="${state.cat === c.id}" data-cat="${c.id}">${c.name}</button>`
+  ).join('');
+
+  countEl.textContent = `${total} 篇文章${state.q ? ` · 搜索“${state.q}”` : ''}`;
+
+  entriesEl.innerHTML = items.length
+    ? items.map(a => entryHTML(a, a.id === latestId)).join('')
+    : noticeHTML();
+
+  /* 规矩①/②：没有搜索（或结果为空）时末尾什么都不加。空结果那一格自己带着两枚，
+     不需要再来一行。 */
+  footEl.hidden = !(state.q && total > 0);
+  footBtn.textContent = wayOutLabel();
+
+  pagerEl.hidden = pages <= 1;
+  pagerCountEl.textContent = `${state.page} / ${pages}`;
+  prevBtn.disabled = state.page <= 1;
+  nextBtn.disabled = state.page >= pages;
+
+  renderReadout(total, items.length, pages);
+}
+function renderReadout(total, shown, pages) {
+  const p = new URLSearchParams();
+  if (state.q) p.set('q', state.q);
+  if (state.cat !== 'all') p.set('category', state.cat);
+  if (state.page > 1) p.set('page', String(state.page));
+  const foot = footEl.hidden ? '（不在）' : `「${footBtn.textContent}」`;
+  readoutEl.innerHTML =
+    `地址 <b>${p.toString() ? '?' + p : '（干净的）'}</b>` +
+    ` · 框里 <b>${typed.trim() === '' ? '（空）' : '“' + typed + '”'}</b>` +
+    ` · 生效的词 <b>${state.q ? '“' + state.q + '”' : '（没有）'}</b>` +
+    ` · 分类 <b>${state.cat === 'all' ? '全部' : catName(state.cat)}</b>` +
+    ` · 共 <b>${total}</b> 篇／本页 <b>${shown}</b> 条／<b>${pages}</b> 页` +
+    ` · 末尾那一枚 <b>${foot}</b>`;
+}
+
+function apply(change) {
+  Object.assign(state, change);
+  writeAddr(true);
+  render();
+}
+function focusHeading() { document.getElementById('archive-title').focus({ preventScroll: true }); }
+
+formEl.addEventListener('submit', e => {
+  e.preventDefault();
+  apply({ q: typed.trim(), page: 1 });
+  focusHeading();
+});
+/* 甲（定稿的其中一半）：框一空，生效的词跟着撤，分类与页码不动。条件里那个 state.q 是
+   「本来有词」——本来没有就别动，免得每一次清空都往历史里推一条空记录。✕、Esc、退格删空
+   都走这条（三种都发 input；✕ 与 Esc 另发 search，退格不发，2026-10-16 真点实测）。 */
+boxEl.addEventListener('input', () => {
+  typed = boxEl.value;
+  if (typed.trim() === '' && state.q) apply({ q: '', page: 1 });
+  renderReadout(pool().length, entriesEl.querySelectorAll('.entry').length, Math.max(1, Math.ceil(pool().length / PAGE_SIZE)));
+});
+filtersEl.addEventListener('click', e => {
+  const btn = e.target.closest('.filter');
+  if (!btn) return;
+  apply({ cat: btn.dataset.cat, page: 1 });
+  focusHeading();
+});
+document.addEventListener('click', e => {
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  const isFoot = !!e.target.closest('#foot-btn');
+  if (!act && !isFoot) return;
+  boxEl.value = '';
+  typed = '';
+  /* 末尾那一枚与空结果格里那一枚「撤词、留分类」走同一条；「查看全部文章」连分类一起放开。 */
+  apply(act === 'all' ? { q: '', cat: 'all', page: 1 } : { q: '', page: 1 });
+  focusHeading();
+});
+prevBtn.addEventListener('click', () => { apply({ page: state.page - 1 }); focusHeading(); });
+nextBtn.addEventListener('click', () => { apply({ page: state.page + 1 }); focusHeading(); });
+addEventListener('popstate', () => {
+  readAddr();
+  boxEl.value = state.q;
+  typed = state.q;
+  render();
+});
+
+for (const input of document.querySelectorAll('input[name="data"]')) {
+  input.addEventListener('change', () => { doc.dataset.data = input.value; render(); });
+}
+for (const input of document.querySelectorAll('input[name="label"]')) {
+  input.addEventListener('change', () => { doc.dataset.label = input.value; render(); });
+}
+/* 控制栏占多高——报头让开这么多（见上面 .masthead 那条）。 */
+const barEl = document.querySelector('.bar');
+const measureBar = () => doc.style.setProperty('--bar-h', barEl.offsetHeight + 'px');
+addEventListener('resize', measureBar);
+measureBar();
+
+doc.dataset.data = 'one';
+/* 定稿那一枚写「返回」；第二栏切到另一句看对照（radios 上那个 checked 写的是同一件事，
+   两处要一起改）。 */
+doc.dataset.label = 'back';
+readAddr();
+boxEl.value = state.q;
+typed = state.q;
+render();
+</script>
+
+</body>
+</html>

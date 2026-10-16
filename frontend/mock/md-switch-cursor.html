@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写作台 ·「看预览」那枚字的指针 · 定稿 · Anxin</title>
+<link rel="stylesheet" href="../src/styles.css">
+<style>
+/* 写作台里「看预览 / 看原文」那枚字，鼠标悬上去为什么不变手。2026-10-16 定稿。
+
+   你看到的：鼠标放到「看预览」上，指针还是箭头；往上挪一点（还没碰到字），它倒变成手了。
+
+   量下来的原因（逐像素扫过这一行，见下面那张表）：这一行的 cursor 写在外面的 .md-switch
+   上，而真正能点的只有里面那枚 label。label 自己有一条来自浏览器内置样式表——
+   `label { cursor: default }`；cursor 虽然是继承属性，可元素自己有一条就用自己那条，
+   于是继承来的 pointer 被它压掉了。结果：
+
+     字上方那 5.0px  → 命中的是 .md-switch，pointer（手）
+     那枚字本身      → 命中的是 label，default（箭头）   ← 你指的地方，反倒不是手
+     字下方那 4.3px  → 又是 .md-switch，pointer
+
+   顺带一提：站里另外两处 label（写作台「插入图片」那枚、以及 .segmented 那族）都把
+   cursor: pointer 写在 label 自己身上，所以它们是对的——.md-switch 是唯一写在外层盒子上的。
+
+   定下的（甲，2026-10-16）：把 cursor 挪到 label 上——与站里另两处 label 同一写法，改动最小。
+   手只出现在那枚字上；字上方那一条不再是手（那里本来也点不动，不是手才对）。
+
+   不取的那一案（乙：给 label 补 padding-top，把字上面那一条也纳进来）不摆在这一页了。
+   它当年的结论留着：只能补上边、不能写 padding-block——那枚 label 是 .link-quiet，它底下
+   那条下划线是 1px 的 border-bottom + .1rem 内边距画出来的（styles.css:548），padding-block
+   会把下划线往下挪 3.2px；而且那挂内边距得永远等于「行盒比字盒多出来的那一半」，改字号或
+   行高时得想起它。甲没有这个尾巴。
+
+   两个样片都是真控制：点「看预览 / 看原文」真换面，鼠标在每一行上来回移能看出差别。 */
+
+/* —— 稿样脚手架（不属产品）—— */
+body { margin: 0; }
+.intro, .note { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; }
+.intro { margin-top: 1.75rem; }
+.notes-h {
+  font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600;
+  margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--rule); max-width: var(--measure);
+}
+.note { margin-top: 1rem; }
+.note strong, .intro strong { color: var(--ink); font-weight: 600; }
+.note code, .intro code { font-family: var(--stack-mono); font-size: .8125rem; }
+
+/* 每个样片是一份 .md（产品里那一栏），照产品摆 .md-head 与两面正文。正文框那 40rem 的
+   下限在这一页压到 8rem：它多高与「这一行多高、正文框从哪儿起」无关，量的是后者。 */
+.spec { margin-top: 3.5rem; }
+.spec > h3 { font-family: var(--stack-display); font-size: 1.125rem; font-weight: 600; }
+.spec > p { max-width: var(--measure); color: var(--muted); font-size: var(--facts-size); line-height: 1.7; margin: .5rem 0 0; }
+.spec .md { --md-source-h: 8rem; }
+.spec .md-source { font-size: .8125rem; }
+
+/* —— 定稿那条规则 ——
+   2026-10-16 已经落进 src/styles.css：那里 .md-switch 那条去掉了 cursor: pointer，
+   另起了一条 .md-switch label { cursor: pointer }。所以「甲」这个样片一个字不抄，
+   吃的就是样式表里那条。
+   「现状」得自己带两条了：改之前外层那枚手是样式表给的（现在样式表上没有了），而里层
+   那枚字当年吃的是浏览器内置的 label { cursor: default }——样式表里新添的那条
+   .md-switch label 会盖到这一片上来，所以得把它按回去。两条都只是脚手架，产品里
+   一条都没有。 */
+.spec-now .md-switch { cursor: pointer; }
+.spec-now .md-switch label { cursor: default; }
+</style>
+</head>
+<body>
+
+<section class="shell">
+<p class="intro">
+  写作台编辑页里「看预览 / 看原文」那一枚字：鼠标悬上去该是一只手，现在手却长在它上面那一条
+  空白里。<strong>把鼠标在每一行上来回移，看指针什么时候变</strong>——这就是全部要 review 的东西。
+  两个样片的行高与正文框顶端都是一样的：定稿那一案没有动几何。
+</p>
+</section>
+
+<main class="shell">
+
+<section class="spec spec-now">
+  <h3>样片一 · 现状</h3>
+  <p>字上方那一条空白里，指针是手；挪到字上反倒变回箭头。那一条点下去什么也不会发生。</p>
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label">Markdown 原文</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input id="n-source" class="sr-only" type="radio" name="n" value="source" checked>
+        <input id="n-preview" class="sr-only" type="radio" name="n" value="preview">
+        <label class="link-quiet" for="n-preview">看预览</label>
+      </div>
+    </div>
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" spellcheck="false" aria-label="Markdown 原文">## 为什么需要 JWT？
+
+鉴权把「你是谁」与「你能做什么」拆成两件事，
+令牌只回答前一件。</textarea>
+    </div>
+    <div class="md-pane" data-pane="preview" hidden>
+      <div class="prose"><h2>为什么需要 JWT？</h2><p>鉴权把「你是谁」与「你能做什么」拆成两件事，令牌只回答前一件。</p></div>
+    </div>
+  </section>
+</section>
+
+<section class="spec spec-jia">
+  <h3>样片二 · 甲（定稿）把 cursor 挪到 label 上</h3>
+  <p>手落在那枚字上；字上方那一条不再是手（那里本来也点不动，不是手才对）。与站里「插入图片」「.segmented」两处的写法一致。</p>
+  <section class="md">
+    <div class="md-head">
+      <span class="md-label">Markdown 原文</span>
+      <div class="md-switch" role="radiogroup" aria-label="正文显示方式">
+        <input id="j-source" class="sr-only" type="radio" name="j" value="source" checked>
+        <input id="j-preview" class="sr-only" type="radio" name="j" value="preview">
+        <label class="link-quiet" for="j-preview">看预览</label>
+      </div>
+    </div>
+    <div class="md-pane" data-pane="source">
+      <textarea class="md-source" spellcheck="false" aria-label="Markdown 原文">## 为什么需要 JWT？
+
+鉴权把「你是谁」与「你能做什么」拆成两件事，
+令牌只回答前一件。</textarea>
+    </div>
+    <div class="md-pane" data-pane="preview" hidden>
+      <div class="prose"><h2>为什么需要 JWT？</h2><p>鉴权把「你是谁」与「你能做什么」拆成两件事，令牌只回答前一件。</p></div>
+    </div>
+  </section>
+</section>
+
+<h2 class="notes-h">量到的那一张表（现状）</h2>
+<p class="note">在「看预览」那枚字的中线上自上而下扫，每一像素问一次「这儿命中的是谁、它的 cursor 是什么」：</p>
+<p class="note">
+  <code>字上方 5.0px　→　div.md-switch　　pointer</code><br>
+  <code>那枚字本身　　→　label.link-quiet　default（箭头）</code><br>
+  <code>字下方 4.3px　→　div.md-switch　　pointer</code>
+</p>
+<p class="note">
+  这一行整高 25.9px，就是那枚字的行盒（字号 14px、行高 25.9px）；label 自己的盒子只有
+  16.6px——字 14px 加上它底下那条下划线（<code>1px</code> 的 border-bottom 与
+  <code>.1rem</code> 内边距），上下那 5.0px 与 4.3px 正是行盒比字盒多出来的两截
+  （5.0 + 16.6 + 4.3 = 25.9）。能点的只有 label 那一段，cursor 却写在外层盒子上，于是
+  「手」与「能点」正好对不上。把 cursor 挪到 label 上之后，手落在 537–553 这一段——正好是
+  那枚字的盒子，与能点的那一段重合。
+</p>
+
+<h2 class="notes-h">落到产品里改哪几行</h2>
+<p class="note">
+  <strong>已落（2026-10-16）</strong>：<code>src/styles.css</code> 里 <code>.md-switch</code> 那条
+  去掉了 <code>cursor: pointer</code>，另起一条 <code>.md-switch label { cursor: pointer; }</code>。
+  与 <code>.segmented label</code>、<code>.md-tools .upload-btn</code>（也是 label）同一个写法：
+  站里别处都没有把 cursor 写在外层盒子上。
+</p>
+<p class="note">
+  只挑 <code>.md-switch label</code>，不写宽泛的 <code>label { cursor: pointer }</code>：站里还有
+  别的 label（表单里的单选、复选那一族），它们该是箭头。字号、位置、点下去会发生什么，一个都
+  不动。
+</p>
+
+</main>
+
+<script>
+/* 样片脚手架：两个样片各自真能换面——两根 radio、字跟着 checked 换、两面用 hidden 切。
+   照产品（AdminArticleEditView.vue）那一套，只是换面用 hidden 不用 v-show。 */
+for (const [group, root] of [['n', document.querySelector('.spec-now')], ['j', document.querySelector('.spec-jia')]]) {
+  const radios = [...root.querySelectorAll(`input[name="${group}"]`)];
+  const label = root.querySelector('.md-switch label');
+  const mdLabel = root.querySelector('.md-label');
+  const panes = [...root.querySelectorAll('.md-pane')];
+  const sync = () => {
+    const mode = radios.find(r => r.checked).value;
+    label.textContent = mode === 'source' ? '看预览' : '看原文';
+    mdLabel.textContent = mode === 'source' ? 'Markdown 原文' : '预览';
+    for (const pane of panes) pane.hidden = pane.dataset.pane !== mode;
+  };
+  for (const radio of radios) radio.addEventListener('change', sync);
+  sync();
+}
+</script>
+
+</body>
+</html>
